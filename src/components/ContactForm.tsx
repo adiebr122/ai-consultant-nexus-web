@@ -1,0 +1,241 @@
+
+import { useState } from 'react';
+import { Send, Phone, Mail, MapPin } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+
+const ContactForm = () => {
+  const { toast } = useToast();
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    company: '',
+    phone: '',
+    service: '',
+    message: ''
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('Form submitted:', formData);
+    toast({
+      title: "Pesan Terkirim!",
+      description: "Tim kami akan menghubungi Anda dalam 24 jam.",
+    });
+    setFormData({
+      name: '',
+      email: '',
+      company: '',
+      phone: '',
+      service: '',
+      message: ''
+    });
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  return (
+    <section id="kontak" className="py-20 bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            Mulai Transformasi Digital Anda
+          </h2>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            Konsultasi gratis dengan tim expert kami untuk menentukan solusi AI 
+            yang tepat untuk kebutuhan bisnis Anda.
+          </p>
+        </div>
+
+        <div className="grid lg:grid-cols-2 gap-12">
+          {/* Contact Info */}
+          <div className="space-y-8">
+            <div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-6">Hubungi Kami</h3>
+              <p className="text-gray-600 text-lg leading-relaxed mb-8">
+                Tim expert kami siap membantu Anda menemukan solusi AI yang tepat. 
+                Dapatkan konsultasi gratis dan proposal customized untuk bisnis Anda.
+              </p>
+            </div>
+
+            <div className="space-y-6">
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center justify-center w-12 h-12 bg-blue-600 rounded-lg">
+                  <Phone className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-900">Telepon</h4>
+                  <p className="text-gray-600">+62 21 5555 1234</p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center justify-center w-12 h-12 bg-blue-600 rounded-lg">
+                  <Mail className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-900">Email</h4>
+                  <p className="text-gray-600">hello@aiconsultantpro.com</p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center justify-center w-12 h-12 bg-blue-600 rounded-lg">
+                  <MapPin className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-900">Alamat</h4>
+                  <p className="text-gray-600">
+                    Menara BCA Lt. 25<br />
+                    Jl. MH Thamrin No. 1<br />
+                    Jakarta Pusat 10310
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-xl shadow-lg">
+              <h4 className="text-lg font-semibold text-gray-900 mb-4">Jam Operasional</h4>
+              <div className="space-y-2 text-gray-600">
+                <div className="flex justify-between">
+                  <span>Senin - Jumat</span>
+                  <span>09:00 - 18:00 WIB</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Sabtu</span>
+                  <span>09:00 - 15:00 WIB</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Minggu</span>
+                  <span>Tutup</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Contact Form */}
+          <div className="bg-white p-8 rounded-2xl shadow-xl">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                    Nama Lengkap *
+                  </label>
+                  <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    required
+                    value={formData.name}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    placeholder="Masukkan nama lengkap"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                    Email *
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    required
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    placeholder="nama@email.com"
+                  />
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-2">
+                    Nama Perusahaan
+                  </label>
+                  <input
+                    type="text"
+                    id="company"
+                    name="company"
+                    value={formData.company}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    placeholder="PT. Nama Perusahaan"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                    Nomor Telepon
+                  </label>
+                  <input
+                    type="tel"
+                    id="phone"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    placeholder="+62 812 3456 7890"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="service" className="block text-sm font-medium text-gray-700 mb-2">
+                  Layanan yang Diminati
+                </label>
+                <select
+                  id="service"
+                  name="service"
+                  value={formData.service}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                >
+                  <option value="">Pilih layanan</option>
+                  <option value="chatbot">AI Chatbot Development</option>
+                  <option value="custom-app">Custom AI Application</option>
+                  <option value="analytics">Data Analytics & Insights</option>
+                  <option value="content">AI Content Generation</option>
+                  <option value="automation">Business Process Automation</option>
+                  <option value="security">AI Security Solutions</option>
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
+                  Pesan *
+                </label>
+                <textarea
+                  id="message"
+                  name="message"
+                  rows={5}
+                  required
+                  value={formData.message}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                  placeholder="Ceritakan tentang kebutuhan AI untuk bisnis Anda..."
+                ></textarea>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-blue-600 text-white py-4 px-6 rounded-lg hover:bg-blue-700 transition-all duration-300 flex items-center justify-center space-x-2 font-semibold text-lg shadow-lg hover:shadow-xl"
+              >
+                <Send className="h-5 w-5" />
+                <span>Kirim Pesan</span>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+export default ContactForm;
