@@ -40,7 +40,9 @@ const Services = () => {
         .eq('is_active', true)
         .single();
 
-      if (error && error.code !== 'PGRST116') throw error;
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching services content:', error);
+      }
 
       if (data) {
         setContent({
@@ -55,13 +57,19 @@ const Services = () => {
 
   const fetchServices = async () => {
     try {
+      console.log('Fetching services from database...');
       const { data, error } = await supabase
         .from('services')
         .select('*')
         .eq('is_active', true)
         .order('display_order', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching services:', error);
+        throw error;
+      }
+      
+      console.log('Services data fetched:', data);
       
       // Transform the data to match our interface
       const transformedServices: Service[] = (data || []).map(service => ({
@@ -71,9 +79,10 @@ const Services = () => {
           : []
       }));
       
+      console.log('Transformed services:', transformedServices);
       setServices(transformedServices);
     } catch (error) {
-      console.error('Error fetching services:', error);
+      console.error('Error in fetchServices:', error);
       // Fallback to static data if fetch fails
       setServices([
         {
@@ -164,11 +173,14 @@ const Services = () => {
   const getServiceIcon = (category: string) => {
     switch (category.toLowerCase()) {
       case 'ai solutions': return Brain;
+      case 'ai customer service': return Brain;
+      case 'ai automation': return Code;
       case 'web development': return Globe;
       case 'mobile development': return Smartphone;
       case 'data science': return Database;
-      case 'ai automation': return Code;
+      case 'ai analytics': return Database;
       case 'security': return Shield;
+      case 'content generation': return Brain;
       default: return Code;
     }
   };
@@ -215,8 +227,14 @@ const Services = () => {
         {services.length === 0 ? (
           <div className="text-center py-12">
             <Code className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Belum Ada Layanan</h3>
-            <p className="text-gray-500">Layanan akan ditampilkan di sini</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Memuat Layanan...</h3>
+            <p className="text-gray-500">Sedang mengambil data layanan dari database</p>
+            <button 
+              onClick={fetchServices}
+              className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+            >
+              Refresh Layanan
+            </button>
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
