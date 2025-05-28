@@ -15,7 +15,7 @@ const ContactInfoManager = () => {
     company_phone: '',
     company_email: '',
     company_address: '',
-    whatsapp_number: '085674722278', // Default number
+    whatsapp_number: '085674722278',
     whatsapp_message: 'Halo, saya tertarik untuk konsultasi gratis mengenai layanan AI dan digital transformation. Bisakah kita berdiskusi lebih lanjut?'
   });
   const [loading, setLoading] = useState(false);
@@ -63,30 +63,42 @@ const ContactInfoManager = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
+      // Use upsert approach instead of delete-insert
       const updates = Object.entries(contactInfo).map(([key, value]) => ({
         key,
         value,
-        description: getFieldDescription(key),
-        user_id: '00000000-0000-0000-0000-000000000000' // Default system user
+        description: getFieldDescription(key)
       }));
 
-      // First, delete existing settings
-      await supabase
-        .from('site_settings')
-        .delete()
-        .in('key', Object.keys(contactInfo));
+      for (const update of updates) {
+        const { error } = await supabase
+          .from('site_settings')
+          .upsert(
+            {
+              key: update.key,
+              value: update.value,
+              description: update.description,
+              user_id: '00000000-0000-0000-0000-000000000000'
+            },
+            {
+              onConflict: 'key'
+            }
+          );
 
-      // Then insert new settings
-      const { error } = await supabase
-        .from('site_settings')
-        .insert(updates);
-
-      if (error) throw error;
+        if (error) {
+          console.error(`Error upserting ${update.key}:`, error);
+          throw error;
+        }
+      }
 
       toast({
         title: "Berhasil",
         description: "Informasi kontak berhasil disimpan",
       });
+
+      // Trigger refresh for other components
+      window.dispatchEvent(new CustomEvent('contactInfoUpdated'));
+      
     } catch (error) {
       console.error('Error saving contact info:', error);
       toast({

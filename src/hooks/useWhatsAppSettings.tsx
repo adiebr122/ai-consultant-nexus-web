@@ -14,10 +14,6 @@ export const useWhatsAppSettings = () => {
   });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchWhatsAppSettings();
-  }, []);
-
   const fetchWhatsAppSettings = async () => {
     try {
       const { data, error } = await supabase
@@ -46,6 +42,21 @@ export const useWhatsAppSettings = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchWhatsAppSettings();
+
+    // Listen for updates from admin panel
+    const handleWhatsAppUpdate = () => {
+      fetchWhatsAppSettings();
+    };
+
+    window.addEventListener('contactInfoUpdated', handleWhatsAppUpdate);
+
+    return () => {
+      window.removeEventListener('contactInfoUpdated', handleWhatsAppUpdate);
+    };
+  }, []);
 
   const createWhatsAppLink = (customMessage?: string) => {
     const number = whatsappSettings.whatsapp_number.replace(/\D/g, ''); // Remove non-digits

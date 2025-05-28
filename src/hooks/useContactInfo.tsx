@@ -30,26 +30,25 @@ export const useContactInfo = () => {
   
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchContactInfo();
-  }, []);
-
   const fetchContactInfo = async () => {
     try {
       setLoading(true);
       
-      // Fetch contact info
+      // Fetch from site_settings table instead of app_settings
       const { data: contactData } = await supabase
-        .from('app_settings')
-        .select('setting_key, setting_value')
-        .eq('setting_category', 'contact_info')
-        .eq('is_public', true);
+        .from('site_settings')
+        .select('key, value')
+        .in('key', ['company_phone', 'company_email', 'company_address']);
 
       if (contactData && contactData.length > 0) {
         const newContactInfo = { ...contactInfo };
         contactData.forEach(item => {
-          if (item.setting_key in newContactInfo) {
-            newContactInfo[item.setting_key as keyof ContactInfo] = item.setting_value || '';
+          if (item.key === 'company_phone') {
+            newContactInfo.company_phone = item.value || newContactInfo.company_phone;
+          } else if (item.key === 'company_email') {
+            newContactInfo.company_email = item.value || newContactInfo.company_email;
+          } else if (item.key === 'company_address') {
+            newContactInfo.company_address = item.value || newContactInfo.company_address;
           }
         });
         setContactInfo(newContactInfo);
@@ -78,6 +77,21 @@ export const useContactInfo = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchContactInfo();
+
+    // Listen for updates from admin panel
+    const handleContactUpdate = () => {
+      fetchContactInfo();
+    };
+
+    window.addEventListener('contactInfoUpdated', handleContactUpdate);
+
+    return () => {
+      window.removeEventListener('contactInfoUpdated', handleContactUpdate);
+    };
+  }, []);
 
   return {
     contactInfo,
