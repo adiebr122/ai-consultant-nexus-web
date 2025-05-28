@@ -75,7 +75,7 @@ const PortfolioManager = () => {
           section: 'portfolio',
           title: content.title,
           content: content.description,
-          metadata: { projects: content.projects },
+          metadata: { projects: content.projects } as any,
           user_id: user.id,
           is_active: true
         }, {
