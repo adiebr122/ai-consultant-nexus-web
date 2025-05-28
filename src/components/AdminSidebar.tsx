@@ -7,12 +7,13 @@ import {
   Star,
   Briefcase,
   Settings,
-  BarChart3,
   Building,
   Zap,
   UserCheck,
   Globe,
-  MessageCircle
+  MessageCircle,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import {
   Sidebar,
@@ -23,6 +24,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar
 } from '@/components/ui/sidebar';
 
 interface AdminSidebarProps {
@@ -31,6 +33,9 @@ interface AdminSidebarProps {
 }
 
 const AdminSidebar = ({ activeTab, onTabChange }: AdminSidebarProps) => {
+  const { state, toggleSidebar } = useSidebar();
+  const isCollapsed = state === 'collapsed';
+
   const menuItems = [
     {
       title: 'Dashboard',
@@ -112,25 +117,46 @@ const AdminSidebar = ({ activeTab, onTabChange }: AdminSidebarProps) => {
   ];
 
   return (
-    <Sidebar className="w-80 bg-gradient-to-b from-slate-50 via-white to-gray-50 border-r-2 border-gray-100 shadow-xl">
-      <SidebarContent className="bg-transparent p-4">
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-gray-800 text-xl font-bold mb-8 px-4 flex items-center">
-            <div className="bg-gradient-to-r from-purple-500 to-blue-600 p-3 rounded-2xl mr-4 shadow-lg">
-              <Globe className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <div className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                Admin Panel
+    <Sidebar 
+      className={`
+        ${isCollapsed ? 'w-16' : 'w-80'} 
+        bg-white border-r border-gray-200 shadow-lg transition-all duration-300 ease-in-out
+      `}
+      collapsible="icon"
+    >
+      <SidebarContent className="bg-white">
+        {/* Header with Toggle */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-100">
+          {!isCollapsed && (
+            <div className="flex items-center">
+              <div className="bg-gradient-to-r from-purple-500 to-blue-600 p-2 rounded-lg mr-3">
+                <Globe className="h-5 w-5 text-white" />
               </div>
-              <div className="text-xs text-gray-500 font-normal mt-1">
-                Kelola semua aspek website
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Admin Panel</h2>
+                <p className="text-xs text-gray-500">Kelola website Anda</p>
               </div>
             </div>
-          </SidebarGroupLabel>
+          )}
           
+          <button
+            onClick={toggleSidebar}
+            className={`
+              p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors
+              ${isCollapsed ? 'mx-auto' : ''}
+            `}
+          >
+            {isCollapsed ? (
+              <ChevronRight className="h-4 w-4 text-gray-600" />
+            ) : (
+              <ChevronLeft className="h-4 w-4 text-gray-600" />
+            )}
+          </button>
+        </div>
+
+        <SidebarGroup className="px-3 py-4">
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-3">
+            <SidebarMenu className="space-y-1">
               {menuItems.map((item) => {
                 const IconComponent = item.icon;
                 const isActive = activeTab === item.id;
@@ -140,51 +166,44 @@ const AdminSidebar = ({ activeTab, onTabChange }: AdminSidebarProps) => {
                     <SidebarMenuButton
                       onClick={() => onTabChange(item.id)}
                       className={`
-                        group relative w-full h-16 rounded-2xl transition-all duration-300 hover:scale-105 border-2
+                        group relative w-full rounded-xl transition-all duration-200 border
+                        ${isCollapsed ? 'h-12 p-3 justify-center' : 'h-14 px-4 py-3'}
                         ${isActive 
-                          ? `bg-gradient-to-r ${item.gradient} text-white shadow-xl shadow-purple-500/25 border-transparent` 
-                          : 'bg-white/80 text-gray-700 hover:bg-white hover:text-gray-900 border-gray-200 hover:border-gray-300 hover:shadow-lg'
+                          ? `bg-gradient-to-r ${item.gradient} text-white shadow-lg border-transparent` 
+                          : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-200 hover:border-gray-300 hover:shadow-md'
                         }
                       `}
+                      title={isCollapsed ? item.title : undefined}
                     >
-                      <div className="flex items-center space-x-4 px-4 w-full">
+                      <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'} w-full`}>
                         <div className={`
-                          p-3 rounded-xl transition-all duration-300 shadow-lg
+                          rounded-lg transition-all duration-200
+                          ${isCollapsed ? 'p-0' : 'p-2'}
                           ${isActive 
-                            ? 'bg-white/20 text-white backdrop-blur-sm' 
+                            ? 'bg-white/20 text-white' 
                             : `bg-gradient-to-r ${item.gradient} text-white group-hover:scale-110`
                           }
                         `}>
                           <IconComponent className="h-5 w-5" />
                         </div>
                         
-                        <div className="flex-1 text-left">
-                          <div className={`font-bold text-sm ${isActive ? 'text-white' : 'text-gray-800'}`}>
-                            {item.title}
-                          </div>
-                          <div className={`text-xs ${isActive ? 'text-white/80' : 'text-gray-500'}`}>
-                            {item.description}
-                          </div>
-                        </div>
-                        
-                        {isActive && (
-                          <div className="flex flex-col items-center space-y-1">
-                            <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                            <div className="w-1 h-1 bg-white/70 rounded-full"></div>
+                        {!isCollapsed && (
+                          <div className="flex-1 text-left min-w-0">
+                            <div className={`font-semibold text-sm truncate ${isActive ? 'text-white' : 'text-gray-900'}`}>
+                              {item.title}
+                            </div>
+                            <div className={`text-xs truncate ${isActive ? 'text-white/80' : 'text-gray-500'}`}>
+                              {item.description}
+                            </div>
                           </div>
                         )}
                         
-                        {!isActive && (
-                          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                            <div className={`w-3 h-3 bg-gradient-to-r ${item.gradient} rounded-full shadow-lg`}></div>
+                        {!isCollapsed && isActive && (
+                          <div className="flex items-center">
+                            <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
                           </div>
                         )}
                       </div>
-                      
-                      {/* Subtle gradient overlay for inactive items */}
-                      {!isActive && (
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-50/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl"></div>
-                      )}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );
@@ -193,18 +212,20 @@ const AdminSidebar = ({ activeTab, onTabChange }: AdminSidebarProps) => {
           </SidebarGroupContent>
         </SidebarGroup>
         
-        {/* Footer decoration */}
-        <div className="mt-8 p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-2xl border border-purple-100">
-          <div className="text-center">
-            <div className="flex justify-center space-x-2 mb-2">
-              <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"></div>
-              <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce delay-100"></div>
-              <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce delay-200"></div>
+        {/* Footer */}
+        {!isCollapsed && (
+          <div className="mt-auto p-4 border-t border-gray-100">
+            <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-3 text-center border border-purple-100">
+              <div className="flex justify-center space-x-1 mb-2">
+                <div className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce"></div>
+                <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce delay-100"></div>
+                <div className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce delay-200"></div>
+              </div>
+              <p className="text-xs text-gray-600 font-medium">Admin Dashboard v2.0</p>
+              <p className="text-xs text-gray-500">Modern & Powerful</p>
             </div>
-            <p className="text-xs text-gray-600 font-medium">Admin Dashboard v2.0</p>
-            <p className="text-xs text-gray-500">Modern & Powerful</p>
           </div>
-        </div>
+        )}
       </SidebarContent>
     </Sidebar>
   );

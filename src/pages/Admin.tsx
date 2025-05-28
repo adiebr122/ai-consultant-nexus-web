@@ -413,33 +413,33 @@ const Admin = () => {
         <Navbar />
         
         <div className="pt-16">
-          <SidebarProvider>
+          <SidebarProvider defaultOpen={true}>
             <div className="flex min-h-screen w-full">
               <AdminSidebar activeTab={activeTab} onTabChange={handleTabChange} />
               
-              <SidebarInset>
-                <header className="flex h-20 shrink-0 items-center gap-2 border-b bg-white/90 backdrop-blur-md px-8 sticky top-0 z-10 shadow-sm">
-                  <SidebarTrigger className="-ml-1 text-gray-600 hover:text-purple-600 transition-colors" />
+              <SidebarInset className="flex-1">
+                <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-white/95 backdrop-blur-sm px-6 sticky top-0 z-10 shadow-sm">
+                  <SidebarTrigger className="text-gray-600 hover:text-purple-600 transition-colors" />
                   <div className="flex-1 flex items-center justify-between">
                     <div>
-                      <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                      <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
                         Admin Dashboard
                       </h1>
-                      <p className="text-gray-600 font-medium">Kelola semua aspek bisnis Anda dengan mudah</p>
+                      <p className="text-sm text-gray-600">Kelola semua aspek bisnis Anda dengan mudah</p>
                     </div>
                     <Button
                       onClick={handleRefresh}
                       variant="outline"
-                      className="flex items-center gap-2 hover:bg-gradient-to-r hover:from-purple-50 hover:to-blue-50 hover:border-purple-300 transition-all duration-300 border-2 font-medium"
-                      title="Refresh halaman"
+                      size="sm"
+                      className="flex items-center gap-2 hover:bg-gradient-to-r hover:from-purple-50 hover:to-blue-50 hover:border-purple-300 transition-all duration-300 border font-medium"
                     >
-                      <RefreshCw className="h-5 w-5" />
+                      <RefreshCw className="h-4 w-4" />
                       <span className="hidden sm:inline">Refresh</span>
                     </Button>
                   </div>
                 </header>
                 
-                <div className="flex-1 p-8">
+                <div className="flex-1 p-6 overflow-auto">
                   {renderContent()}
                 </div>
               </SidebarInset>
