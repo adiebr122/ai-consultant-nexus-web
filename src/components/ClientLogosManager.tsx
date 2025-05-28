@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Upload, ExternalLink } from 'lucide-react';
+import { Plus, Edit, Trash2, Upload, ExternalLink, ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,6 +23,7 @@ const ClientLogosManager = () => {
   const [editingLogo, setEditingLogo] = useState<ClientLogo | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string>('');
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -35,6 +36,13 @@ const ClientLogosManager = () => {
   useEffect(() => {
     fetchLogos();
   }, []);
+
+  // Reset preview when dialog closes
+  useEffect(() => {
+    if (!isDialogOpen) {
+      setPreviewUrl('');
+    }
+  }, [isDialogOpen]);
 
   const fetchLogos = async () => {
     try {
@@ -87,6 +95,15 @@ const ClientLogosManager = () => {
       return null;
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Create preview URL
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
     }
   };
 
@@ -144,6 +161,7 @@ const ClientLogosManager = () => {
       setIsDialogOpen(false);
       setEditingLogo(null);
       setFormData({ name: '', company_url: '', display_order: 0, is_active: true });
+      setPreviewUrl('');
       fetchLogos();
     } catch (error) {
       console.error('Error saving logo:', error);
@@ -163,6 +181,7 @@ const ClientLogosManager = () => {
       display_order: logo.display_order,
       is_active: logo.is_active
     });
+    setPreviewUrl(logo.logo_url);
     setIsDialogOpen(true);
   };
 
@@ -229,12 +248,13 @@ const ClientLogosManager = () => {
             <Button onClick={() => {
               setEditingLogo(null);
               setFormData({ name: '', company_url: '', display_order: 0, is_active: true });
+              setPreviewUrl('');
             }}>
               <Plus className="h-4 w-4 mr-2" />
               Tambah Logo
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>{editingLogo ? 'Edit Logo' : 'Tambah Logo Baru'}</DialogTitle>
             </DialogHeader>
@@ -242,53 +262,113 @@ const ClientLogosManager = () => {
               const fileInput = document.getElementById('logo-file') as HTMLInputElement;
               const file = fileInput?.files?.[0];
               handleSubmit(e, file);
-            }} className="space-y-4">
-              <div>
-                <Label htmlFor="name">Nama Perusahaan</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                />
-              </div>
+            }} className="space-y-6">
               
-              <div>
-                <Label htmlFor="logo-file">Logo</Label>
+              {/* Logo Preview Section */}
+              <div className="space-y-3">
+                <Label>Preview Logo</Label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center bg-gray-50">
+                  {previewUrl ? (
+                    <div className="space-y-3">
+                      <img
+                        src={previewUrl}
+                        alt="Preview"
+                        className="max-h-24 max-w-full mx-auto object-contain"
+                        onError={() => setPreviewUrl('')}
+                      />
+                      <p className="text-sm text-gray-600">Preview logo</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <ImageIcon className="h-12 w-12 text-gray-400 mx-auto" />
+                      <p className="text-sm text-gray-600">
+                        {editingLogo ? 'Logo saat ini akan tetap digunakan jika tidak mengupload logo baru' : 'Belum ada logo dipilih'}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* File Upload */}
+              <div className="space-y-2">
+                <Label htmlFor="logo-file">
+                  Upload Logo {editingLogo ? '(Opsional)' : '*'}
+                </Label>
                 <Input
                   id="logo-file"
                   type="file"
                   accept="image/*"
+                  onChange={handleFileChange}
                   required={!editingLogo}
+                  className="cursor-pointer"
+                />
+                <p className="text-xs text-gray-500">
+                  Format yang didukung: JPG, PNG, GIF. Maksimal 5MB.
+                </p>
+              </div>
+
+              {/* Company Name */}
+              <div className="space-y-2">
+                <Label htmlFor="name">Nama Perusahaan *</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="Contoh: PT. Teknologi Indonesia"
+                  required
                 />
               </div>
 
-              <div>
+              {/* Company URL */}
+              <div className="space-y-2">
                 <Label htmlFor="company_url">URL Perusahaan (Opsional)</Label>
                 <Input
                   id="company_url"
                   type="url"
                   value={formData.company_url}
                   onChange={(e) => setFormData({ ...formData, company_url: e.target.value })}
+                  placeholder="https://www.example.com"
                 />
               </div>
 
-              <div>
+              {/* Display Order */}
+              <div className="space-y-2">
                 <Label htmlFor="display_order">Urutan Tampil</Label>
                 <Input
                   id="display_order"
                   type="number"
                   value={formData.display_order}
-                  onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) })}
+                  onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) || 0 })}
+                  placeholder="0"
                 />
+                <p className="text-xs text-gray-500">
+                  Semakin kecil angka, semakin awal ditampilkan
+                </p>
               </div>
 
-              <div className="flex justify-end space-x-2">
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+              {/* Action Buttons */}
+              <div className="flex justify-end space-x-3 pt-4 border-t">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setIsDialogOpen(false)}
+                  disabled={uploading}
+                >
                   Batal
                 </Button>
-                <Button type="submit" disabled={uploading}>
-                  {uploading ? 'Mengupload...' : editingLogo ? 'Update' : 'Simpan'}
+                <Button 
+                  type="submit" 
+                  disabled={uploading}
+                  className="min-w-[100px]"
+                >
+                  {uploading ? (
+                    <div className="flex items-center space-x-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>Upload...</span>
+                    </div>
+                  ) : (
+                    editingLogo ? 'Update' : 'Simpan'
+                  )}
                 </Button>
               </div>
             </form>
@@ -296,10 +376,11 @@ const ClientLogosManager = () => {
         </Dialog>
       </div>
 
+      {/* Logo Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {logos.map((logo) => (
-          <div key={logo.id} className="border rounded-lg p-4 space-y-4">
-            <div className="flex items-center justify-center h-32 bg-gray-50 rounded">
+          <div key={logo.id} className="border rounded-lg p-4 space-y-4 bg-white shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-center h-32 bg-gray-50 rounded border">
               <img
                 src={logo.logo_url}
                 alt={logo.name}
@@ -311,16 +392,18 @@ const ClientLogosManager = () => {
             </div>
             
             <div className="space-y-2">
-              <h3 className="font-semibold">{logo.name}</h3>
+              <h3 className="font-semibold text-lg">{logo.name}</h3>
               <p className="text-sm text-gray-600">Urutan: {logo.display_order}</p>
               {logo.company_url && (
-                <div className="flex items-center text-sm text-blue-600">
+                <div className="flex items-center text-sm text-blue-600 hover:text-blue-800">
                   <ExternalLink className="h-3 w-3 mr-1" />
-                  <span>Website</span>
+                  <a href={logo.company_url} target="_blank" rel="noopener noreferrer">
+                    Website
+                  </a>
                 </div>
               )}
-              <div className="flex items-center justify-between">
-                <span className={`px-2 py-1 text-xs rounded-full ${
+              <div className="flex items-center justify-between pt-2">
+                <span className={`px-3 py-1 text-xs rounded-full font-medium ${
                   logo.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                 }`}>
                   {logo.is_active ? 'Aktif' : 'Nonaktif'}
@@ -330,6 +413,7 @@ const ClientLogosManager = () => {
                     size="sm"
                     variant="outline"
                     onClick={() => toggleActive(logo)}
+                    className="text-xs"
                   >
                     {logo.is_active ? 'Nonaktifkan' : 'Aktifkan'}
                   </Button>
@@ -356,6 +440,7 @@ const ClientLogosManager = () => {
 
       {logos.length === 0 && (
         <div className="text-center py-12">
+          <ImageIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
           <div className="text-gray-500 mb-4">Belum ada logo klien</div>
           <Button onClick={() => setIsDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
