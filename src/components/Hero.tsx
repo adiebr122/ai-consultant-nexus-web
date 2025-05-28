@@ -1,7 +1,26 @@
 
 import { ArrowRight, Sparkles, Zap, Target, Code, Smartphone, Brain } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 const Hero = () => {
+  const [currentTextIndex, setCurrentTextIndex] = useState(0);
+  
+  const dynamicTexts = [
+    "Teknologi AI",
+    "Inovasi Terdepan",
+    "Solusi Digital",
+    "Performa Tinggi",
+    "User Experience Optimal"
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTextIndex((prevIndex) => (prevIndex + 1) % dynamicTexts.length);
+    }, 3000); // Ganti teks setiap 3 detik
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <section className="pt-20 pb-16 bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen flex items-center">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -14,7 +33,9 @@ const Hero = () => {
             
             <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
               Web & Apps Development dengan
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600"> Teknologi AI</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 block mt-2 transition-all duration-500 ease-in-out">
+                {dynamicTexts[currentTextIndex]}
+              </span>
             </h1>
             
             <p className="text-xl text-gray-600 mb-8 leading-relaxed">
