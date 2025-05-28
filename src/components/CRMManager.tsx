@@ -75,7 +75,15 @@ const CRMManager = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setContacts(data || []);
+      
+      // Transform data to ensure tags is always an array
+      const transformedData = (data || []).map(contact => ({
+        ...contact,
+        tags: Array.isArray(contact.tags) ? contact.tags : 
+              (typeof contact.tags === 'string' ? [contact.tags] : [])
+      }));
+      
+      setContacts(transformedData);
     } catch (error: any) {
       toast({
         title: "Error",

@@ -52,7 +52,15 @@ const ServiceManager = () => {
         .order('display_order', { ascending: true });
 
       if (error) throw error;
-      setServices(data || []);
+      
+      // Transform data to ensure service_features is always an array
+      const transformedData = (data || []).map(service => ({
+        ...service,
+        service_features: Array.isArray(service.service_features) ? service.service_features : 
+                          (typeof service.service_features === 'string' ? [service.service_features] : [])
+      }));
+      
+      setServices(transformedData);
     } catch (error: any) {
       toast({
         title: "Error",

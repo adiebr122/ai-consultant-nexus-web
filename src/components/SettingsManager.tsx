@@ -22,7 +22,7 @@ const SettingsManager = () => {
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [filterCategory, setFilterCategory] = useState('all');
   const [formData, setFormData] = useState({
     setting_category: '',
     setting_key: '',
@@ -33,50 +33,24 @@ const SettingsManager = () => {
   });
   const { toast } = useToast();
 
-  const settingCategories = [
-    'general', 'contact', 'social_media', 'seo', 'design', 'email', 'api', 'security', 'other'
-  ];
-
   const settingTypes = [
     { value: 'text', label: 'Text' },
-    { value: 'textarea', label: 'Textarea' },
     { value: 'number', label: 'Number' },
     { value: 'boolean', label: 'Boolean' },
     { value: 'url', label: 'URL' },
     { value: 'email', label: 'Email' },
-    { value: 'color', label: 'Color' },
     { value: 'json', label: 'JSON' }
   ];
 
-  const defaultSettings = [
-    {
-      category: 'general',
-      settings: [
-        { key: 'site_name', value: 'Visual Media X', type: 'text', description: 'Nama website', public: true },
-        { key: 'site_tagline', value: 'Solusi Digital Terdepan', type: 'text', description: 'Tagline website', public: true },
-        { key: 'site_description', value: 'Kami adalah perusahaan yang fokus pada pengembangan solusi digital inovatif', type: 'textarea', description: 'Deskripsi website', public: true }
-      ]
-    },
-    {
-      category: 'contact',
-      settings: [
-        { key: 'company_name', value: 'Visual Media X', type: 'text', description: 'Nama perusahaan', public: true },
-        { key: 'company_address', value: 'Jakarta, Indonesia', type: 'textarea', description: 'Alamat perusahaan', public: true },
-        { key: 'company_phone', value: '+62 21 1234 5678', type: 'text', description: 'Telepon perusahaan', public: true },
-        { key: 'company_email', value: 'info@visualmediax.com', type: 'email', description: 'Email perusahaan', public: true },
-        { key: 'company_whatsapp', value: '+62812345678', type: 'text', description: 'WhatsApp perusahaan', public: true }
-      ]
-    },
-    {
-      category: 'social_media',
-      settings: [
-        { key: 'facebook_url', value: '', type: 'url', description: 'URL Facebook', public: true },
-        { key: 'instagram_url', value: '', type: 'url', description: 'URL Instagram', public: true },
-        { key: 'twitter_url', value: '', type: 'url', description: 'URL Twitter', public: true },
-        { key: 'linkedin_url', value: '', type: 'url', description: 'URL LinkedIn', public: true },
-        { key: 'youtube_url', value: '', type: 'url', description: 'URL YouTube', public: true }
-      ]
-    }
+  const settingCategories = [
+    'company_info',
+    'contact_info', 
+    'social_media',
+    'website_config',
+    'email_config',
+    'payment_config',
+    'seo_config',
+    'other'
   ];
 
   useEffect(() => {
@@ -104,52 +78,11 @@ const SettingsManager = () => {
     }
   };
 
-  const createDefaultSettings = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User tidak terautentikasi');
-
-      const settingsToCreate = [];
-      for (const category of defaultSettings) {
-        for (const setting of category.settings) {
-          settingsToCreate.push({
-            user_id: user.id,
-            setting_category: category.category,
-            setting_key: setting.key,
-            setting_value: setting.value,
-            setting_type: setting.type,
-            description: setting.description,
-            is_public: setting.public
-          });
-        }
-      }
-
-      const { error } = await supabase
-        .from('app_settings')
-        .insert(settingsToCreate);
-
-      if (error) throw error;
-
-      toast({
-        title: "Berhasil!",
-        description: "Pengaturan default berhasil dibuat",
-      });
-
-      await fetchSettings();
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: `Gagal membuat pengaturan default: ${error.message}`,
-        variant: "destructive",
-      });
-    }
-  };
-
   const handleSave = async () => {
     if (!formData.setting_category.trim() || !formData.setting_key.trim()) {
       toast({
         title: "Error",
-        description: "Kategori dan key wajib diisi",
+        description: "Kategori dan key pengaturan wajib diisi",
         variant: "destructive",
       });
       return;
@@ -250,24 +183,23 @@ const SettingsManager = () => {
       setting.setting_category.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (setting.setting_value && setting.setting_value.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    const matchesCategory = selectedCategory === 'all' || setting.setting_category === selectedCategory;
+    const matchesCategory = filterCategory === 'all' || setting.setting_category === filterCategory;
     
     return matchesSearch && matchesCategory;
   });
 
-  const getUniqueCategories = () => {
-    const categories = [...new Set(settings.map(s => s.setting_category))];
-    return categories.sort();
-  };
-
   const getCategoryIcon = (category: string) => {
     switch (category) {
-      case 'contact': return <Phone className="h-4 w-4" />;
+      case 'company_info': return <Globe className="h-4 w-4" />;
+      case 'contact_info': return <Phone className="h-4 w-4" />;
       case 'social_media': return <Globe className="h-4 w-4" />;
-      case 'email': return <Mail className="h-4 w-4" />;
-      case 'general': return <Settings className="h-4 w-4" />;
+      case 'email_config': return <Mail className="h-4 w-4" />;
       default: return <Settings className="h-4 w-4" />;
     }
+  };
+
+  const formatCategoryName = (category: string) => {
+    return category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
   if (loading) {
@@ -281,24 +213,6 @@ const SettingsManager = () => {
 
   return (
     <div className="space-y-6">
-      {/* Quick Setup */}
-      {settings.length === 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-blue-900 mb-2">Setup Awal</h3>
-              <p className="text-blue-700">Belum ada pengaturan. Buat pengaturan default untuk memulai?</p>
-            </div>
-            <button
-              onClick={createDefaultSettings}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-            >
-              Buat Pengaturan Default
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Form Section */}
       <div className="bg-white p-6 rounded-xl shadow-lg border">
         <h3 className="text-lg font-semibold mb-4 flex items-center">
@@ -318,29 +232,31 @@ const SettingsManager = () => {
               required
             >
               <option value="">Pilih kategori</option>
-              {settingCategories.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
+              {settingCategories.map(category => (
+                <option key={category} value={category}>
+                  {formatCategoryName(category)}
+                </option>
               ))}
             </select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Key *
+              Key Pengaturan *
             </label>
             <input
               type="text"
               value={formData.setting_key}
               onChange={(e) => setFormData({ ...formData, setting_key: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="site_name, company_email, dll"
+              placeholder="company_name, phone_number, dll"
               required
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Tipe
+              Tipe Data
             </label>
             <select
               value={formData.setting_type}
@@ -355,35 +271,15 @@ const SettingsManager = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Deskripsi
+              Nilai Pengaturan
             </label>
-            <input
-              type="text"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Deskripsi pengaturan"
-            />
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Nilai
-            </label>
-            {formData.setting_type === 'textarea' ? (
-              <textarea
-                value={formData.setting_value}
-                onChange={(e) => setFormData({ ...formData, setting_value: e.target.value })}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
-                placeholder="Nilai pengaturan"
-              />
-            ) : formData.setting_type === 'boolean' ? (
+            {formData.setting_type === 'boolean' ? (
               <select
                 value={formData.setting_value}
                 onChange={(e) => setFormData({ ...formData, setting_value: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
+                <option value="">Pilih nilai</option>
                 <option value="true">True</option>
                 <option value="false">False</option>
               </select>
@@ -391,14 +287,26 @@ const SettingsManager = () => {
               <input
                 type={formData.setting_type === 'number' ? 'number' : 
                       formData.setting_type === 'email' ? 'email' :
-                      formData.setting_type === 'url' ? 'url' :
-                      formData.setting_type === 'color' ? 'color' : 'text'}
+                      formData.setting_type === 'url' ? 'url' : 'text'}
                 value={formData.setting_value}
                 onChange={(e) => setFormData({ ...formData, setting_value: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Nilai pengaturan"
+                placeholder="Masukkan nilai pengaturan"
               />
             )}
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Deskripsi
+            </label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+              placeholder="Deskripsi pengaturan ini..."
+            />
           </div>
 
           <div className="md:col-span-2">
@@ -409,7 +317,7 @@ const SettingsManager = () => {
                 onChange={(e) => setFormData({ ...formData, is_public: e.target.checked })}
                 className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
-              <span className="text-sm text-gray-700">Pengaturan publik (dapat diakses frontend)</span>
+              <span className="text-sm text-gray-700">Pengaturan publik (dapat diakses tanpa autentikasi)</span>
             </label>
           </div>
         </div>
@@ -464,13 +372,13 @@ const SettingsManager = () => {
                 />
               </div>
               <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value)}
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="all">Semua Kategori</option>
-                {getUniqueCategories().map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
+                {settingCategories.map(category => (
+                  <option key={category} value={category}>{formatCategoryName(category)}</option>
                 ))}
               </select>
             </div>
@@ -503,11 +411,11 @@ const SettingsManager = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredSettings.map((setting) => (
                   <tr key={setting.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4">
                       <div className="flex items-center">
                         {getCategoryIcon(setting.setting_category)}
                         <span className="ml-2 text-sm font-medium text-gray-900">
-                          {setting.setting_category}
+                          {formatCategoryName(setting.setting_category)}
                         </span>
                       </div>
                     </td>
@@ -515,7 +423,9 @@ const SettingsManager = () => {
                       <div>
                         <div className="text-sm font-medium text-gray-900">{setting.setting_key}</div>
                         {setting.description && (
-                          <div className="text-sm text-gray-500">{setting.description}</div>
+                          <div className="text-sm text-gray-500 max-w-xs truncate" title={setting.description}>
+                            {setting.description}
+                          </div>
                         )}
                       </div>
                     </td>
@@ -524,8 +434,8 @@ const SettingsManager = () => {
                         {setting.setting_value || '-'}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">
                         {setting.setting_type}
                       </span>
                     </td>
@@ -533,7 +443,7 @@ const SettingsManager = () => {
                       <span className={`inline-flex items-center px-2 py-1 text-xs rounded-full ${
                         setting.is_public 
                           ? 'bg-green-100 text-green-800' 
-                          : 'bg-gray-100 text-gray-800'
+                          : 'bg-blue-100 text-blue-800'
                       }`}>
                         {setting.is_public ? 'Publik' : 'Privat'}
                       </span>
