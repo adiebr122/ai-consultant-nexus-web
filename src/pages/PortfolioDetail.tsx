@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, ExternalLink, Github, Calendar, User, Building, Tag, Clock, Users, Check, Lightbulb, Award } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Github, Calendar, User, Building, Tag, Clock, Users, Check, Lightbulb, Award, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import Navbar from '@/components/Navbar';
 
