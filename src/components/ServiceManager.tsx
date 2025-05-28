@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Save, Edit3, Plus, Trash2, Eye, EyeOff, Search, RefreshCw, Package } from 'lucide-react';
+import { Save, Edit3, Plus, Trash2, Eye, EyeOff, Search, RefreshCw, Package, Sparkles, Zap } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 interface Service {
   id: string;
@@ -107,7 +109,7 @@ const ServiceManager = () => {
           .eq('id', editingId);
 
         if (error) throw error;
-        toast({ title: "Berhasil!", description: "Layanan berhasil diupdate" });
+        toast({ title: "🎉 Berhasil!", description: "Layanan berhasil diupdate" });
       } else {
         const { error } = await supabase
           .from('services')
@@ -117,7 +119,7 @@ const ServiceManager = () => {
           });
 
         if (error) throw error;
-        toast({ title: "Berhasil!", description: "Layanan berhasil ditambahkan" });
+        toast({ title: "🎉 Berhasil!", description: "Layanan berhasil ditambahkan" });
       }
 
       resetForm();
@@ -219,284 +221,319 @@ const ServiceManager = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <RefreshCw className="h-8 w-8 animate-spin text-blue-600 mr-3" />
-        <span className="text-lg">Memuat layanan...</span>
+      <div className="flex items-center justify-center py-16">
+        <div className="text-center">
+          <div className="relative">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-purple-200 border-t-purple-600 mx-auto mb-6"></div>
+            <Sparkles className="h-6 w-6 text-purple-600 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 animate-pulse" />
+          </div>
+          <p className="text-gray-700 text-lg font-medium">Memuat layanan...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* Header */}
+      <Card className="border-0 shadow-xl bg-gradient-to-r from-emerald-500 to-blue-600 text-white">
+        <CardHeader className="pb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-3xl font-bold flex items-center mb-2">
+                <Package className="h-8 w-8 mr-3 text-emerald-200" />
+                Kelola Layanan
+              </CardTitle>
+              <CardDescription className="text-emerald-100 text-lg">
+                Atur dan kelola semua layanan yang Anda tawarkan
+              </CardDescription>
+            </div>
+            <div className="hidden md:block">
+              <Zap className="h-16 w-16 text-emerald-200" />
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
+
       {/* Form Section */}
-      <div className="bg-white p-6 rounded-xl shadow-lg border">
-        <h3 className="text-lg font-semibold mb-4 flex items-center">
-          {editingId ? <Edit3 className="h-5 w-5 mr-2 text-blue-600" /> : <Plus className="h-5 w-5 mr-2 text-green-600" />}
-          {editingId ? 'Edit Layanan' : 'Tambah Layanan Baru'}
-        </h3>
+      <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-gray-50">
+        <CardHeader className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-t-xl border-b">
+          <CardTitle className="text-xl font-bold flex items-center text-gray-800">
+            {editingId ? <Edit3 className="h-6 w-6 mr-3 text-blue-600" /> : <Plus className="h-6 w-6 mr-3 text-green-600" />}
+            {editingId ? 'Edit Layanan' : 'Tambah Layanan Baru'}
+          </CardTitle>
+        </CardHeader>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Nama Layanan *
-            </label>
-            <input
-              type="text"
-              value={formData.service_name}
-              onChange={(e) => setFormData({ ...formData, service_name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Website Development, Mobile App, dll"
-              required
-            />
-          </div>
+        <CardContent className="p-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <label className="block text-sm font-bold text-gray-800">
+                Nama Layanan *
+              </label>
+              <input
+                type="text"
+                value={formData.service_name}
+                onChange={(e) => setFormData({ ...formData, service_name: e.target.value })}
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 bg-white/80"
+                placeholder="Website Development, Mobile App, dll"
+                required
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Kategori
-            </label>
-            <input
-              type="text"
-              value={formData.service_category}
-              onChange={(e) => setFormData({ ...formData, service_category: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Web Development, Mobile, Design, dll"
-            />
-          </div>
+            <div className="space-y-3">
+              <label className="block text-sm font-bold text-gray-800">
+                Kategori
+              </label>
+              <input
+                type="text"
+                value={formData.service_category}
+                onChange={(e) => setFormData({ ...formData, service_category: e.target.value })}
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-300 bg-white/80"
+                placeholder="Web Development, Mobile, Design, dll"
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Harga Mulai Dari
-            </label>
-            <div className="flex">
-              <select
-                value={formData.price_currency}
-                onChange={(e) => setFormData({ ...formData, price_currency: e.target.value })}
-                className="px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="IDR">IDR</option>
-                <option value="USD">USD</option>
-              </select>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Harga Mulai Dari
+              </label>
+              <div className="flex">
+                <select
+                  value={formData.price_currency}
+                  onChange={(e) => setFormData({ ...formData, price_currency: e.target.value })}
+                  className="px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="IDR">IDR</option>
+                  <option value="USD">USD</option>
+                </select>
+                <input
+                  type="number"
+                  value={formData.price_starting_from}
+                  onChange={(e) => setFormData({ ...formData, price_starting_from: e.target.value })}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="15000000"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Estimasi Durasi
+              </label>
+              <input
+                type="text"
+                value={formData.estimated_duration}
+                onChange={(e) => setFormData({ ...formData, estimated_duration: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="2-4 minggu, 1-3 bulan, dll"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                URL Gambar
+              </label>
+              <input
+                type="url"
+                value={formData.service_image_url}
+                onChange={(e) => setFormData({ ...formData, service_image_url: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="https://example.com/service-image.jpg"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Urutan Tampil
+              </label>
               <input
                 type="number"
-                value={formData.price_starting_from}
-                onChange={(e) => setFormData({ ...formData, price_starting_from: e.target.value })}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="15000000"
+                value={formData.display_order}
+                onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) || 0 })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="0"
               />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Deskripsi Layanan
+              </label>
+              <textarea
+                value={formData.service_description}
+                onChange={(e) => setFormData({ ...formData, service_description: e.target.value })}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+                placeholder="Deskripsi detail tentang layanan..."
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Fitur Layanan
+              </label>
+              <textarea
+                value={formData.service_features}
+                onChange={(e) => setFormData({ ...formData, service_features: e.target.value })}
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+                placeholder="Tulis satu fitur per baris&#10;Responsive Design&#10;SEO Optimized&#10;Fast Loading&#10;Mobile Friendly"
+              />
+              <p className="text-xs text-gray-500 mt-1">Tulis satu fitur per baris</p>
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Estimasi Durasi
-            </label>
-            <input
-              type="text"
-              value={formData.estimated_duration}
-              onChange={(e) => setFormData({ ...formData, estimated_duration: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="2-4 minggu, 1-3 bulan, dll"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              URL Gambar
-            </label>
-            <input
-              type="url"
-              value={formData.service_image_url}
-              onChange={(e) => setFormData({ ...formData, service_image_url: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="https://example.com/service-image.jpg"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Urutan Tampil
-            </label>
-            <input
-              type="number"
-              value={formData.display_order}
-              onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) || 0 })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="0"
-            />
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Deskripsi Layanan
-            </label>
-            <textarea
-              value={formData.service_description}
-              onChange={(e) => setFormData({ ...formData, service_description: e.target.value })}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
-              placeholder="Deskripsi detail tentang layanan..."
-            />
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Fitur Layanan
-            </label>
-            <textarea
-              value={formData.service_features}
-              onChange={(e) => setFormData({ ...formData, service_features: e.target.value })}
-              rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
-              placeholder="Tulis satu fitur per baris&#10;Responsive Design&#10;SEO Optimized&#10;Fast Loading&#10;Mobile Friendly"
-            />
-            <p className="text-xs text-gray-500 mt-1">Tulis satu fitur per baris</p>
-          </div>
-        </div>
-
-        <div className="flex space-x-3 mt-6">
-          <button
-            onClick={handleSave}
-            disabled={saving || !formData.service_name.trim()}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-          >
-            {saving ? (
-              <RefreshCw className="h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="h-4 w-4" />
-            )}
-            <span>{saving ? 'Menyimpan...' : (editingId ? 'Update' : 'Simpan')}</span>
-          </button>
-          
-          {editingId && (
-            <button
-              onClick={resetForm}
-              className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600"
+          <div className="flex space-x-4 mt-8">
+            <Button
+              onClick={handleSave}
+              disabled={saving || !formData.service_name.trim()}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold px-8 py-3 rounded-xl transition-all duration-300 hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
             >
-              Batal
-            </button>
-          )}
-          
-          <button
-            onClick={fetchServices}
-            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center space-x-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-            <span>Refresh</span>
-          </button>
-        </div>
-      </div>
+              {saving ? (
+                <RefreshCw className="h-5 w-5 animate-spin" />
+              ) : (
+                <Save className="h-5 w-5" />
+              )}
+              <span>{saving ? 'Menyimpan...' : (editingId ? 'Update' : 'Simpan')}</span>
+            </Button>
+            
+            {editingId && (
+              <Button
+                onClick={resetForm}
+                variant="outline"
+                className="border-2 border-gray-300 hover:bg-gray-50 font-bold px-6 py-3 rounded-xl transition-all duration-300"
+              >
+                Batal
+              </Button>
+            )}
+            
+            <Button
+              onClick={fetchServices}
+              variant="outline"
+              className="border-2 border-emerald-300 text-emerald-600 hover:bg-emerald-50 font-bold px-6 py-3 rounded-xl transition-all duration-300 flex items-center space-x-2"
+            >
+              <RefreshCw className="h-5 w-5" />
+              <span>Refresh</span>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* List Section */}
-      <div className="bg-white rounded-xl shadow-lg border overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
+      <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-gray-50 overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-gray-50 to-purple-50 border-b">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <h3 className="text-lg font-semibold">Daftar Layanan ({filteredServices.length})</h3>
+            <CardTitle className="text-xl font-bold text-gray-800">
+              Daftar Layanan ({filteredServices.length})
+            </CardTitle>
             <div className="relative">
-              <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <Search className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Cari layanan..."
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 bg-white/80"
               />
             </div>
           </div>
-        </div>
+        </CardHeader>
         
         {filteredServices.length === 0 ? (
-          <div className="text-center py-12">
-            <Package className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-            <h4 className="text-lg font-medium text-gray-900 mb-2">
+          <CardContent className="text-center py-16">
+            <Package className="h-16 w-16 mx-auto text-gray-400 mb-6" />
+            <h4 className="text-xl font-bold text-gray-900 mb-3">
               {searchTerm ? 'Tidak ada hasil pencarian' : 'Belum Ada Layanan'}
             </h4>
-            <p className="text-gray-500">
+            <p className="text-gray-600 text-lg">
               {searchTerm ? 'Coba kata kunci yang berbeda' : 'Tambahkan layanan pertama Anda'}
             </p>
-          </div>
+          </CardContent>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Layanan</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kategori</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Harga</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Durasi</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredServices.map((service) => (
-                  <tr key={service.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{service.service_name}</div>
-                        {service.service_description && (
-                          <div className="text-sm text-gray-500 max-w-xs truncate" title={service.service_description}>
-                            {service.service_description}
-                          </div>
-                        )}
-                        <div className="text-xs text-gray-400">Urutan: {service.display_order}</div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm text-gray-900">
-                        {service.service_category || '-'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm text-gray-900">
-                        {formatPrice(service.price_starting_from, service.price_currency)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm text-gray-900">
-                        {service.estimated_duration || '-'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <button
-                        onClick={() => toggleStatus(service.id, service.is_active)}
-                        className={`inline-flex items-center px-2 py-1 text-xs rounded-full transition-colors ${
-                          service.is_active 
-                            ? 'bg-green-100 text-green-800 hover:bg-green-200' 
-                            : 'bg-red-100 text-red-800 hover:bg-red-200'
-                        }`}
-                      >
-                        {service.is_active ? (
-                          <><Eye className="h-3 w-3 mr-1" /> Aktif</>
-                        ) : (
-                          <><EyeOff className="h-3 w-3 mr-1" /> Nonaktif</>
-                        )}
-                      </button>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => handleEdit(service)}
-                          className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 transition-colors"
-                          title="Edit layanan"
-                        >
-                          <Edit3 className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(service.id)}
-                          className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors"
-                          title="Hapus layanan"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gradient-to-r from-gray-100 to-purple-100">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">Layanan</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">Kategori</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">Harga</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">Durasi</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">Aksi</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredServices.map((service) => (
+                    <tr key={service.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">{service.service_name}</div>
+                          {service.service_description && (
+                            <div className="text-sm text-gray-500 max-w-xs truncate" title={service.service_description}>
+                              {service.service_description}
+                            </div>
+                          )}
+                          <div className="text-xs text-gray-400">Urutan: {service.display_order}</div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-sm text-gray-900">
+                          {service.service_category || '-'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-sm text-gray-900">
+                          {formatPrice(service.price_starting_from, service.price_currency)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-sm text-gray-900">
+                          {service.estimated_duration || '-'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <button
+                          onClick={() => toggleStatus(service.id, service.is_active)}
+                          className={`inline-flex items-center px-2 py-1 text-xs rounded-full transition-colors ${
+                            service.is_active 
+                              ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                              : 'bg-red-100 text-red-800 hover:bg-red-200'
+                          }`}
+                        >
+                          {service.is_active ? (
+                            <><Eye className="h-3 w-3 mr-1" /> Aktif</>
+                          ) : (
+                            <><EyeOff className="h-3 w-3 mr-1" /> Nonaktif</>
+                          )}
+                        </button>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => handleEdit(service)}
+                            className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 transition-colors"
+                            title="Edit layanan"
+                          >
+                            <Edit3 className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(service.id)}
+                            className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors"
+                            title="Hapus layanan"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
         )}
-      </div>
+      </Card>
     </div>
   );
 };
