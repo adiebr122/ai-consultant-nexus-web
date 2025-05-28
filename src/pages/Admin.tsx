@@ -1,24 +1,15 @@
+
 import { useState } from 'react';
 import { 
   Users, 
-  MessageSquare, 
   BarChart3, 
-  Settings, 
   FileText, 
   Star,
-  TrendingUp,
-  Eye,
-  Edit,
-  Trash2,
-  Plus,
-  LogOut,
-  MessageCircle,
-  Package,
-  UserCheck,
-  Briefcase,
-  Home
+  TrendingUp
 } from 'lucide-react';
+import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import Navbar from '@/components/Navbar';
+import AdminSidebar from '@/components/AdminSidebar';
 import HeroEditor from '@/components/HeroEditor';
 import FormSubmissions from '@/components/FormSubmissions';
 import LiveChatManager from '@/components/LiveChatManager';
@@ -33,7 +24,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
 
   const stats = [
     { title: 'Total Proyek', value: '156', change: '+12%', icon: FileText },
@@ -128,18 +119,38 @@ const Admin = () => {
     </div>
   );
 
-  const tabs = [
-    { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-    { id: 'hero', label: 'Hero Section', icon: Home },
-    { id: 'portfolio', label: 'Portfolio', icon: Briefcase },
-    { id: 'submissions', label: 'Form Submissions', icon: MessageSquare },
-    { id: 'livechat', label: 'Live Chat', icon: MessageCircle },
-    { id: 'testimonials', label: 'Testimoni', icon: Star },
-    { id: 'services', label: 'Layanan', icon: Package },
-    { id: 'crm', label: 'CRM', icon: UserCheck },
-    { id: 'users', label: 'Pengguna', icon: Users },
-    { id: 'settings', label: 'Pengaturan', icon: Settings }
-  ];
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'dashboard':
+        return renderDashboard();
+      case 'hero':
+        return <HeroEditor />;
+      case 'portfolio':
+        return <PortfolioManager />;
+      case 'submissions':
+        return <FormSubmissions />;
+      case 'livechat':
+        return <LiveChatManager />;
+      case 'testimonials':
+        return <TestimonialManager />;
+      case 'services':
+        return <ServiceManager />;
+      case 'crm':
+        return <CRMManager />;
+      case 'users':
+        return (
+          <div className="text-center py-12">
+            <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Kelola Pengguna</h3>
+            <p className="text-gray-500">Fitur kelola pengguna akan segera tersedia</p>
+          </div>
+        );
+      case 'settings':
+        return renderSettings();
+      default:
+        return renderDashboard();
+    }
+  };
 
   return (
     <ProtectedRoute>
@@ -147,60 +158,26 @@ const Admin = () => {
         <Navbar />
         
         <div className="pt-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="mb-8 flex justify-between items-center">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-                <p className="text-gray-600">Selamat datang, {user?.email}</p>
-              </div>
-              <button
-                onClick={signOut}
-                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center space-x-2"
-              >
-                <LogOut className="h-4 w-4" />
-                <span>Logout</span>
-              </button>
-            </div>
-
-            <div className="flex flex-wrap gap-2 mb-8 border-b border-gray-200">
-              {tabs.map((tab) => {
-                const IconComponent = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-t-lg transition-colors ${
-                      activeTab === tab.id
-                        ? 'bg-blue-600 text-white'
-                        : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
-                    }`}
-                  >
-                    <IconComponent className="h-4 w-4" />
-                    <span>{tab.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="bg-gray-50 rounded-xl p-6">
-              {activeTab === 'dashboard' && renderDashboard()}
-              {activeTab === 'hero' && <HeroEditor />}
-              {activeTab === 'portfolio' && <PortfolioManager />}
-              {activeTab === 'submissions' && <FormSubmissions />}
-              {activeTab === 'livechat' && <LiveChatManager />}
-              {activeTab === 'testimonials' && <TestimonialManager />}
-              {activeTab === 'services' && <ServiceManager />}
-              {activeTab === 'crm' && <CRMManager />}
-              {activeTab === 'users' && (
-                <div className="text-center py-12">
-                  <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Kelola Pengguna</h3>
-                  <p className="text-gray-500">Fitur kelola pengguna akan segera tersedia</p>
+          <SidebarProvider>
+            <div className="flex min-h-screen w-full">
+              <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} />
+              
+              <SidebarInset>
+                <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+                  <SidebarTrigger className="-ml-1" />
+                  <div className="flex-1">
+                    <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+                  </div>
+                </header>
+                
+                <div className="flex-1 p-6">
+                  <div className="bg-white rounded-xl shadow-lg p-6">
+                    {renderContent()}
+                  </div>
                 </div>
-              )}
-              {activeTab === 'settings' && renderSettings()}
+              </SidebarInset>
             </div>
-          </div>
+          </SidebarProvider>
         </div>
       </div>
     </ProtectedRoute>
