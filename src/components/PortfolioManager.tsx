@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
 
 interface Project {
   id?: string;
@@ -33,6 +34,7 @@ interface PortfolioContent {
 
 const PortfolioManager = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [content, setContent] = useState<PortfolioContent>({
     title: 'Portfolio Proyek Terbaik',
     description: 'Lihat hasil karya terbaik kami dalam mengembangkan solusi AI dan aplikasi untuk berbagai industri.',
@@ -45,16 +47,20 @@ const PortfolioManager = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
-    fetchContent();
-  }, []);
+    if (user) {
+      fetchContent();
+    }
+  }, [user]);
 
   const fetchContent = async () => {
+    if (!user) return;
+    
     try {
       const { data, error } = await supabase
         .from('website_content')
         .select('*')
         .eq('section', 'portfolio')
-        .eq('user_id', user?.id)
+        .eq('user_id', user.id)
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') throw error;
@@ -69,13 +75,26 @@ const PortfolioManager = () => {
       }
     } catch (error) {
       console.error('Error fetching portfolio content:', error);
+      toast({
+        title: "Error",
+        description: "Gagal memuat konten portfolio",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
   const saveContent = async () => {
-    if (!user) return;
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "Anda harus login untuk menyimpan konten",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setSaving(true);
 
     try {
@@ -93,10 +112,18 @@ const PortfolioManager = () => {
         });
 
       if (error) throw error;
-      alert('Portfolio content saved successfully!');
+      
+      toast({
+        title: "Berhasil",
+        description: "Konten portfolio berhasil disimpan",
+      });
     } catch (error) {
       console.error('Error saving portfolio content:', error);
-      alert('Error saving portfolio content');
+      toast({
+        title: "Error",
+        description: "Gagal menyimpan konten portfolio",
+        variant: "destructive",
+      });
     } finally {
       setSaving(false);
     }
@@ -128,9 +155,18 @@ const PortfolioManager = () => {
         const newGallery = [...(editingProject.gallery_images || []), urlData.publicUrl];
         setEditingProject({ ...editingProject, gallery_images: newGallery });
       }
+      
+      toast({
+        title: "Berhasil",
+        description: "Gambar berhasil diupload",
+      });
     } catch (error) {
       console.error('Error uploading image:', error);
-      alert('Error uploading image');
+      toast({
+        title: "Error",
+        description: "Gagal mengupload gambar",
+        variant: "destructive",
+      });
     } finally {
       setUploadingImage(false);
     }
@@ -163,14 +199,55 @@ const PortfolioManager = () => {
   };
 
   const deleteProject = (index: number) => {
-    if (confirm('Are you sure you want to delete this project?')) {
+    if (confirm('Apakah Anda yakin ingin menghapus proyek ini?')) {
       const newProjects = content.projects.filter((_, i) => i !== index);
       setContent({ ...content, projects: newProjects });
+      toast({
+        title: "Berhasil",
+        description: "Proyek berhasil dihapus",
+      });
     }
   };
 
   const saveProject = () => {
     if (!editingProject) return;
+
+    // Validasi form
+    if (!editingProject.title.trim()) {
+      toast({
+        title: "Error",
+        description: "Judul proyek harus diisi",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!editingProject.description.trim()) {
+      toast({
+        title: "Error",
+        description: "Deskripsi proyek harus diisi",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!editingProject.client.trim()) {
+      toast({
+        title: "Error",
+        description: "Nama klien harus diisi",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!editingProject.category.trim()) {
+      toast({
+        title: "Error",
+        description: "Kategori proyek harus diisi",
+        variant: "destructive",
+      });
+      return;
+    }
 
     const newProjects = [...content.projects];
     
@@ -186,6 +263,11 @@ const PortfolioManager = () => {
     setContent({ ...content, projects: newProjects });
     setShowProjectForm(false);
     setEditingProject(null);
+    
+    toast({
+      title: "Berhasil",
+      description: "Proyek berhasil disimpan",
+    });
   };
 
   const handleTechnologiesChange = (value: string) => {
@@ -200,6 +282,15 @@ const PortfolioManager = () => {
     setEditingProject({ ...editingProject, gallery_images: newGallery });
   };
 
+  if (!user) {
+    return (
+      <div className="text-center py-12">
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Login Diperlukan</h3>
+        <p className="text-gray-500">Anda harus login untuk mengelola portfolio</p>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -211,39 +302,41 @@ const PortfolioManager = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Portfolio Management</h2>
+        <h2 className="text-2xl font-bold text-gray-900">Kelola Portfolio</h2>
         <button
           onClick={saveContent}
           disabled={saving}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2 disabled:opacity-50"
         >
           <Save className="h-4 w-4" />
-          <span>{saving ? 'Saving...' : 'Save Changes'}</span>
+          <span>{saving ? 'Menyimpan...' : 'Simpan Perubahan'}</span>
         </button>
       </div>
 
       {/* Header Content */}
       <Card>
         <CardHeader>
-          <CardTitle>Header Content</CardTitle>
+          <CardTitle>Konten Header</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Judul</label>
             <input
               type="text"
               value={content.title}
               onChange={(e) => setContent({ ...content, title: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Masukkan judul portfolio"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Deskripsi</label>
             <Textarea
               value={content.description}
               onChange={(e) => setContent({ ...content, description: e.target.value })}
               rows={3}
               className="w-full"
+              placeholder="Masukkan deskripsi portfolio"
             />
           </div>
         </CardContent>
@@ -252,13 +345,13 @@ const PortfolioManager = () => {
       {/* Projects Section */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Projects</CardTitle>
+          <CardTitle>Proyek</CardTitle>
           <button
             onClick={addProject}
             className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center space-x-2"
           >
             <Plus className="h-4 w-4" />
-            <span>Add Project</span>
+            <span>Tambah Proyek</span>
           </button>
         </CardHeader>
         <CardContent>
@@ -285,7 +378,7 @@ const PortfolioManager = () => {
                   {project.detailed_description && (
                     <div className="mb-3">
                       <span className="text-xs text-green-600 font-medium">
-                        Detailed description available
+                        Deskripsi detail tersedia
                       </span>
                     </div>
                   )}
@@ -329,7 +422,7 @@ const PortfolioManager = () => {
           <div className="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white z-10 p-6 border-b border-gray-200 flex justify-between items-center">
               <h3 className="text-lg font-semibold">
-                {editingProject.id && editingProject.id !== 'new' ? 'Edit Project' : 'Add New Project'}
+                {editingProject.id && editingProject.id !== 'new' ? 'Edit Proyek' : 'Tambah Proyek Baru'}
               </h3>
               <button
                 onClick={() => setShowProjectForm(false)}
@@ -342,65 +435,75 @@ const PortfolioManager = () => {
             <div className="p-6">
               <div className="space-y-6">
                 <h4 className="font-semibold text-blue-600 flex items-center gap-2">
-                  <FileText className="h-4 w-4" /> Basic Information
+                  <FileText className="h-4 w-4" /> Informasi Dasar
                 </h4>
                 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Project Title</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Judul Proyek <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="text"
                       value={editingProject.title}
                       onChange={(e) => setEditingProject({ ...editingProject, title: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Masukkan judul proyek"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Client</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Klien <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="text"
                       value={editingProject.client}
                       onChange={(e) => setEditingProject({ ...editingProject, client: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Nama klien"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Short Description (shown in cards)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Deskripsi Singkat <span className="text-red-500">*</span>
+                  </label>
                   <Textarea
                     value={editingProject.description}
                     onChange={(e) => setEditingProject({ ...editingProject, description: e.target.value })}
-                    placeholder="Brief description of the project (1-2 sentences)"
+                    placeholder="Deskripsi singkat proyek (1-2 kalimat)"
                     className="w-full"
                   />
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Kategori <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="text"
                       value={editingProject.category}
                       onChange={(e) => setEditingProject({ ...editingProject, category: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="e.g., AI Chatbot, Mobile App"
+                      placeholder="Contoh: AI Chatbot, Mobile App"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Project Duration</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Durasi Proyek</label>
                     <input
                       type="text"
                       value={editingProject.project_duration}
                       onChange={(e) => setEditingProject({ ...editingProject, project_duration: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="e.g., 3 months, Jan-Mar 2023"
+                      placeholder="Contoh: 3 bulan, Jan-Mar 2023"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Technologies (comma separated)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Teknologi (pisahkan dengan koma)</label>
                   <input
                     type="text"
                     value={editingProject.technologies.join(', ')}
@@ -412,45 +515,47 @@ const PortfolioManager = () => {
 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Demo URL (optional)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">URL Demo (opsional)</label>
                     <input
                       type="url"
                       value={editingProject.demo_url || ''}
                       onChange={(e) => setEditingProject({ ...editingProject, demo_url: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="https://demo.example.com"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">GitHub URL (optional)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">URL GitHub (opsional)</label>
                     <input
                       type="url"
                       value={editingProject.github_url || ''}
                       onChange={(e) => setEditingProject({ ...editingProject, github_url: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="https://github.com/username/repo"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Team Size</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Ukuran Tim</label>
                   <input
                     type="text"
                     value={editingProject.team_size || ''}
                     onChange={(e) => setEditingProject({ ...editingProject, team_size: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="e.g., 5 developers, 1 designer, 1 project manager"
+                    placeholder="Contoh: 5 developer, 1 designer, 1 project manager"
                   />
                 </div>
 
                 <div className="border-t border-gray-200 pt-6">
                   <h4 className="font-semibold text-blue-600 mb-4 flex items-center gap-2">
-                    <Image className="h-4 w-4" /> Images
+                    <Image className="h-4 w-4" /> Gambar
                   </h4>
                   
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Main Project Image
+                        Gambar Utama Proyek
                       </label>
                       {editingProject.image_url && (
                         <div className="mb-4 relative w-40 h-40">
@@ -472,7 +577,7 @@ const PortfolioManager = () => {
                           />
                           <span className="flex items-center">
                             <Upload className="h-4 w-4 mr-2" />
-                            {uploadingImage ? 'Uploading...' : 'Upload Image'}
+                            {uploadingImage ? 'Mengupload...' : 'Upload Gambar'}
                           </span>
                         </label>
                       </div>
@@ -480,7 +585,7 @@ const PortfolioManager = () => {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Gallery Images
+                        Galeri Gambar
                       </label>
                       {editingProject.gallery_images && editingProject.gallery_images.length > 0 && (
                         <div className="grid grid-cols-3 gap-4 mb-4">
@@ -512,7 +617,7 @@ const PortfolioManager = () => {
                           />
                           <span className="flex items-center">
                             <Upload className="h-4 w-4 mr-2" />
-                            {uploadingImage ? 'Uploading...' : 'Add Gallery Image'}
+                            {uploadingImage ? 'Mengupload...' : 'Tambah Gambar Galeri'}
                           </span>
                         </label>
                       </div>
@@ -522,54 +627,54 @@ const PortfolioManager = () => {
 
                 <div className="border-t border-gray-200 pt-6">
                   <h4 className="font-semibold text-blue-600 mb-4 flex items-center gap-2">
-                    <FileText className="h-4 w-4" /> Detailed Information (for project detail page)
+                    <FileText className="h-4 w-4" /> Informasi Detail (untuk halaman detail proyek)
                   </h4>
                   
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Detailed Description
+                        Deskripsi Detail
                       </label>
                       <Textarea
                         value={editingProject.detailed_description || ''}
                         onChange={(e) => setEditingProject({ ...editingProject, detailed_description: e.target.value })}
-                        placeholder="Comprehensive description of the project"
+                        placeholder="Deskripsi komprehensif tentang proyek"
                         className="w-full min-h-[150px]"
                       />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Challenges
+                        Tantangan
                       </label>
                       <Textarea
                         value={editingProject.challenges || ''}
                         onChange={(e) => setEditingProject({ ...editingProject, challenges: e.target.value })}
-                        placeholder="Technical or project challenges faced"
+                        placeholder="Tantangan teknis atau proyek yang dihadapi"
                         className="w-full"
                       />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Solutions
+                        Solusi
                       </label>
                       <Textarea
                         value={editingProject.solutions || ''}
                         onChange={(e) => setEditingProject({ ...editingProject, solutions: e.target.value })}
-                        placeholder="How challenges were overcome"
+                        placeholder="Bagaimana tantangan diatasi"
                         className="w-full"
                       />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Results
+                        Hasil
                       </label>
                       <Textarea
                         value={editingProject.results || ''}
                         onChange={(e) => setEditingProject({ ...editingProject, results: e.target.value })}
-                        placeholder="Outcomes and impact of the project"
+                        placeholder="Hasil dan dampak dari proyek"
                         className="w-full"
                       />
                     </div>
@@ -581,13 +686,13 @@ const PortfolioManager = () => {
                     onClick={() => setShowProjectForm(false)}
                     className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
                   >
-                    Cancel
+                    Batal
                   </button>
                   <button
                     onClick={saveProject}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                   >
-                    Save Project
+                    Simpan Proyek
                   </button>
                 </div>
               </div>
