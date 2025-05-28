@@ -36,16 +36,45 @@ const ClientLogos = () => {
     }
   };
 
-  // Default logos jika belum ada data
+  // Enhanced default logos with companies from various sectors
   const defaultLogos: ClientLogo[] = [
-    { id: '1', name: 'Telkom Indonesia', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Telkom_Indonesia_2013.svg/200px-Telkom_Indonesia_2013.svg.png', company_url: 'https://telkom.co.id', display_order: 1, is_active: true },
-    { id: '2', name: 'Bank Central Asia', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/BCA_logo.svg/200px-BCA_logo.svg.png', company_url: 'https://bca.co.id', display_order: 2, is_active: true },
-    { id: '3', name: 'Gojek', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/Gojek_logo_2019.svg/200px-Gojek_logo_2019.svg.png', company_url: 'https://gojek.com', display_order: 3, is_active: true },
-    { id: '4', name: 'Tokopedia', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Tokopedia.svg/200px-Tokopedia.svg.png', company_url: 'https://tokopedia.com', display_order: 4, is_active: true },
-    { id: '5', name: 'Shopee', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Shopee_logo.svg/200px-Shopee_logo.svg.png', company_url: 'https://shopee.co.id', display_order: 5, is_active: true },
-    { id: '6', name: 'Grab', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Grab_%28application%29_logo.svg/200px-Grab_%28application%29_logo.svg.png', company_url: 'https://grab.com', display_order: 6, is_active: true },
-    { id: '7', name: 'OVO', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Logo_ovo_purple.svg/200px-Logo_ovo_purple.svg.png', company_url: 'https://ovo.id', display_order: 7, is_active: true },
-    { id: '8', name: 'Bukalapak', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Bukalapak_official_logo.svg/200px-Bukalapak_official_logo.svg.png', company_url: 'https://bukalapak.com', display_order: 8, is_active: true }
+    // BUMN
+    { id: '1', name: 'Pertamina', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Pertamina_Logo.svg/200px-Pertamina_Logo.svg.png', company_url: 'https://pertamina.com', display_order: 1, is_active: true },
+    { id: '2', name: 'PLN', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/PLN_logo.svg/200px-PLN_logo.svg.png', company_url: 'https://pln.co.id', display_order: 2, is_active: true },
+    { id: '3', name: 'Telkom Indonesia', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Telkom_Indonesia_2013.svg/200px-Telkom_Indonesia_2013.svg.png', company_url: 'https://telkom.co.id', display_order: 3, is_active: true },
+    { id: '4', name: 'Bank Mandiri', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/Bank_Mandiri_logo_2016.svg/200px-Bank_Mandiri_logo_2016.svg.png', company_url: 'https://bankmandiri.co.id', display_order: 4, is_active: true },
+    
+    // Pertambangan
+    { id: '5', name: 'Vale Indonesia', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/43/Vale_logo.svg/200px-Vale_logo.svg.png', company_url: 'https://vale.com', display_order: 5, is_active: true },
+    { id: '6', name: 'Freeport', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Freeport-McMoRan_Logo.svg/200px-Freeport-McMoRan_Logo.svg.png', company_url: 'https://fcx.com', display_order: 6, is_active: true },
+    { id: '7', name: 'Adaro Energy', logo_url: 'https://via.placeholder.com/200x80/1e40af/ffffff?text=ADARO', company_url: 'https://adaro.com', display_order: 7, is_active: true },
+    
+    // Manufaktur
+    { id: '8', name: 'Astra International', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Astra_International_logo.svg/200px-Astra_International_logo.svg.png', company_url: 'https://astra.co.id', display_order: 8, is_active: true },
+    { id: '9', name: 'Unilever Indonesia', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Unilever.svg/200px-Unilever.svg.png', company_url: 'https://unilever.co.id', display_order: 9, is_active: true },
+    { id: '10', name: 'Indofood', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Indofood_logo.svg/200px-Indofood_logo.svg.png', company_url: 'https://indofood.com', display_order: 10, is_active: true },
+    { id: '11', name: 'Kalbe Farma', logo_url: 'https://via.placeholder.com/200x80/059669/ffffff?text=KALBE', company_url: 'https://kalbe.co.id', display_order: 11, is_active: true },
+    
+    // Logistik
+    { id: '12', name: 'JNE', logo_url: 'https://via.placeholder.com/200x80/dc2626/ffffff?text=JNE', company_url: 'https://jne.co.id', display_order: 12, is_active: true },
+    { id: '13', name: 'J&T Express', logo_url: 'https://via.placeholder.com/200x80/ea580c/ffffff?text=J%26T', company_url: 'https://jet.co.id', display_order: 13, is_active: true },
+    { id: '14', name: 'SiCepat', logo_url: 'https://via.placeholder.com/200x80/7c3aed/ffffff?text=SiCepat', company_url: 'https://sicepat.com', display_order: 14, is_active: true },
+    { id: '15', name: 'Pos Indonesia', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Pos_Indonesia_logo.svg/200px-Pos_Indonesia_logo.svg.png', company_url: 'https://posindonesia.co.id', display_order: 15, is_active: true },
+    
+    // Fashion & Retail
+    { id: '16', name: 'Matahari', logo_url: 'https://via.placeholder.com/200x80/dc2626/ffffff?text=MATAHARI', company_url: 'https://matahari.co.id', display_order: 16, is_active: true },
+    { id: '17', name: 'Ramayana', logo_url: 'https://via.placeholder.com/200x80/059669/ffffff?text=RAMAYANA', company_url: 'https://ramayana.co.id', display_order: 17, is_active: true },
+    { id: '18', name: 'Zalora', logo_url: 'https://via.placeholder.com/200x80/1e40af/ffffff?text=ZALORA', company_url: 'https://zalora.co.id', display_order: 18, is_active: true },
+    
+    // Tech & E-commerce
+    { id: '19', name: 'Gojek', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/Gojek_logo_2019.svg/200px-Gojek_logo_2019.svg.png', company_url: 'https://gojek.com', display_order: 19, is_active: true },
+    { id: '20', name: 'Tokopedia', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Tokopedia.svg/200px-Tokopedia.svg.png', company_url: 'https://tokopedia.com', display_order: 20, is_active: true },
+    { id: '21', name: 'Shopee', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Shopee_logo.svg/200px-Shopee_logo.svg.png', company_url: 'https://shopee.co.id', display_order: 21, is_active: true },
+    { id: '22', name: 'Bukalapak', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Bukalapak_official_logo.svg/200px-Bukalapak_official_logo.svg.png', company_url: 'https://bukalapak.com', display_order: 22, is_active: true },
+    
+    // Financial
+    { id: '23', name: 'BCA', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/BCA_logo.svg/200px-BCA_logo.svg.png', company_url: 'https://bca.co.id', display_order: 23, is_active: true },
+    { id: '24', name: 'OVO', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Logo_ovo_purple.svg/200px-Logo_ovo_purple.svg.png', company_url: 'https://ovo.id', display_order: 24, is_active: true }
   ];
 
   const displayLogos = logos.length > 0 ? logos : defaultLogos;
@@ -72,7 +101,7 @@ const ClientLogos = () => {
             Dipercaya oleh Perusahaan Terkemuka
           </h2>
           <p className="text-xl text-gray-600 max-w-4xl mx-auto">
-            Lebih dari {displayLogos.length}+ perusahaan besar Indonesia telah mempercayakan transformasi digital mereka kepada kami
+            Lebih dari {displayLogos.length}+ perusahaan besar Indonesia dari berbagai sektor telah mempercayakan transformasi digital mereka kepada kami
           </p>
         </div>
 
@@ -84,32 +113,32 @@ const ClientLogos = () => {
               {displayLogos.map((logo, index) => (
                 <div 
                   key={`${logo.id}-1`}
-                  className="mx-8 flex items-center justify-center min-w-[160px] h-20 group"
+                  className="mx-6 flex items-center justify-center min-w-[180px] h-24 group"
                 >
                   {logo.company_url ? (
                     <a
                       href={logo.company_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-center w-full h-full p-4 rounded-2xl bg-white/50 hover:bg-white transition-all duration-300 hover:shadow-xl hover:scale-110"
+                      className="flex items-center justify-center w-full h-full p-6 rounded-2xl bg-white/70 hover:bg-white transition-all duration-300 hover:shadow-xl hover:scale-110 border border-gray-100"
                     >
                       <img 
                         src={logo.logo_url} 
                         alt={logo.name}
-                        className="max-h-12 w-auto opacity-60 group-hover:opacity-100 transition-all duration-300 filter grayscale group-hover:grayscale-0"
+                        className="max-h-14 max-w-[160px] w-auto object-contain opacity-70 group-hover:opacity-100 transition-all duration-300 filter grayscale group-hover:grayscale-0"
                         onError={(e) => {
-                          e.currentTarget.src = `https://via.placeholder.com/120x60/f3f4f6/6b7280?text=${logo.name.replace(' ', '+')}`;
+                          e.currentTarget.src = `https://via.placeholder.com/160x56/f3f4f6/6b7280?text=${logo.name.replace(' ', '+')}`;
                         }}
                       />
                     </a>
                   ) : (
-                    <div className="flex items-center justify-center w-full h-full p-4 rounded-2xl bg-white/50 hover:bg-white transition-all duration-300 hover:shadow-xl hover:scale-110">
+                    <div className="flex items-center justify-center w-full h-full p-6 rounded-2xl bg-white/70 hover:bg-white transition-all duration-300 hover:shadow-xl hover:scale-110 border border-gray-100">
                       <img 
                         src={logo.logo_url} 
                         alt={logo.name}
-                        className="max-h-12 w-auto opacity-60 group-hover:opacity-100 transition-all duration-300 filter grayscale group-hover:grayscale-0"
+                        className="max-h-14 max-w-[160px] w-auto object-contain opacity-70 group-hover:opacity-100 transition-all duration-300 filter grayscale group-hover:grayscale-0"
                         onError={(e) => {
-                          e.currentTarget.src = `https://via.placeholder.com/120x60/f3f4f6/6b7280?text=${logo.name.replace(' ', '+')}`;
+                          e.currentTarget.src = `https://via.placeholder.com/160x56/f3f4f6/6b7280?text=${logo.name.replace(' ', '+')}`;
                         }}
                       />
                     </div>
@@ -122,32 +151,32 @@ const ClientLogos = () => {
               {displayLogos.map((logo, index) => (
                 <div 
                   key={`${logo.id}-2`}
-                  className="mx-8 flex items-center justify-center min-w-[160px] h-20 group"
+                  className="mx-6 flex items-center justify-center min-w-[180px] h-24 group"
                 >
                   {logo.company_url ? (
                     <a
                       href={logo.company_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-center w-full h-full p-4 rounded-2xl bg-white/50 hover:bg-white transition-all duration-300 hover:shadow-xl hover:scale-110"
+                      className="flex items-center justify-center w-full h-full p-6 rounded-2xl bg-white/70 hover:bg-white transition-all duration-300 hover:shadow-xl hover:scale-110 border border-gray-100"
                     >
                       <img 
                         src={logo.logo_url} 
                         alt={logo.name}
-                        className="max-h-12 w-auto opacity-60 group-hover:opacity-100 transition-all duration-300 filter grayscale group-hover:grayscale-0"
+                        className="max-h-14 max-w-[160px] w-auto object-contain opacity-70 group-hover:opacity-100 transition-all duration-300 filter grayscale group-hover:grayscale-0"
                         onError={(e) => {
-                          e.currentTarget.src = `https://via.placeholder.com/120x60/f3f4f6/6b7280?text=${logo.name.replace(' ', '+')}`;
+                          e.currentTarget.src = `https://via.placeholder.com/160x56/f3f4f6/6b7280?text=${logo.name.replace(' ', '+')}`;
                         }}
                       />
                     </a>
                   ) : (
-                    <div className="flex items-center justify-center w-full h-full p-4 rounded-2xl bg-white/50 hover:bg-white transition-all duration-300 hover:shadow-xl hover:scale-110">
+                    <div className="flex items-center justify-center w-full h-full p-6 rounded-2xl bg-white/70 hover:bg-white transition-all duration-300 hover:shadow-xl hover:scale-110 border border-gray-100">
                       <img 
                         src={logo.logo_url} 
                         alt={logo.name}
-                        className="max-h-12 w-auto opacity-60 group-hover:opacity-100 transition-all duration-300 filter grayscale group-hover:grayscale-0"
+                        className="max-h-14 max-w-[160px] w-auto object-contain opacity-70 group-hover:opacity-100 transition-all duration-300 filter grayscale group-hover:grayscale-0"
                         onError={(e) => {
-                          e.currentTarget.src = `https://via.placeholder.com/120x60/f3f4f6/6b7280?text=${logo.name.replace(' ', '+')}`;
+                          e.currentTarget.src = `https://via.placeholder.com/160x56/f3f4f6/6b7280?text=${logo.name.replace(' ', '+')}`;
                         }}
                       />
                     </div>
@@ -158,19 +187,27 @@ const ClientLogos = () => {
           </div>
         </div>
 
-        {/* Trust indicators */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-          <div className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300">
-            <div className="text-3xl font-bold text-blue-600 mb-2">{displayLogos.length}+</div>
-            <div className="text-gray-600">Klien Terpercaya</div>
+        {/* Enhanced Trust indicators with sector breakdown */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-6 text-center">
+          <div className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 border border-gray-100">
+            <div className="text-2xl font-bold text-blue-600 mb-2">5+</div>
+            <div className="text-gray-600 text-sm">BUMN</div>
           </div>
-          <div className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300">
-            <div className="text-3xl font-bold text-green-600 mb-2">98%</div>
-            <div className="text-gray-600">Tingkat Kepuasan</div>
+          <div className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 border border-gray-100">
+            <div className="text-2xl font-bold text-green-600 mb-2">8+</div>
+            <div className="text-gray-600 text-sm">Manufaktur</div>
           </div>
-          <div className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300">
-            <div className="text-3xl font-bold text-purple-600 mb-2">5 Tahun</div>
-            <div className="text-gray-600">Pengalaman</div>
+          <div className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 border border-gray-100">
+            <div className="text-2xl font-bold text-purple-600 mb-2">4+</div>
+            <div className="text-gray-600 text-sm">Logistik</div>
+          </div>
+          <div className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 border border-gray-100">
+            <div className="text-2xl font-bold text-orange-600 mb-2">3+</div>
+            <div className="text-gray-600 text-sm">Fashion</div>
+          </div>
+          <div className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 border border-gray-100">
+            <div className="text-2xl font-bold text-red-600 mb-2">3+</div>
+            <div className="text-gray-600 text-sm">Pertambangan</div>
           </div>
         </div>
       </div>
