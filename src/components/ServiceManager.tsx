@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -38,7 +39,7 @@ const ServiceManager = () => {
     service_image_url: '',
     display_order: 0
   });
-  const { toast } = useToast();
+  const { toastSuccess, toastError, toast } = useToast();
 
   useEffect(() => {
     fetchServices();
@@ -47,12 +48,19 @@ const ServiceManager = () => {
   const fetchServices = async () => {
     try {
       setLoading(true);
+      console.log('Fetching services...');
+      
       const { data, error } = await supabase
         .from('services')
         .select('*')
         .order('display_order', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching services:', error);
+        throw error;
+      }
+      
+      console.log('Services fetched:', data);
       
       // Transform data to ensure service_features is always an array of strings
       const transformedData = (data || []).map(service => ({
@@ -63,11 +71,12 @@ const ServiceManager = () => {
       }));
       
       setServices(transformedData);
+      console.log('Services set:', transformedData);
     } catch (error: any) {
-      toast({
+      console.error('Fetch services error:', error);
+      toastError({
         title: "Error",
         description: `Gagal memuat layanan: ${error.message}`,
-        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -76,23 +85,32 @@ const ServiceManager = () => {
 
   const handleSave = async () => {
     if (!formData.service_name.trim()) {
-      toast({
+      toastError({
         title: "Error",
         description: "Nama layanan wajib diisi",
-        variant: "destructive",
       });
       return;
     }
 
     try {
       setSaving(true);
+      console.log('Starting save process...');
+      
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User tidak terautentikasi');
+      if (!user) {
+        toastError({
+          title: "Error",
+          description: "User tidak terautentikasi",
+        });
+        return;
+      }
 
       const serviceData = {
         service_name: formData.service_name.trim(),
         service_description: formData.service_description.trim() || null,
-        service_features: formData.service_features ? formData.service_features.split('\n').filter(f => f.trim()) : [],
+        service_features: formData.service_features 
+          ? formData.service_features.split('\n').filter(f => f.trim()).map(f => f.trim())
+          : [],
         price_starting_from: formData.price_starting_from ? parseFloat(formData.price_starting_from) : null,
         price_currency: formData.price_currency,
         service_category: formData.service_category.trim() || null,
@@ -102,33 +120,57 @@ const ServiceManager = () => {
         updated_at: new Date().toISOString()
       };
 
+      console.log('Service data to save:', serviceData);
+
       if (editingId) {
-        const { error } = await supabase
+        console.log('Updating service with ID:', editingId);
+        
+        const { data, error } = await supabase
           .from('services')
           .update(serviceData)
-          .eq('id', editingId);
+          .eq('id', editingId)
+          .select();
 
-        if (error) throw error;
-        toast({ title: "🎉 Berhasil!", description: "Layanan berhasil diupdate" });
+        if (error) {
+          console.error('Update error:', error);
+          throw error;
+        }
+        
+        console.log('Update successful:', data);
+        toastSuccess({ 
+          title: "✅ Berhasil!", 
+          description: "Layanan berhasil diupdate" 
+        });
       } else {
-        const { error } = await supabase
+        console.log('Creating new service...');
+        
+        const { data, error } = await supabase
           .from('services')
           .insert({
             user_id: user.id,
             ...serviceData
-          });
+          })
+          .select();
 
-        if (error) throw error;
-        toast({ title: "🎉 Berhasil!", description: "Layanan berhasil ditambahkan" });
+        if (error) {
+          console.error('Insert error:', error);
+          throw error;
+        }
+        
+        console.log('Insert successful:', data);
+        toastSuccess({ 
+          title: "✅ Berhasil!", 
+          description: "Layanan berhasil ditambahkan" 
+        });
       }
 
       resetForm();
       await fetchServices();
     } catch (error: any) {
-      toast({
-        title: "Error",
+      console.error('Save error:', error);
+      toastError({
+        title: "❌ Error",
         description: `Gagal menyimpan: ${error.message}`,
-        variant: "destructive",
       });
     } finally {
       setSaving(false);
@@ -136,11 +178,15 @@ const ServiceManager = () => {
   };
 
   const handleEdit = (service: Service) => {
+    console.log('Editing service:', service);
+    
     setEditingId(service.id);
     setFormData({
       service_name: service.service_name,
       service_description: service.service_description || '',
-      service_features: service.service_features.join('\n'),
+      service_features: Array.isArray(service.service_features) 
+        ? service.service_features.join('\n') 
+        : '',
       price_starting_from: service.price_starting_from?.toString() || '',
       price_currency: service.price_currency,
       service_category: service.service_category || '',
@@ -148,48 +194,83 @@ const ServiceManager = () => {
       service_image_url: service.service_image_url || '',
       display_order: service.display_order
     });
+    
+    // Scroll to form
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    toast({
+      title: "📝 Mode Edit",
+      description: `Mengedit layanan: ${service.service_name}`,
+      variant: "info"
+    });
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Apakah Anda yakin ingin menghapus layanan ini?')) return;
 
     try {
-      const { error } = await supabase.from('services').delete().eq('id', id);
-      if (error) throw error;
-      toast({ title: "Berhasil!", description: "Layanan berhasil dihapus" });
+      console.log('Deleting service with ID:', id);
+      
+      const { error } = await supabase
+        .from('services')
+        .delete()
+        .eq('id', id);
+        
+      if (error) {
+        console.error('Delete error:', error);
+        throw error;
+      }
+      
+      console.log('Delete successful');
+      toastSuccess({ 
+        title: "🗑️ Berhasil!", 
+        description: "Layanan berhasil dihapus" 
+      });
       await fetchServices();
     } catch (error: any) {
-      toast({
-        title: "Error",
+      console.error('Delete error:', error);
+      toastError({
+        title: "❌ Error",
         description: `Gagal menghapus: ${error.message}`,
-        variant: "destructive",
       });
     }
   };
 
   const toggleStatus = async (id: string, currentStatus: boolean) => {
     try {
+      console.log('Toggling status for service:', id, 'from', currentStatus, 'to', !currentStatus);
+      
       const { error } = await supabase
         .from('services')
-        .update({ is_active: !currentStatus, updated_at: new Date().toISOString() })
+        .update({ 
+          is_active: !currentStatus, 
+          updated_at: new Date().toISOString() 
+        })
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Toggle status error:', error);
+        throw error;
+      }
+      
+      console.log('Status toggle successful');
       toast({
-        title: "Berhasil!",
+        title: "🔄 Status Diubah",
         description: `Layanan berhasil ${!currentStatus ? 'diaktifkan' : 'dinonaktifkan'}`,
+        variant: !currentStatus ? "success" : "warning"
       });
       await fetchServices();
     } catch (error: any) {
-      toast({
-        title: "Error",
+      console.error('Toggle status error:', error);
+      toastError({
+        title: "❌ Error",
         description: `Gagal mengubah status: ${error.message}`,
-        variant: "destructive",
       });
     }
   };
 
   const resetForm = () => {
+    console.log('Resetting form...');
     setEditingId(null);
     setFormData({
       service_name: '',
@@ -262,6 +343,11 @@ const ServiceManager = () => {
             {editingId ? <Edit3 className="h-6 w-6 mr-3 text-blue-600" /> : <Plus className="h-6 w-6 mr-3 text-green-600" />}
             {editingId ? 'Edit Layanan' : 'Tambah Layanan Baru'}
           </CardTitle>
+          {editingId && (
+            <CardDescription className="text-blue-600 font-medium">
+              Mode edit aktif - Anda sedang mengedit layanan
+            </CardDescription>
+          )}
         </CardHeader>
         
         <CardContent className="p-8">
@@ -394,7 +480,7 @@ const ServiceManager = () => {
               ) : (
                 <Save className="h-5 w-5" />
               )}
-              <span>{saving ? 'Menyimpan...' : (editingId ? 'Update' : 'Simpan')}</span>
+              <span>{saving ? 'Menyimpan...' : (editingId ? 'Update Layanan' : 'Simpan Layanan')}</span>
             </Button>
             
             {editingId && (
@@ -403,7 +489,7 @@ const ServiceManager = () => {
                 variant="outline"
                 className="border-2 border-gray-300 hover:bg-gray-50 font-bold px-6 py-3 rounded-xl transition-all duration-300"
               >
-                Batal
+                Batal Edit
               </Button>
             )}
             
