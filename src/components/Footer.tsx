@@ -1,5 +1,5 @@
 
-import { Code, Mail, Phone, MapPin, Facebook, Instagram, Linkedin, Youtube } from 'lucide-react';
+import { Mail, Phone, MapPin, Facebook, Instagram, Linkedin, Youtube } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useContactInfo } from '@/hooks/useContactInfo';
 
@@ -21,9 +21,12 @@ const Footer = () => {
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company Info */}
           <div className="space-y-6">
-            <div className="flex items-center space-x-2">
-              <Code className="h-8 w-8 text-blue-400" />
-              <span className="text-xl font-bold">Visual Media X</span>
+            <div className="flex items-center">
+              <img 
+                src="/lovable-uploads/a31e965f-5dde-4e87-8495-27e1458b7a39.png" 
+                alt="Visual Media X" 
+                className="h-10 w-auto"
+              />
             </div>
             <p className="text-gray-300 leading-relaxed">
               Leading digital agency di Indonesia yang menghadirkan solusi web development, 
