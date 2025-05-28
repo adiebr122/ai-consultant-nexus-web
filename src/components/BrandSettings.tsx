@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -6,6 +5,7 @@ import { Save, RefreshCw, Upload, Image, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { checkStorageAvailability } from '@/integrations/supabase/setup';
 
 interface BrandSetting {
   id?: string;
@@ -27,11 +27,19 @@ const BrandSettings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState<string | null>(null);
+  const [storageAvailable, setStorageAvailable] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchBrandSettings();
+    checkStorage();
   }, []);
+
+  const checkStorage = async () => {
+    const available = await checkStorageAvailability();
+    setStorageAvailable(available);
+    console.log('Storage availability:', available);
+  };
 
   const fetchBrandSettings = async () => {
     try {
@@ -95,32 +103,26 @@ const BrandSettings = () => {
         throw new Error('Ukuran file maksimal 10MB');
       }
 
-      // Create a unique file name
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${settings[index].setting_key}_${Date.now()}.${fileExt}`;
-      
-      console.log('Uploading to storage with filename:', fileName);
-      
-      // Try to upload to storage
-      const { data, error } = await supabase.storage
-        .from('brand-assets')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
-
-      if (error) {
-        console.error('Storage upload error:', error);
-        // If upload fails, create a local URL as fallback
-        const localUrl = URL.createObjectURL(file);
-        handleInputChange(index, localUrl);
+      if (storageAvailable) {
+        // Create a unique file name
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${settings[index].setting_key}_${Date.now()}.${fileExt}`;
         
-        toast({
-          title: "Info",
-          description: "Gambar disimpan sementara. Untuk penyimpanan permanen, pastikan storage bucket tersedia.",
-          variant: "default",
-        });
-      } else {
+        console.log('Uploading to storage with filename:', fileName);
+        
+        // Try to upload to storage
+        const { data, error } = await supabase.storage
+          .from('brand-assets')
+          .upload(fileName, file, {
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        if (error) {
+          console.error('Storage upload error:', error);
+          throw error;
+        }
+
         console.log('Upload successful:', data);
         // Get public URL
         const { data: { publicUrl } } = supabase.storage
@@ -135,6 +137,16 @@ const BrandSettings = () => {
         toast({
           title: "Berhasil!",
           description: "Gambar berhasil diupload",
+        });
+      } else {
+        // Fallback: create local URL
+        const localUrl = URL.createObjectURL(file);
+        handleInputChange(index, localUrl);
+        
+        toast({
+          title: "Info",
+          description: "Gambar disimpan sementara. Storage bucket belum tersedia.",
+          variant: "default",
         });
       }
     } catch (error: any) {
@@ -279,6 +291,11 @@ const BrandSettings = () => {
           <Palette className="h-5 w-5 mr-2 text-blue-600" />
           Pengaturan Brand & Logo
         </h3>
+        {!storageAvailable && (
+          <div className="text-sm text-amber-600 bg-amber-50 px-3 py-1 rounded-md">
+            Storage bucket belum tersedia
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

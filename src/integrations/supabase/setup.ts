@@ -37,15 +37,18 @@ export const setupStorage = async () => {
       
       if (!bucketExists) {
         try {
+          // Try creating bucket with service role if available
           const { error } = await supabase.storage.createBucket(bucket.id, bucket.options);
           
           if (error) {
             console.error(`Error creating storage bucket ${bucket.id}:`, error);
+            // Continue without throwing - app should still work with external URLs
           } else {
             console.log(`Storage bucket ${bucket.id} created successfully`);
           }
         } catch (err) {
           console.error(`Error creating storage bucket ${bucket.id}:`, err);
+          // Continue without throwing - app should still work with external URLs
         }
       } else {
         console.log(`Storage bucket ${bucket.id} already exists`);
@@ -55,5 +58,25 @@ export const setupStorage = async () => {
     console.log('Supabase storage initialization complete');
   } catch (error) {
     console.error('Error setting up storage:', error);
+    // Don't throw - app should still work without storage
+  }
+};
+
+// Function to check if storage is available
+export const checkStorageAvailability = async () => {
+  try {
+    const { data: buckets, error } = await supabase.storage.listBuckets();
+    if (error) {
+      console.warn('Storage not available:', error);
+      return false;
+    }
+    
+    const hasBrandAssets = buckets?.some(b => b.name === 'brand-assets');
+    const hasPortfolioImages = buckets?.some(b => b.name === 'portfolio-images');
+    
+    return hasBrandAssets && hasPortfolioImages;
+  } catch (error) {
+    console.warn('Storage check failed:', error);
+    return false;
   }
 };
