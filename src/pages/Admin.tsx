@@ -12,6 +12,7 @@ import Navbar from '@/components/Navbar';
 import AdminSidebar from '@/components/AdminSidebar';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import LoadingWrapper from '@/components/LoadingWrapper';
+import AdminSkeleton from '@/components/AdminSkeleton';
 import { useAuth } from '@/hooks/useAuth';
 
 // Import critical components directly (no lazy loading for frequently used ones)
@@ -44,8 +45,8 @@ const Admin = () => {
   const handleTabChange = (tab: string) => {
     setIsLoading(true);
     setActiveTab(tab);
-    // Simulate quick loading for better UX
-    setTimeout(() => setIsLoading(false), 200);
+    // Quick loading for better UX
+    setTimeout(() => setIsLoading(false), 100);
   };
 
   const stats = [
@@ -137,7 +138,7 @@ const Admin = () => {
   const renderContent = () => {
     if (activeTab === 'portfolio' && selectedProject) {
       return (
-        <Suspense fallback={<LoadingWrapper loading={true} loadingText="Memuat detail portfolio..." />}>
+        <Suspense fallback={<AdminSkeleton />}>
           <PortfolioDetail 
             project={selectedProject} 
             onBack={() => setSelectedProject(null)} 
@@ -154,13 +155,13 @@ const Admin = () => {
           return <HeroEditor key={refreshKey} />;
         case 'portfolio':
           return (
-            <Suspense fallback={<LoadingWrapper loading={true} loadingText="Memuat portfolio..." />}>
+            <Suspense fallback={<AdminSkeleton />}>
               <PortfolioManager key={refreshKey} onProjectSelect={setSelectedProject} />
             </Suspense>
           );
         case 'clientlogos':
           return (
-            <Suspense fallback={<LoadingWrapper loading={true} loadingText="Memuat client logos..." />}>
+            <Suspense fallback={<AdminSkeleton />}>
               <ClientLogosManager key={refreshKey} />
             </Suspense>
           );
@@ -168,25 +169,25 @@ const Admin = () => {
           return <FormSubmissions key={refreshKey} />;
         case 'livechat':
           return (
-            <Suspense fallback={<LoadingWrapper loading={true} loadingText="Memuat live chat..." />}>
+            <Suspense fallback={<AdminSkeleton />}>
               <LiveChatManager key={refreshKey} />
             </Suspense>
           );
         case 'testimonials':
           return (
-            <Suspense fallback={<LoadingWrapper loading={true} loadingText="Memuat testimonial..." />}>
+            <Suspense fallback={<AdminSkeleton />}>
               <TestimonialManager key={refreshKey} />
             </Suspense>
           );
         case 'services':
           return (
-            <Suspense fallback={<LoadingWrapper loading={true} loadingText="Memuat services..." />}>
+            <Suspense fallback={<AdminSkeleton />}>
               <ServiceManager key={refreshKey} />
             </Suspense>
           );
         case 'crm':
           return (
-            <Suspense fallback={<LoadingWrapper loading={true} loadingText="Memuat CRM..." />}>
+            <Suspense fallback={<AdminSkeleton />}>
               <CRMManager key={refreshKey} />
             </Suspense>
           );
@@ -194,7 +195,7 @@ const Admin = () => {
           return <UserManagement key={refreshKey} />;
         case 'settings':
           return (
-            <Suspense fallback={<LoadingWrapper loading={true} loadingText="Memuat settings..." />}>
+            <Suspense fallback={<AdminSkeleton />}>
               <SettingsManager key={refreshKey} />
             </Suspense>
           );
