@@ -73,7 +73,8 @@ const ContactInfoManager = () => {
         .from('app_settings')
         .select('*')
         .eq('setting_category', 'operating_hours')
-        .single();
+        .eq('setting_key', 'business_hours')
+        .maybeSingle();
 
       if (hoursData && hoursData.setting_value) {
         try {
@@ -118,11 +119,19 @@ const ContactInfoManager = () => {
   const saveContactInfo = async () => {
     try {
       setSaving(true);
+      console.log('Starting to save contact info...');
+      
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User tidak terautentikasi');
+      if (!user) {
+        throw new Error('User tidak terautentikasi');
+      }
+
+      console.log('User authenticated:', user.id);
 
       // Save contact info
       for (const info of contactInfo) {
+        console.log('Saving contact info:', info);
+        
         const contactData = {
           setting_category: 'contact_info',
           setting_key: info.setting_key,
@@ -134,26 +143,43 @@ const ContactInfoManager = () => {
         };
 
         if (info.id) {
-          await supabase
+          console.log('Updating existing contact info with ID:', info.id);
+          const { error } = await supabase
             .from('app_settings')
             .update(contactData)
             .eq('id', info.id);
+          
+          if (error) {
+            console.error('Error updating contact info:', error);
+            throw error;
+          }
         } else {
-          await supabase
+          console.log('Creating new contact info');
+          const { error } = await supabase
             .from('app_settings')
             .insert({
               user_id: user.id,
               ...contactData
             });
+          
+          if (error) {
+            console.error('Error creating contact info:', error);
+            throw error;
+          }
         }
       }
 
+      console.log('Contact info saved successfully');
+
       // Save operating hours
+      console.log('Saving operating hours:', operatingHours);
+      
       const { data: existingHours } = await supabase
         .from('app_settings')
         .select('id')
         .eq('setting_category', 'operating_hours')
-        .single();
+        .eq('setting_key', 'business_hours')
+        .maybeSingle();
 
       const hoursData = {
         setting_category: 'operating_hours',
@@ -166,26 +192,43 @@ const ContactInfoManager = () => {
       };
 
       if (existingHours) {
-        await supabase
+        console.log('Updating existing operating hours with ID:', existingHours.id);
+        const { error } = await supabase
           .from('app_settings')
           .update(hoursData)
           .eq('id', existingHours.id);
+        
+        if (error) {
+          console.error('Error updating operating hours:', error);
+          throw error;
+        }
       } else {
-        await supabase
+        console.log('Creating new operating hours');
+        const { error } = await supabase
           .from('app_settings')
           .insert({
             user_id: user.id,
             ...hoursData
           });
+        
+        if (error) {
+          console.error('Error creating operating hours:', error);
+          throw error;
+        }
       }
+
+      console.log('Operating hours saved successfully');
 
       toast({
         title: "Berhasil!",
         description: "Informasi kontak dan jam operasional berhasil disimpan",
       });
 
+      // Refresh data to get updated IDs
       await fetchContactInfo();
+      
     } catch (error: any) {
+      console.error('Error in saveContactInfo:', error);
       toast({
         title: "Error",
         description: `Gagal menyimpan: ${error.message}`,
