@@ -226,6 +226,131 @@ export type Database = {
         }
         Relationships: []
       }
+      invoice_items: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          invoice_id: string
+          item_name: string
+          quantity: number
+          total: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          invoice_id: string
+          item_name: string
+          quantity?: number
+          total: number
+          unit_price: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          invoice_id?: string
+          item_name?: string
+          quantity?: number
+          total?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          client_address: string | null
+          client_company: string | null
+          client_email: string
+          client_name: string
+          created_at: string
+          due_date: string | null
+          id: string
+          invoice_date: string
+          invoice_number: string
+          lead_id: string | null
+          notes: string | null
+          quotation_id: string | null
+          status: string
+          subtotal: number
+          tax_amount: number
+          tax_percentage: number
+          terms_conditions: string | null
+          total_amount: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_address?: string | null
+          client_company?: string | null
+          client_email: string
+          client_name: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          invoice_date?: string
+          invoice_number: string
+          lead_id?: string | null
+          notes?: string | null
+          quotation_id?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          tax_percentage?: number
+          terms_conditions?: string | null
+          total_amount?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_address?: string | null
+          client_company?: string | null
+          client_email?: string
+          client_name?: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          invoice_date?: string
+          invoice_number?: string
+          lead_id?: string | null
+          notes?: string | null
+          quotation_id?: string | null
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          tax_percentage?: number
+          terms_conditions?: string | null
+          total_amount?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "user_management"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_quotation_id_fkey"
+            columns: ["quotation_id"]
+            isOneToOne: false
+            referencedRelation: "quotations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       knowledge_base: {
         Row: {
           agent_type: string | null
@@ -285,6 +410,121 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      quotation_items: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          item_name: string
+          quantity: number
+          quotation_id: string
+          total: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          item_name: string
+          quantity?: number
+          quotation_id: string
+          total: number
+          unit_price: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          item_name?: string
+          quantity?: number
+          quotation_id?: string
+          total?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotation_items_quotation_id_fkey"
+            columns: ["quotation_id"]
+            isOneToOne: false
+            referencedRelation: "quotations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotations: {
+        Row: {
+          client_address: string | null
+          client_company: string | null
+          client_email: string
+          client_name: string
+          created_at: string
+          id: string
+          lead_id: string | null
+          notes: string | null
+          quotation_date: string
+          quotation_number: string
+          status: string
+          subtotal: number
+          tax_amount: number
+          tax_percentage: number
+          terms_conditions: string | null
+          total_amount: number
+          updated_at: string
+          user_id: string
+          valid_until: string | null
+        }
+        Insert: {
+          client_address?: string | null
+          client_company?: string | null
+          client_email: string
+          client_name: string
+          created_at?: string
+          id?: string
+          lead_id?: string | null
+          notes?: string | null
+          quotation_date?: string
+          quotation_number: string
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          tax_percentage?: number
+          terms_conditions?: string | null
+          total_amount?: number
+          updated_at?: string
+          user_id: string
+          valid_until?: string | null
+        }
+        Update: {
+          client_address?: string | null
+          client_company?: string | null
+          client_email?: string
+          client_name?: string
+          created_at?: string
+          id?: string
+          lead_id?: string | null
+          notes?: string | null
+          quotation_date?: string
+          quotation_number?: string
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          tax_percentage?: number
+          terms_conditions?: string | null
+          total_amount?: number
+          updated_at?: string
+          user_id?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotations_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "user_management"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       services: {
         Row: {

@@ -1,526 +1,296 @@
 
-import { useState, Suspense, lazy, useEffect, useCallback } from 'react';
+import { useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { Navigate } from 'react-router-dom';
+import { SidebarProvider } from '@/components/ui/sidebar';
+import AdminSidebar from '@/components/AdminSidebar';
+import HeroEditor from '@/components/HeroEditor';
+import ServiceManager from '@/components/ServiceManager';
+import PortfolioManager from '@/components/PortfolioManager';
+import ClientLogosManager from '@/components/ClientLogosManager';
+import TestimonialManager from '@/components/TestimonialManager';
+import FormSubmissions from '@/components/FormSubmissions';
+import LiveChatManager from '@/components/LiveChatManager';
+import CRMManager from '@/components/CRMManager';
+import QuotationManager from '@/components/QuotationManager';
+import InvoiceManager from '@/components/InvoiceManager';
+import UserManagement from '@/components/UserManagement';
+import SettingsManager from '@/components/SettingsManager';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   Users, 
-  BarChart3, 
   FileText, 
-  Star,
+  Star, 
+  MessageSquare, 
+  Building,
+  Calculator,
+  Receipt,
   TrendingUp,
-  RefreshCw,
-  Calendar,
-  Clock,
-  Activity,
-  Zap,
-  Sparkles,
-  Rocket,
-  Target,
-  ArrowUpRight,
-  Plus,
-  Bell,
-  Search
+  Eye,
+  Mail,
+  Phone
 } from 'lucide-react';
-import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import Navbar from '@/components/Navbar';
-import AdminSidebar from '@/components/AdminSidebar';
-import ProtectedRoute from '@/components/ProtectedRoute';
-import LoadingWrapper from '@/components/LoadingWrapper';
-import AdminSkeleton from '@/components/AdminSkeleton';
-import { useAuth } from '@/hooks/useAuth';
-
-// Import critical components directly (no lazy loading for frequently used ones)
-import HeroEditor from '@/components/HeroEditor';
-import FormSubmissions from '@/components/FormSubmissions';
-import UserManagement from '@/components/UserManagement';
-
-// Keep lazy loading only for less frequently used components
-const LiveChatManager = lazy(() => import('@/components/LiveChatManager'));
-const TestimonialManager = lazy(() => import('@/components/TestimonialManager'));
-const ServiceManager = lazy(() => import('@/components/ServiceManager'));
-const PortfolioManager = lazy(() => import('@/components/PortfolioManager'));
-const PortfolioDetail = lazy(() => import('@/components/PortfolioDetail'));
-const CRMManager = lazy(() => import('@/components/CRMManager'));
-const SettingsManager = lazy(() => import('@/components/SettingsManager'));
-const ClientLogosManager = lazy(() => import('@/components/ClientLogosManager'));
 
 const Admin = () => {
+  const { user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [selectedProject, setSelectedProject] = useState(null);
-  const [refreshKey, setRefreshKey] = useState(0);
-  const [isTabLoading, setIsTabLoading] = useState(false);
-  const { user, loading: authLoading, error: authError } = useAuth();
 
-  const handleRefresh = useCallback(() => {
-    setRefreshKey(prev => prev + 1);
-    setSelectedProject(null);
-  }, []);
-
-  const handleTabChange = useCallback((tab: string) => {
-    if (tab === activeTab) return;
-    
-    setIsTabLoading(true);
-    setActiveTab(tab);
-    
-    setTimeout(() => setIsTabLoading(false), 50);
-  }, [activeTab]);
-
-  // Show loading if auth is still loading
-  if (authLoading) {
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
-        <div className="text-center">
-          <div className="relative">
-            <div className="animate-spin rounded-full h-20 w-20 border-4 border-purple-200 border-t-purple-600 mx-auto mb-6"></div>
-            <Sparkles className="h-8 w-8 text-purple-600 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
-          </div>
-          <p className="text-gray-700 text-xl font-medium">Memuat dashboard admin...</p>
-          <p className="text-gray-500 text-sm mt-2">Siapkan pengalaman terbaik untuk Anda ✨</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
-  // Show error if auth failed
-  if (authError) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 via-pink-50 to-orange-50">
-        <Card className="w-full max-w-md shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
-          <CardHeader className="text-center">
-            <div className="w-16 h-16 bg-gradient-to-r from-red-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Target className="h-8 w-8 text-white" />
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'dashboard':
+        return <DashboardContent />;
+      case 'hero':
+        return <HeroEditor />;
+      case 'services':
+        return <ServiceManager />;
+      case 'portfolio':
+        return <PortfolioManager />;
+      case 'clientlogos':
+        return <ClientLogosManager />;
+      case 'testimonials':
+        return <TestimonialManager />;
+      case 'submissions':
+        return <FormSubmissions />;
+      case 'livechat':
+        return <LiveChatManager />;
+      case 'crm':
+        return <CRMManager />;
+      case 'quotations':
+        return <QuotationManager />;
+      case 'invoices':
+        return <InvoiceManager />;
+      case 'users':
+        return <UserManagement />;
+      case 'settings':
+        return <SettingsManager />;
+      default:
+        return <DashboardContent />;
+    }
+  };
+
+  return (
+    <SidebarProvider>
+      <div className="min-h-screen flex bg-gray-50">
+        <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} />
+        
+        <main className="flex-1 overflow-hidden">
+          <div className="h-full overflow-y-auto">
+            <div className="p-6">
+              {renderContent()}
             </div>
-            <CardTitle className="text-red-600 text-xl">Oops! Ada Masalah</CardTitle>
-            <CardDescription className="text-gray-600">Terjadi kesalahan saat memuat halaman admin</CardDescription>
-          </CardHeader>
-          <CardContent className="text-center">
-            <p className="text-red-600 mb-6 p-4 bg-red-50 rounded-lg text-sm">{authError}</p>
-            <Button 
-              onClick={() => window.location.reload()} 
-              className="w-full bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-medium py-3 rounded-xl transition-all duration-300 hover:scale-105"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Muat Ulang Halaman
-            </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </main>
       </div>
-    );
-  }
+    </SidebarProvider>
+  );
+};
 
-  const stats = [
-    { 
-      title: 'Total Proyek', 
-      value: '156', 
-      change: '+12%', 
-      changeType: 'increase',
-      icon: FileText,
-      color: 'blue'
-    },
-    { 
-      title: 'Klien Aktif', 
-      value: '89', 
-      change: '+8%', 
-      changeType: 'increase',
+const DashboardContent = () => {
+  const statsCards = [
+    {
+      title: 'Total Kontak CRM',
+      value: '0',
+      description: 'Kontak yang terdaftar',
       icon: Users,
-      color: 'emerald'
+      color: 'text-blue-600',
+      bg: 'bg-blue-100'
     },
-    { 
-      title: 'Revenue Bulan Ini', 
-      value: 'Rp 2.1M', 
-      change: '+15%', 
-      changeType: 'increase',
-      icon: TrendingUp,
-      color: 'purple'
+    {
+      title: 'Penawaran Aktif',
+      value: '0',
+      description: 'Penawaran yang terkirim',
+      icon: Calculator,
+      color: 'text-purple-600',
+      bg: 'bg-purple-100'
     },
-    { 
-      title: 'Rating Rata-rata', 
-      value: '4.9', 
-      change: '+0.1', 
-      changeType: 'increase',
+    {
+      title: 'Invoice Pending',
+      value: '0',
+      description: 'Invoice belum dibayar',
+      icon: Receipt,
+      color: 'text-green-600',
+      bg: 'bg-green-100'
+    },
+    {
+      title: 'Form Submissions',
+      value: '0',
+      description: 'Formulir masuk hari ini',
+      icon: MessageSquare,
+      color: 'text-orange-600',
+      bg: 'bg-orange-100'
+    },
+    {
+      title: 'Client Logos',
+      value: '0',
+      description: 'Logo klien aktif',
+      icon: Building,
+      color: 'text-cyan-600',
+      bg: 'bg-cyan-100'
+    },
+    {
+      title: 'Testimonials',
+      value: '0',
+      description: 'Testimonial aktif',
       icon: Star,
-      color: 'amber'
+      color: 'text-yellow-600',
+      bg: 'bg-yellow-100'
     }
   ];
 
-  const getColorClasses = (color: string) => {
-    const colorMap = {
-      blue: {
-        bg: 'bg-blue-50',
-        border: 'border-blue-200',
-        icon: 'bg-blue-500',
-        text: 'text-blue-600'
-      },
-      emerald: {
-        bg: 'bg-emerald-50',
-        border: 'border-emerald-200',
-        icon: 'bg-emerald-500',
-        text: 'text-emerald-600'
-      },
-      purple: {
-        bg: 'bg-purple-50',
-        border: 'border-purple-200',
-        icon: 'bg-purple-500',
-        text: 'text-purple-600'
-      },
-      amber: {
-        bg: 'bg-amber-50',
-        border: 'border-amber-200',
-        icon: 'bg-amber-500',
-        text: 'text-amber-600'
-      }
-    };
-    return colorMap[color] || colorMap.blue;
-  };
+  const quickActions = [
+    {
+      title: 'Buat Penawaran',
+      description: 'Buat penawaran baru untuk klien',
+      icon: Calculator,
+      action: 'quotations',
+      color: 'bg-blue-600 hover:bg-blue-700'
+    },
+    {
+      title: 'Buat Invoice',
+      description: 'Generate invoice dari penawaran',
+      icon: Receipt,
+      action: 'invoices',
+      color: 'bg-green-600 hover:bg-green-700'
+    },
+    {
+      title: 'Kelola CRM',
+      description: 'Tambah kontak dan leads baru',
+      icon: Users,
+      action: 'crm',
+      color: 'bg-purple-600 hover:bg-purple-700'
+    },
+    {
+      title: 'Lihat Submissions',
+      description: 'Cek form yang masuk',
+      icon: Mail,
+      action: 'submissions',
+      color: 'bg-orange-600 hover:bg-orange-700'
+    }
+  ];
 
-  const renderDashboard = () => (
-    <div className="space-y-8">
-      {/* Header Section */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Selamat Datang, {user?.email?.split('@')[0]}! 👋
-          </h1>
-          <p className="text-gray-600 text-lg">
-            Kelola bisnis Anda dengan dashboard yang powerful dan mudah digunakan
-          </p>
-          <div className="flex items-center gap-2 text-sm text-gray-500 mt-2">
-            <Calendar className="h-4 w-4" />
-            <span>{new Date().toLocaleDateString('id-ID', { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            })}</span>
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="bg-white rounded-xl shadow-sm border p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Dashboard Admin</h1>
+            <p className="text-gray-600 mt-1">Selamat datang di panel admin website Anda</p>
           </div>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input 
-              placeholder="Cari..." 
-              className="pl-10 w-64"
-            />
+          <div className="flex items-center space-x-4">
+            <div className="text-right">
+              <p className="text-sm text-gray-500">Last Updated</p>
+              <p className="font-medium">{new Date().toLocaleDateString('id-ID')}</p>
+            </div>
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+              <TrendingUp className="h-6 w-6 text-white" />
+            </div>
           </div>
-          <Button variant="outline" size="icon">
-            <Bell className="h-4 w-4" />
-          </Button>
-          <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
-            <Plus className="h-4 w-4 mr-2" />
-            Tambah Proyek
-          </Button>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => {
-          const IconComponent = stat.icon;
-          const colors = getColorClasses(stat.color);
-          
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {statsCards.map((card, index) => {
+          const IconComponent = card.icon;
           return (
-            <Card key={index} className={`${colors.bg} border-2 ${colors.border} hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group cursor-pointer`}>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`${colors.icon} p-3 rounded-xl shadow-sm group-hover:scale-110 transition-transform duration-300`}>
-                    <IconComponent className="h-6 w-6 text-white" />
-                  </div>
-                  <ArrowUpRight className={`h-5 w-5 ${colors.text} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+            <Card key={index} className="hover:shadow-lg transition-shadow duration-200">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-gray-600">
+                  {card.title}
+                </CardTitle>
+                <div className={`p-2 rounded-lg ${card.bg}`}>
+                  <IconComponent className={`h-4 w-4 ${card.color}`} />
                 </div>
-                
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-600 uppercase tracking-wide">
-                    {stat.title}
-                  </p>
-                  <p className="text-3xl font-bold text-gray-900">
-                    {stat.value}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <Badge 
-                      variant="outline" 
-                      className={`${stat.changeType === 'increase' ? 'border-emerald-200 text-emerald-700 bg-emerald-50' : 'border-red-200 text-red-700 bg-red-50'} font-semibold`}
-                    >
-                      <TrendingUp className="h-3 w-3 mr-1" />
-                      {stat.change}
-                    </Badge>
-                    <span className="text-xs text-gray-500">vs bulan lalu</span>
-                  </div>
-                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-gray-900">{card.value}</div>
+                <p className="text-xs text-gray-500 mt-1">{card.description}</p>
               </CardContent>
             </Card>
           );
         })}
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid lg:grid-cols-3 gap-8">
-        {/* Recent Projects - Takes 2 columns */}
-        <Card className="lg:col-span-2 border-0 shadow-sm hover:shadow-md transition-shadow duration-300">
-          <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 border-b border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                  <Zap className="h-5 w-5 text-blue-600" />
-                  Proyek Terbaru
-                </CardTitle>
-                <CardDescription className="text-gray-600 mt-1">
-                  Pantau progress proyek yang sedang berjalan
-                </CardDescription>
-              </div>
-              <Button variant="outline" size="sm">
-                Lihat Semua
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="space-y-4">
-              {[
-                { client: 'Bank Mandiri', project: 'Corporate Website', status: 'In Progress', progress: 75, priority: 'High', deadline: '2 hari', color: 'blue' },
-                { client: 'Telkomsel', project: 'Mobile App Development', status: 'Review', progress: 90, priority: 'Medium', deadline: '5 hari', color: 'amber' },
-                { client: 'Indofood', project: 'E-commerce Platform', status: 'Planning', progress: 25, priority: 'Low', deadline: '1 minggu', color: 'purple' }
-              ].map((project, index) => (
-                <div key={index} className="border border-gray-200 rounded-xl p-5 hover:border-gray-300 hover:shadow-sm transition-all duration-200 bg-white">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-gray-900 text-lg mb-1">{project.project}</h4>
-                      <p className="text-gray-600 mb-2">{project.client}</p>
-                      <div className="flex items-center gap-2">
-                        <Badge 
-                          variant="outline" 
-                          className={`text-xs ${
-                            project.status === 'In Progress' ? 'border-blue-200 text-blue-700 bg-blue-50' :
-                            project.status === 'Review' ? 'border-amber-200 text-amber-700 bg-amber-50' :
-                            'border-purple-200 text-purple-700 bg-purple-50'
-                          }`}
-                        >
-                          {project.status}
-                        </Badge>
-                        <Badge 
-                          variant="outline" 
-                          className={`text-xs ${
-                            project.priority === 'High' ? 'border-red-200 text-red-700 bg-red-50' :
-                            project.priority === 'Medium' ? 'border-yellow-200 text-yellow-700 bg-yellow-50' :
-                            'border-gray-200 text-gray-700 bg-gray-50'
-                          }`}
-                        >
-                          {project.priority}
-                        </Badge>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm text-gray-500">Deadline</p>
-                      <p className="text-sm font-medium text-gray-900">{project.deadline}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Progress</span>
-                      <span className="font-semibold text-gray-900">{project.progress}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className={`${
-                          project.color === 'blue' ? 'bg-blue-500' :
-                          project.color === 'amber' ? 'bg-amber-500' :
-                          'bg-purple-500'
-                        } h-2 rounded-full transition-all duration-700 ease-out`}
-                        style={{ width: `${project.progress}%` }}
-                      ></div>
-                    </div>
+      {/* Quick Actions */}
+      <div className="bg-white rounded-xl shadow-sm border p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {quickActions.map((action, index) => {
+            const IconComponent = action.icon;
+            return (
+              <div
+                key={index}
+                className={`p-4 rounded-lg text-white cursor-pointer transition-all duration-200 hover:scale-105 ${action.color}`}
+              >
+                <div className="flex items-center space-x-3">
+                  <IconComponent className="h-6 w-6" />
+                  <div>
+                    <h3 className="font-medium">{action.title}</h3>
+                    <p className="text-xs opacity-90">{action.description}</p>
                   </div>
                 </div>
-              ))}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Recent Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <FileText className="h-5 w-5 mr-2 text-blue-600" />
+              Aktivitas Terbaru
+            </CardTitle>
+            <CardDescription>
+              Aktivitas sistem dalam 24 jam terakhir
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="text-center py-8 text-gray-500">
+                <Eye className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>Belum ada aktivitas terbaru</p>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Quick Actions & Notifications */}
-        <div className="space-y-6">
-          {/* Quick Actions */}
-          <Card className="border-0 shadow-sm hover:shadow-md transition-shadow duration-300">
-            <CardHeader className="bg-gradient-to-r from-emerald-50 to-teal-50 border-b border-gray-100">
-              <CardTitle className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                <Rocket className="h-5 w-5 text-emerald-600" />
-                Aksi Cepat
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4">
-              <div className="space-y-3">
-                {[
-                  { label: 'Tambah Proyek Baru', icon: Plus, color: 'bg-blue-500' },
-                  { label: 'Upload Portfolio', icon: FileText, color: 'bg-purple-500' },
-                  { label: 'Kelola Testimoni', icon: Star, color: 'bg-amber-500' },
-                  { label: 'Lihat Pesan', icon: Clock, color: 'bg-emerald-500' }
-                ].map((action, index) => (
-                  <Button key={index} variant="ghost" className="w-full justify-start h-auto p-3 hover:bg-gray-50">
-                    <div className={`${action.color} p-2 rounded-lg mr-3`}>
-                      <action.icon className="h-4 w-4 text-white" />
-                    </div>
-                    <span className="text-gray-700 font-medium">{action.label}</span>
-                  </Button>
-                ))}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Phone className="h-5 w-5 mr-2 text-green-600" />
+              Kontak Terbaru
+            </CardTitle>
+            <CardDescription>
+              Lead dan kontak yang masuk
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="text-center py-8 text-gray-500">
+                <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>Belum ada kontak masuk</p>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Recent Messages */}
-          <Card className="border-0 shadow-sm hover:shadow-md transition-shadow duration-300">
-            <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 border-b border-gray-100">
-              <CardTitle className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                <Activity className="h-5 w-5 text-orange-600" />
-                Pesan Terbaru
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4">
-              <div className="space-y-4">
-                {[
-                  { name: 'Ahmad Rizki', company: 'PT Astra', message: 'Tertarik dengan development website', time: '2 jam', avatar: 'AR', color: 'bg-blue-500' },
-                  { name: 'Linda Sari', company: 'Shopee', message: 'Konsultasi mobile app', time: '4 jam', avatar: 'LS', color: 'bg-purple-500' },
-                  { name: 'Budi Santoso', company: 'OVO', message: 'Solusi e-commerce platform', time: '1 hari', avatar: 'BS', color: 'bg-emerald-500' }
-                ].map((message, index) => (
-                  <div key={index} className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors duration-200">
-                    <div className={`w-10 h-10 ${message.color} rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-sm`}>
-                      {message.avatar}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <h4 className="text-sm font-semibold text-gray-900 truncate">{message.name}</h4>
-                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">{message.time}</span>
-                      </div>
-                      <p className="text-xs text-gray-600 mb-1">{message.company}</p>
-                      <p className="text-sm text-gray-700 line-clamp-2">{message.message}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
-  );
-
-  const renderContent = () => {
-    if (activeTab === 'portfolio' && selectedProject) {
-      return (
-        <Suspense fallback={<AdminSkeleton />}>
-          <PortfolioDetail 
-            project={selectedProject} 
-            onBack={() => setSelectedProject(null)} 
-          />
-        </Suspense>
-      );
-    }
-
-    const content = (() => {
-      switch (activeTab) {
-        case 'dashboard':
-          return renderDashboard();
-        case 'hero':
-          return <HeroEditor key={refreshKey} />;
-        case 'portfolio':
-          return (
-            <Suspense fallback={<AdminSkeleton />}>
-              <PortfolioManager key={refreshKey} onProjectSelect={setSelectedProject} />
-            </Suspense>
-          );
-        case 'clientlogos':
-          return (
-            <Suspense fallback={<AdminSkeleton />}>
-              <ClientLogosManager key={refreshKey} />
-            </Suspense>
-          );
-        case 'submissions':
-          return <FormSubmissions key={refreshKey} />;
-        case 'livechat':
-          return (
-            <Suspense fallback={<AdminSkeleton />}>
-              <LiveChatManager key={refreshKey} />
-            </Suspense>
-          );
-        case 'testimonials':
-          return (
-            <Suspense fallback={<AdminSkeleton />}>
-              <TestimonialManager key={refreshKey} />
-            </Suspense>
-          );
-        case 'services':
-          return (
-            <Suspense fallback={<AdminSkeleton />}>
-              <ServiceManager key={refreshKey} />
-            </Suspense>
-          );
-        case 'crm':
-          return (
-            <Suspense fallback={<AdminSkeleton />}>
-              <CRMManager key={refreshKey} />
-            </Suspense>
-          );
-        case 'users':
-          return <UserManagement key={refreshKey} />;
-        case 'settings':
-          return (
-            <Suspense fallback={<AdminSkeleton />}>
-              <SettingsManager key={refreshKey} />
-            </Suspense>
-          );
-        default:
-          return renderDashboard();
-      }
-    })();
-
-    return (
-      <LoadingWrapper loading={isTabLoading} loadingText="Memuat...">
-        {content}
-      </LoadingWrapper>
-    );
-  };
-
-  return (
-    <ProtectedRoute>
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        
-        <div className="pt-16">
-          <SidebarProvider defaultOpen={true}>
-            <div className="flex min-h-screen w-full">
-              <AdminSidebar activeTab={activeTab} onTabChange={handleTabChange} />
-              
-              <SidebarInset className="flex-1">
-                <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-white/95 backdrop-blur-sm px-6 sticky top-0 z-10 shadow-sm">
-                  <SidebarTrigger className="text-gray-600 hover:text-purple-600 transition-colors" />
-                  <div className="flex-1 flex items-center justify-between">
-                    <div>
-                      <h1 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                        Admin Dashboard
-                      </h1>
-                      <p className="text-sm text-gray-600">Kelola semua aspek bisnis Anda dengan mudah</p>
-                    </div>
-                    <Button
-                      onClick={handleRefresh}
-                      variant="outline"
-                      size="sm"
-                      className="flex items-center gap-2 hover:bg-gradient-to-r hover:from-purple-50 hover:to-blue-50 hover:border-purple-300 transition-all duration-300 border font-medium"
-                    >
-                      <RefreshCw className="h-4 w-4" />
-                      <span className="hidden sm:inline">Refresh</span>
-                    </Button>
-                  </div>
-                </header>
-                
-                <div className="flex-1 p-6 overflow-auto">
-                  {renderContent()}
-                </div>
-              </SidebarInset>
-            </div>
-          </SidebarProvider>
-        </div>
-      </div>
-    </ProtectedRoute>
   );
 };
 

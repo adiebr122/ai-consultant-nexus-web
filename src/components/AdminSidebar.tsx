@@ -13,7 +13,9 @@ import {
   Globe,
   MessageCircle,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Receipt,
+  Calculator
 } from 'lucide-react';
 import {
   Sidebar,
@@ -99,6 +101,20 @@ const AdminSidebar = ({ activeTab, onTabChange }: AdminSidebarProps) => {
       id: 'crm',
       description: 'Customer management',
       gradient: 'from-pink-500 to-rose-600'
+    },
+    {
+      title: 'Penawaran',
+      icon: Calculator,
+      id: 'quotations',
+      description: 'Manage quotations',
+      gradient: 'from-blue-500 to-indigo-600'
+    },
+    {
+      title: 'Invoice',
+      icon: Receipt,
+      id: 'invoices',
+      description: 'Manage invoices',
+      gradient: 'from-green-500 to-teal-600'
     },
     {
       title: 'User Management',
