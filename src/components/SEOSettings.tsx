@@ -2,11 +2,13 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Save, RefreshCw, Globe, Search, Image, FileText, Sparkles, Zap } from 'lucide-react';
+import { Save, RefreshCw, Globe, Search, Image, FileText, Sparkles, Zap, Plus, Edit, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/useAuth';
 
 interface SEOSetting {
@@ -17,7 +19,21 @@ interface SEOSetting {
 }
 
 const SEOSettings = () => {
-  const [settings, setSettings] = useState<SEOSetting[]>([
+  const [settings, setSettings] = useState<SEOSetting[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [editingSetting, setEditingSetting] = useState<SEOSetting | null>(null);
+  const [showSettingForm, setShowSettingForm] = useState(false);
+  const { toast } = useToast();
+  const { user } = useAuth();
+
+  const [newSetting, setNewSetting] = useState<SEOSetting>({
+    setting_key: '',
+    setting_value: '',
+    description: ''
+  });
+
+  const defaultSettings: SEOSetting[] = [
     { setting_key: 'site_title', setting_value: '', description: 'Judul Website' },
     { setting_key: 'site_description', setting_value: '', description: 'Deskripsi Website' },
     { setting_key: 'site_keywords', setting_value: '', description: 'Keywords (pisahkan dengan koma)' },
@@ -28,11 +44,7 @@ const SEOSettings = () => {
     { setting_key: 'twitter_description', setting_value: '', description: 'Twitter Card Description' },
     { setting_key: 'canonical_url', setting_value: '', description: 'Canonical URL' },
     { setting_key: 'robots_txt', setting_value: '', description: 'Robots.txt Content' }
-  ]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const { toast } = useToast();
-  const { user } = useAuth();
+  ];
 
   useEffect(() => {
     if (user) {
@@ -54,15 +66,29 @@ const SEOSettings = () => {
       if (error) throw error;
 
       if (data && data.length > 0) {
-        const updatedSettings = settings.map(setting => {
-          const existingSetting = data.find(d => d.setting_key === setting.setting_key);
+        const mappedSettings = defaultSettings.map(defaultSetting => {
+          const existingSetting = data.find(d => d.setting_key === defaultSetting.setting_key);
           return existingSetting ? {
-            ...setting,
             id: existingSetting.id,
-            setting_value: existingSetting.setting_value || ''
-          } : setting;
+            setting_key: existingSetting.setting_key,
+            setting_value: existingSetting.setting_value || '',
+            description: existingSetting.description || defaultSetting.description
+          } : defaultSetting;
         });
-        setSettings(updatedSettings);
+        
+        // Add any custom settings that aren't in defaults
+        const customSettings = data.filter(d => 
+          !defaultSettings.some(ds => ds.setting_key === d.setting_key)
+        ).map(cs => ({
+          id: cs.id,
+          setting_key: cs.setting_key,
+          setting_value: cs.setting_value || '',
+          description: cs.description || ''
+        }));
+        
+        setSettings([...mappedSettings, ...customSettings]);
+      } else {
+        setSettings(defaultSettings);
       }
     } catch (error: any) {
       console.error('Error fetching SEO settings:', error);
@@ -71,6 +97,7 @@ const SEOSettings = () => {
         description: `Gagal memuat pengaturan SEO: ${error.message}`,
         variant: "destructive",
       });
+      setSettings(defaultSettings);
     } finally {
       setLoading(false);
     }
@@ -96,6 +123,8 @@ const SEOSettings = () => {
       setSaving(true);
 
       for (const setting of settings) {
+        if (!setting.setting_key) continue;
+        
         const settingData = {
           setting_category: 'seo_config',
           setting_key: setting.setting_key,
@@ -139,6 +168,85 @@ const SEOSettings = () => {
     }
   };
 
+  const addCustomSetting = () => {
+    setEditingSetting(null);
+    setNewSetting({
+      setting_key: '',
+      setting_value: '',
+      description: ''
+    });
+    setShowSettingForm(true);
+  };
+
+  const editSetting = (setting: SEOSetting, index: number) => {
+    setEditingSetting({ ...setting, id: setting.id || index.toString() });
+    setNewSetting(setting);
+    setShowSettingForm(true);
+  };
+
+  const deleteSetting = async (setting: SEOSetting, index: number) => {
+    if (!confirm('Apakah Anda yakin ingin menghapus pengaturan ini?')) return;
+
+    try {
+      if (setting.id) {
+        const { error } = await supabase
+          .from('app_settings')
+          .delete()
+          .eq('id', setting.id);
+        
+        if (error) throw error;
+      }
+
+      const newSettings = settings.filter((_, i) => i !== index);
+      setSettings(newSettings);
+      
+      toast({
+        title: "Berhasil",
+        description: "Pengaturan berhasil dihapus",
+      });
+    } catch (error: any) {
+      console.error('Error deleting setting:', error);
+      toast({
+        title: "Error",
+        description: "Gagal menghapus pengaturan",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const saveCustomSetting = () => {
+    if (!newSetting.setting_key || !newSetting.description) {
+      toast({
+        title: "Error",
+        description: "Key dan deskripsi harus diisi",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (editingSetting) {
+      const index = parseInt(editingSetting.id || '0');
+      const newSettings = [...settings];
+      newSettings[index] = newSetting;
+      setSettings(newSettings);
+    } else {
+      setSettings([...settings, newSetting]);
+    }
+
+    setShowSettingForm(false);
+    setEditingSetting(null);
+    setNewSetting({
+      setting_key: '',
+      setting_value: '',
+      description: ''
+    });
+
+    toast({
+      title: "Berhasil",
+      description: "Pengaturan berhasil ditambahkan. Jangan lupa simpan perubahan!",
+    });
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -175,25 +283,90 @@ const SEOSettings = () => {
         </CardHeader>
       </Card>
 
+      {/* Actions */}
+      <Card className="border-0 shadow-lg">
+        <CardContent className="p-6">
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-semibold text-gray-900">Pengaturan SEO ({settings.length})</h3>
+            <div className="flex gap-3">
+              <Button
+                onClick={addCustomSetting}
+                variant="outline"
+                className="flex items-center gap-2 border-2 border-gray-200 hover:border-green-500 hover:text-green-600"
+              >
+                <Plus className="h-4 w-4" />
+                Tambah Setting Custom
+              </Button>
+              <Button
+                onClick={saveSEOSettings}
+                disabled={saving}
+                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 hover:scale-105 shadow-lg"
+              >
+                {saving ? (
+                  <>
+                    <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
+                    Menyimpan...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-5 w-5 mr-2" />
+                    Simpan Semua Pengaturan
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Settings Form */}
       <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-gray-50">
         <CardContent className="p-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 gap-8">
             {settings.map((setting, index) => (
-              <div key={setting.setting_key} className="space-y-3">
-                <Label 
-                  htmlFor={setting.setting_key} 
-                  className="text-sm font-bold text-gray-800 mb-3 flex items-center"
-                >
-                  {setting.setting_key.includes('image') ? 
-                    <Image className="h-5 w-5 mr-2 text-purple-600" /> : 
-                   setting.setting_key.includes('robots') ? 
-                    <FileText className="h-5 w-5 mr-2 text-blue-600" /> :
-                    <Globe className="h-5 w-5 mr-2 text-emerald-600" />}
-                  {setting.description}
-                </Label>
+              <div key={`${setting.setting_key}-${index}`} className="bg-white p-6 rounded-xl border-2 border-gray-100 hover:border-purple-200 transition-all duration-300 group">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <Label 
+                      htmlFor={setting.setting_key} 
+                      className="text-sm font-bold text-gray-800 mb-3 flex items-center"
+                    >
+                      {setting.setting_key.includes('image') ? 
+                        <Image className="h-5 w-5 mr-2 text-purple-600" /> : 
+                       setting.setting_key.includes('robots') ? 
+                        <FileText className="h-5 w-5 mr-2 text-blue-600" /> :
+                        <Globe className="h-5 w-5 mr-2 text-emerald-600" />}
+                      {setting.description}
+                    </Label>
+                    <div className="text-xs text-gray-500 mb-3">
+                      Key: <code className="bg-gray-100 px-2 py-1 rounded">{setting.setting_key}</code>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => editSetting(setting, index)}
+                      className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    {!defaultSettings.some(ds => ds.setting_key === setting.setting_key) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteSetting(setting, index)}
+                        className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                
                 {setting.setting_key === 'site_description' || setting.setting_key === 'robots_txt' ? (
-                  <textarea
+                  <Textarea
                     id={setting.setting_key}
                     value={setting.setting_value}
                     onChange={(e) => handleInputChange(index, e.target.value)}
@@ -214,28 +387,82 @@ const SEOSettings = () => {
               </div>
             ))}
           </div>
-
-          <div className="flex justify-end mt-10">
-            <Button
-              onClick={saveSEOSettings}
-              disabled={saving}
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold py-4 px-8 rounded-xl transition-all duration-300 hover:scale-105 shadow-xl"
-            >
-              {saving ? (
-                <>
-                  <RefreshCw className="h-5 w-5 mr-3 animate-spin" />
-                  Menyimpan...
-                </>
-              ) : (
-                <>
-                  <Save className="h-5 w-5 mr-3" />
-                  Simpan Pengaturan SEO
-                </>
-              )}
-            </Button>
-          </div>
         </CardContent>
       </Card>
+
+      {/* Custom Setting Form Modal */}
+      {showSettingForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-lg w-full">
+            <Card className="border-0">
+              <CardHeader className="bg-gradient-to-r from-purple-500 to-blue-600 text-white rounded-t-xl">
+                <CardTitle className="flex items-center">
+                  {editingSetting ? <Edit className="h-5 w-5 mr-2" /> : <Plus className="h-5 w-5 mr-2" />}
+                  {editingSetting ? 'Edit Setting' : 'Tambah Setting Custom'}
+                </CardTitle>
+                <CardDescription className="text-purple-100">
+                  {editingSetting ? 'Update pengaturan SEO' : 'Buat pengaturan SEO custom baru'}
+                </CardDescription>
+              </CardHeader>
+              
+              <CardContent className="p-6 space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="setting_key">Setting Key *</Label>
+                  <Input
+                    id="setting_key"
+                    value={newSetting.setting_key}
+                    onChange={(e) => setNewSetting({ ...newSetting, setting_key: e.target.value })}
+                    placeholder="e.g., custom_meta_tag"
+                    disabled={!!editingSetting}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="description">Deskripsi *</Label>
+                  <Input
+                    id="description"
+                    value={newSetting.description}
+                    onChange={(e) => setNewSetting({ ...newSetting, description: e.target.value })}
+                    placeholder="Deskripsi pengaturan ini"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="setting_value">Nilai</Label>
+                  <Textarea
+                    id="setting_value"
+                    value={newSetting.setting_value}
+                    onChange={(e) => setNewSetting({ ...newSetting, setting_value: e.target.value })}
+                    placeholder="Nilai untuk pengaturan ini"
+                    rows={3}
+                  />
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-4 border-t">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowSettingForm(false);
+                      setEditingSetting(null);
+                    }}
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Batal
+                  </Button>
+                  <Button
+                    onClick={saveCustomSetting}
+                    disabled={!newSetting.setting_key || !newSetting.description}
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                  >
+                    <Save className="h-4 w-4 mr-1" />
+                    {editingSetting ? 'Update' : 'Tambah'} Setting
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

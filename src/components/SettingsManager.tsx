@@ -1,96 +1,147 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { 
+  Settings, 
+  Globe, 
+  Palette, 
+  Users, 
+  Bell, 
+  Shield, 
+  Database,
+  Mail,
+  Phone,
+  MapPin,
+  Share2,
+  Search,
+  Analytics,
+  Copyright,
+  MessageCircle
+} from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, Search, Palette, BarChart3, Globe, Phone, Share2, Copyright } from 'lucide-react';
-import SEOSettings from '@/components/SEOSettings';
-import BrandSettings from '@/components/BrandSettings';
-import AnalyticsSettings from '@/components/AnalyticsSettings';
-import ContactInfoManager from '@/components/ContactInfoManager';
-import SocialMediaSettings from '@/components/SocialMediaSettings';
-import CopyrightSettings from '@/components/CopyrightSettings';
-import { setupStorage } from '@/integrations/supabase/setup';
+import SEOSettings from './SEOSettings';
+import SocialMediaSettings from './SocialMediaSettings';
+import ContactInfoManager from './ContactInfoManager';
+import AnalyticsSettings from './AnalyticsSettings';
+import CopyrightSettings from './CopyrightSettings';
+import BrandSettings from './BrandSettings';
+import WhatsAppConfig from './WhatsAppConfig';
 
 const SettingsManager = () => {
-  useEffect(() => {
-    // Initialize storage buckets on component mount
-    setupStorage();
-  }, []);
-  
+  const [activeTab, setActiveTab] = useState('seo');
+
+  const settingsTabs = [
+    {
+      id: 'seo',
+      label: 'SEO & Meta',
+      icon: Search,
+      description: 'Search Engine Optimization',
+      component: SEOSettings
+    },
+    {
+      id: 'brand',
+      label: 'Brand Settings',
+      icon: Palette,
+      description: 'Brand identity & design',
+      component: BrandSettings
+    },
+    {
+      id: 'contact',
+      label: 'Contact Info',
+      icon: Phone,
+      description: 'Contact information',
+      component: ContactInfoManager
+    },
+    {
+      id: 'social',
+      label: 'Social Media',
+      icon: Share2,
+      description: 'Social media links',
+      component: SocialMediaSettings
+    },
+    {
+      id: 'whatsapp',
+      label: 'WhatsApp',
+      icon: MessageCircle,
+      description: 'WhatsApp integration',
+      component: WhatsAppConfig
+    },
+    {
+      id: 'analytics',
+      label: 'Analytics',
+      icon: Analytics,
+      description: 'Google Analytics & tracking',
+      component: AnalyticsSettings
+    },
+    {
+      id: 'copyright',
+      label: 'Copyright',
+      icon: Copyright,
+      description: 'Copyright information',
+      component: CopyrightSettings
+    }
+  ];
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-          <Settings className="h-6 w-6 mr-3 text-blue-600" />
-          Pengaturan Website
-        </h2>
-      </div>
-
-      <Tabs defaultValue="contact" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="contact" className="flex items-center space-x-2">
-            <Phone className="h-4 w-4" />
-            <span>Kontak</span>
-          </TabsTrigger>
-          <TabsTrigger value="social" className="flex items-center space-x-2">
-            <Share2 className="h-4 w-4" />
-            <span>Social Media</span>
-          </TabsTrigger>
-          <TabsTrigger value="copyright" className="flex items-center space-x-2">
-            <Copyright className="h-4 w-4" />
-            <span>Copyright</span>
-          </TabsTrigger>
-          <TabsTrigger value="seo" className="flex items-center space-x-2">
-            <Search className="h-4 w-4" />
-            <span>SEO</span>
-          </TabsTrigger>
-          <TabsTrigger value="brand" className="flex items-center space-x-2">
-            <Palette className="h-4 w-4" />
-            <span>Brand</span>
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center space-x-2">
-            <BarChart3 className="h-4 w-4" />
-            <span>Analytics</span>
-          </TabsTrigger>
-        </TabsList>
-
-        <div className="mt-6">
-          <TabsContent value="contact" className="space-y-6">
-            <div className="bg-white p-6 rounded-xl shadow-lg border">
-              <ContactInfoManager />
+    <div className="space-y-8">
+      {/* Header */}
+      <Card className="border-0 shadow-xl bg-gradient-to-r from-purple-500 to-blue-600 text-white">
+        <CardHeader className="pb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-3xl font-bold flex items-center mb-2">
+                <Settings className="h-8 w-8 mr-3 text-purple-200" />
+                Pengaturan Website
+              </CardTitle>
+              <CardDescription className="text-purple-100 text-lg">
+                Kelola semua pengaturan dan konfigurasi website Anda
+              </CardDescription>
             </div>
-          </TabsContent>
-
-          <TabsContent value="social" className="space-y-6">
-            <div className="bg-white p-6 rounded-xl shadow-lg border">
-              <SocialMediaSettings />
+            <div className="hidden md:block">
+              <Globe className="h-16 w-16 text-purple-200" />
             </div>
-          </TabsContent>
+          </div>
+        </CardHeader>
+      </Card>
 
-          <TabsContent value="copyright" className="space-y-6">
-            <div className="bg-white p-6 rounded-xl shadow-lg border">
-              <CopyrightSettings />
-            </div>
-          </TabsContent>
+      {/* Settings Tabs */}
+      <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-gray-50">
+        <CardContent className="p-8">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+            {/* Tab Navigation */}
+            <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2 h-auto p-2 bg-gray-100 rounded-2xl">
+              {settingsTabs.map((tab) => {
+                const IconComponent = tab.icon;
+                return (
+                  <TabsTrigger
+                    key={tab.id}
+                    value={tab.id}
+                    className="flex flex-col items-center p-4 rounded-xl space-y-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-blue-600 data-[state=active]:text-white transition-all duration-300 hover:scale-105"
+                  >
+                    <IconComponent className="h-6 w-6" />
+                    <div className="text-center">
+                      <div className="font-semibold text-sm">{tab.label}</div>
+                      <div className="text-xs opacity-70 hidden lg:block">{tab.description}</div>
+                    </div>
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
 
-          <TabsContent value="seo" className="space-y-6">
-            <div className="bg-white p-6 rounded-xl shadow-lg border">
-              <SEOSettings />
+            {/* Tab Content */}
+            <div className="min-h-[600px]">
+              {settingsTabs.map((tab) => {
+                const Component = tab.component;
+                return (
+                  <TabsContent key={tab.id} value={tab.id} className="mt-8">
+                    <Component />
+                  </TabsContent>
+                );
+              })}
             </div>
-          </TabsContent>
-
-          <TabsContent value="brand" className="space-y-6">
-            <div className="bg-white p-6 rounded-xl shadow-lg border">
-              <BrandSettings />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="analytics" className="space-y-6">
-            <div className="bg-white p-6 rounded-xl shadow-lg border">
-              <AnalyticsSettings />
-            </div>
-          </TabsContent>
-        </div>
-      </Tabs>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 };
