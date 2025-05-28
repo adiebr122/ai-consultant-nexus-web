@@ -13,11 +13,17 @@ import {
   Zap,
   Sparkles,
   Rocket,
-  Target
+  Target,
+  ArrowUpRight,
+  Plus,
+  Bell,
+  Search
 } from 'lucide-react';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import Navbar from '@/components/Navbar';
 import AdminSidebar from '@/components/AdminSidebar';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -109,81 +115,103 @@ const Admin = () => {
       title: 'Total Proyek', 
       value: '156', 
       change: '+12%', 
+      changeType: 'increase',
       icon: FileText,
-      gradient: 'from-blue-500 via-purple-500 to-indigo-600',
-      lightBg: 'from-blue-50 to-purple-50',
-      borderColor: 'border-blue-200',
-      iconBg: 'from-blue-500 to-purple-600'
+      color: 'blue'
     },
     { 
       title: 'Klien Aktif', 
       value: '89', 
       change: '+8%', 
+      changeType: 'increase',
       icon: Users,
-      gradient: 'from-emerald-500 via-teal-500 to-green-600',
-      lightBg: 'from-emerald-50 to-teal-50',
-      borderColor: 'border-emerald-200',
-      iconBg: 'from-emerald-500 to-teal-600'
+      color: 'emerald'
     },
     { 
       title: 'Revenue Bulan Ini', 
       value: 'Rp 2.1M', 
       change: '+15%', 
+      changeType: 'increase',
       icon: TrendingUp,
-      gradient: 'from-purple-500 via-pink-500 to-rose-600',
-      lightBg: 'from-purple-50 to-pink-50',
-      borderColor: 'border-purple-200',
-      iconBg: 'from-purple-500 to-pink-600'
+      color: 'purple'
     },
     { 
       title: 'Rating Rata-rata', 
       value: '4.9', 
       change: '+0.1', 
+      changeType: 'increase',
       icon: Star,
-      gradient: 'from-amber-500 via-orange-500 to-yellow-600',
-      lightBg: 'from-amber-50 to-orange-50',
-      borderColor: 'border-amber-200',
-      iconBg: 'from-amber-500 to-orange-600'
+      color: 'amber'
     }
   ];
 
+  const getColorClasses = (color: string) => {
+    const colorMap = {
+      blue: {
+        bg: 'bg-blue-50',
+        border: 'border-blue-200',
+        icon: 'bg-blue-500',
+        text: 'text-blue-600'
+      },
+      emerald: {
+        bg: 'bg-emerald-50',
+        border: 'border-emerald-200',
+        icon: 'bg-emerald-500',
+        text: 'text-emerald-600'
+      },
+      purple: {
+        bg: 'bg-purple-50',
+        border: 'border-purple-200',
+        icon: 'bg-purple-500',
+        text: 'text-purple-600'
+      },
+      amber: {
+        bg: 'bg-amber-50',
+        border: 'border-amber-200',
+        icon: 'bg-amber-500',
+        text: 'text-amber-600'
+      }
+    };
+    return colorMap[color] || colorMap.blue;
+  };
+
   const renderDashboard = () => (
     <div className="space-y-8">
-      {/* Welcome Section */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-700 rounded-3xl p-8 text-white shadow-2xl">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-indigo-600/20"></div>
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-32 translate-x-32"></div>
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24"></div>
-        <div className="relative z-10">
-          <div className="flex items-center justify-between">
-            <div className="max-w-2xl">
-              <div className="flex items-center mb-4">
-                <Sparkles className="h-8 w-8 text-yellow-300 mr-3 animate-pulse" />
-                <h1 className="text-4xl font-bold">Halo, {user?.email?.split('@')[0]}! 👋</h1>
-              </div>
-              <p className="text-purple-100 text-xl leading-relaxed">
-                Selamat datang di dashboard admin yang modern dan powerful! 
-                Kelola bisnis Anda dengan mudah dan efisien. ✨
-              </p>
-              <div className="flex items-center mt-6 text-purple-100">
-                <Calendar className="h-5 w-5 mr-2" />
-                <span className="font-medium">{new Date().toLocaleDateString('id-ID', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                })}</span>
-              </div>
-            </div>
-            <div className="hidden lg:block">
-              <div className="relative">
-                <Rocket className="h-24 w-24 text-white/20" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Activity className="h-12 w-12 text-yellow-300 animate-bounce" />
-                </div>
-              </div>
-            </div>
+      {/* Header Section */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Selamat Datang, {user?.email?.split('@')[0]}! 👋
+          </h1>
+          <p className="text-gray-600 text-lg">
+            Kelola bisnis Anda dengan dashboard yang powerful dan mudah digunakan
+          </p>
+          <div className="flex items-center gap-2 text-sm text-gray-500 mt-2">
+            <Calendar className="h-4 w-4" />
+            <span>{new Date().toLocaleDateString('id-ID', { 
+              weekday: 'long', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            })}</span>
           </div>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input 
+              placeholder="Cari..." 
+              className="pl-10 w-64"
+            />
+          </div>
+          <Button variant="outline" size="icon">
+            <Bell className="h-4 w-4" />
+          </Button>
+          <Button className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
+            <Plus className="h-4 w-4 mr-2" />
+            Tambah Proyek
+          </Button>
         </div>
       </div>
 
@@ -191,27 +219,34 @@ const Admin = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, index) => {
           const IconComponent = stat.icon;
+          const colors = getColorClasses(stat.color);
+          
           return (
-            <Card key={index} className={`relative overflow-hidden bg-gradient-to-br ${stat.lightBg} border-2 ${stat.borderColor} hover:shadow-2xl transition-all duration-500 hover:scale-105 hover:-translate-y-1 group`}>
-              <div className="absolute inset-0 bg-gradient-to-br from-white/50 to-transparent"></div>
-              <CardContent className="p-6 relative z-10">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">
-                      {stat.title}
-                    </p>
-                    <p className="text-4xl font-bold text-gray-900 mb-2 group-hover:scale-110 transition-transform duration-300">
-                      {stat.value}
-                    </p>
-                    <div className="flex items-center">
-                      <span className="text-sm font-bold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full flex items-center">
-                        <TrendingUp className="h-3 w-3 mr-1" />
-                        {stat.change}
-                      </span>
-                    </div>
+            <Card key={index} className={`${colors.bg} border-2 ${colors.border} hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group cursor-pointer`}>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className={`${colors.icon} p-3 rounded-xl shadow-sm group-hover:scale-110 transition-transform duration-300`}>
+                    <IconComponent className="h-6 w-6 text-white" />
                   </div>
-                  <div className={`bg-gradient-to-r ${stat.iconBg} p-4 rounded-2xl shadow-lg group-hover:rotate-12 transition-transform duration-300`}>
-                    <IconComponent className="h-8 w-8 text-white" />
+                  <ArrowUpRight className={`h-5 w-5 ${colors.text} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+                </div>
+                
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-gray-600 uppercase tracking-wide">
+                    {stat.title}
+                  </p>
+                  <p className="text-3xl font-bold text-gray-900">
+                    {stat.value}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Badge 
+                      variant="outline" 
+                      className={`${stat.changeType === 'increase' ? 'border-emerald-200 text-emerald-700 bg-emerald-50' : 'border-red-200 text-red-700 bg-red-50'} font-semibold`}
+                    >
+                      <TrendingUp className="h-3 w-3 mr-1" />
+                      {stat.change}
+                    </Badge>
+                    <span className="text-xs text-gray-500">vs bulan lalu</span>
                   </div>
                 </div>
               </CardContent>
@@ -221,54 +256,78 @@ const Admin = () => {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid lg:grid-cols-2 gap-8">
-        {/* Recent Projects */}
-        <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-gray-50 hover:shadow-2xl transition-all duration-300">
-          <CardHeader className="pb-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-t-xl">
+      <div className="grid lg:grid-cols-3 gap-8">
+        {/* Recent Projects - Takes 2 columns */}
+        <Card className="lg:col-span-2 border-0 shadow-sm hover:shadow-md transition-shadow duration-300">
+          <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 border-b border-gray-100">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-2xl font-bold flex items-center">
-                  <Zap className="h-6 w-6 mr-3 text-yellow-300" />
+                <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <Zap className="h-5 w-5 text-blue-600" />
                   Proyek Terbaru
                 </CardTitle>
-                <CardDescription className="text-blue-100 mt-1">
+                <CardDescription className="text-gray-600 mt-1">
                   Pantau progress proyek yang sedang berjalan
                 </CardDescription>
               </div>
-              <div className="bg-white/20 p-2 rounded-lg">
-                <BarChart3 className="h-6 w-6 text-white" />
-              </div>
+              <Button variant="outline" size="sm">
+                Lihat Semua
+              </Button>
             </div>
           </CardHeader>
           <CardContent className="p-6">
-            <div className="space-y-5">
+            <div className="space-y-4">
               {[
-                { client: 'Bank Mandiri', project: 'Corporate Website', status: 'In Progress', progress: 75, color: 'blue', bgColor: 'bg-blue-500' },
-                { client: 'Telkomsel', project: 'Mobile App Development', status: 'Review', progress: 90, color: 'amber', bgColor: 'bg-amber-500' },
-                { client: 'Indofood', project: 'E-commerce Platform', status: 'Planning', progress: 25, color: 'purple', bgColor: 'bg-purple-500' }
+                { client: 'Bank Mandiri', project: 'Corporate Website', status: 'In Progress', progress: 75, priority: 'High', deadline: '2 hari', color: 'blue' },
+                { client: 'Telkomsel', project: 'Mobile App Development', status: 'Review', progress: 90, priority: 'Medium', deadline: '5 hari', color: 'amber' },
+                { client: 'Indofood', project: 'E-commerce Platform', status: 'Planning', progress: 25, priority: 'Low', deadline: '1 minggu', color: 'purple' }
               ].map((project, index) => (
-                <div key={index} className="bg-gradient-to-r from-gray-50 to-white border-2 border-gray-100 p-5 rounded-2xl hover:shadow-lg transition-all duration-300 hover:scale-102">
+                <div key={index} className="border border-gray-200 rounded-xl p-5 hover:border-gray-300 hover:shadow-sm transition-all duration-200 bg-white">
                   <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h4 className="font-bold text-gray-900 text-lg">{project.project}</h4>
-                      <p className="text-gray-600 font-medium">{project.client}</p>
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-gray-900 text-lg mb-1">{project.project}</h4>
+                      <p className="text-gray-600 mb-2">{project.client}</p>
+                      <div className="flex items-center gap-2">
+                        <Badge 
+                          variant="outline" 
+                          className={`text-xs ${
+                            project.status === 'In Progress' ? 'border-blue-200 text-blue-700 bg-blue-50' :
+                            project.status === 'Review' ? 'border-amber-200 text-amber-700 bg-amber-50' :
+                            'border-purple-200 text-purple-700 bg-purple-50'
+                          }`}
+                        >
+                          {project.status}
+                        </Badge>
+                        <Badge 
+                          variant="outline" 
+                          className={`text-xs ${
+                            project.priority === 'High' ? 'border-red-200 text-red-700 bg-red-50' :
+                            project.priority === 'Medium' ? 'border-yellow-200 text-yellow-700 bg-yellow-50' :
+                            'border-gray-200 text-gray-700 bg-gray-50'
+                          }`}
+                        >
+                          {project.priority}
+                        </Badge>
+                      </div>
                     </div>
-                    <span className={`px-4 py-2 text-sm font-bold rounded-full ${
-                      project.status === 'In Progress' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
-                      project.status === 'Review' ? 'bg-amber-100 text-amber-800 border border-amber-200' :
-                      'bg-purple-100 text-purple-800 border border-purple-200'
-                    }`}>
-                      {project.status}
-                    </span>
+                    <div className="text-right">
+                      <p className="text-sm text-gray-500">Deadline</p>
+                      <p className="text-sm font-medium text-gray-900">{project.deadline}</p>
+                    </div>
                   </div>
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-sm font-medium">
-                      <span className="text-gray-700">Progress</span>
-                      <span className="text-gray-900 font-bold">{project.progress}%</span>
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Progress</span>
+                      <span className="font-semibold text-gray-900">{project.progress}%</span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                    <div className="w-full bg-gray-200 rounded-full h-2">
                       <div 
-                        className={`${project.bgColor} h-3 rounded-full transition-all duration-1000 ease-out shadow-inner`}
+                        className={`${
+                          project.color === 'blue' ? 'bg-blue-500' :
+                          project.color === 'amber' ? 'bg-amber-500' :
+                          'bg-purple-500'
+                        } h-2 rounded-full transition-all duration-700 ease-out`}
                         style={{ width: `${project.progress}%` }}
                       ></div>
                     </div>
@@ -279,54 +338,68 @@ const Admin = () => {
           </CardContent>
         </Card>
 
-        {/* Recent Messages */}
-        <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-gray-50 hover:shadow-2xl transition-all duration-300">
-          <CardHeader className="pb-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-t-xl">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-2xl font-bold flex items-center">
-                  <Clock className="h-6 w-6 mr-3 text-emerald-200" />
-                  Pesan Terbaru
-                </CardTitle>
-                <CardDescription className="text-emerald-100 mt-1">
-                  Komunikasi terbaru dengan klien
-                </CardDescription>
+        {/* Quick Actions & Notifications */}
+        <div className="space-y-6">
+          {/* Quick Actions */}
+          <Card className="border-0 shadow-sm hover:shadow-md transition-shadow duration-300">
+            <CardHeader className="bg-gradient-to-r from-emerald-50 to-teal-50 border-b border-gray-100">
+              <CardTitle className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <Rocket className="h-5 w-5 text-emerald-600" />
+                Aksi Cepat
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4">
+              <div className="space-y-3">
+                {[
+                  { label: 'Tambah Proyek Baru', icon: Plus, color: 'bg-blue-500' },
+                  { label: 'Upload Portfolio', icon: FileText, color: 'bg-purple-500' },
+                  { label: 'Kelola Testimoni', icon: Star, color: 'bg-amber-500' },
+                  { label: 'Lihat Pesan', icon: Clock, color: 'bg-emerald-500' }
+                ].map((action, index) => (
+                  <Button key={index} variant="ghost" className="w-full justify-start h-auto p-3 hover:bg-gray-50">
+                    <div className={`${action.color} p-2 rounded-lg mr-3`}>
+                      <action.icon className="h-4 w-4 text-white" />
+                    </div>
+                    <span className="text-gray-700 font-medium">{action.label}</span>
+                  </Button>
+                ))}
               </div>
-              <div className="bg-white/20 p-2 rounded-lg">
-                <Users className="h-6 w-6 text-white" />
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="space-y-5">
-              {[
-                { name: 'Ahmad Rizki', company: 'PT Astra', message: 'Tertarik dengan development website corporate', time: '2 jam lalu', avatar: 'AR', bgColor: 'bg-blue-500' },
-                { name: 'Linda Sari', company: 'Shopee', message: 'Ingin konsultasi tentang mobile app development', time: '4 jam lalu', avatar: 'LS', bgColor: 'bg-purple-500' },
-                { name: 'Budi Santoso', company: 'OVO', message: 'Perlu solusi e-commerce platform', time: '1 hari lalu', avatar: 'BS', bgColor: 'bg-emerald-500' }
-              ].map((message, index) => (
-                <div key={index} className="bg-gradient-to-r from-gray-50 to-white border-2 border-gray-100 p-5 rounded-2xl hover:shadow-lg transition-all duration-300 hover:scale-102">
-                  <div className="flex items-start space-x-4">
-                    <div className={`w-12 h-12 ${message.bgColor} rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg`}>
+            </CardContent>
+          </Card>
+
+          {/* Recent Messages */}
+          <Card className="border-0 shadow-sm hover:shadow-md transition-shadow duration-300">
+            <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 border-b border-gray-100">
+              <CardTitle className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <Activity className="h-5 w-5 text-orange-600" />
+                Pesan Terbaru
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4">
+              <div className="space-y-4">
+                {[
+                  { name: 'Ahmad Rizki', company: 'PT Astra', message: 'Tertarik dengan development website', time: '2 jam', avatar: 'AR', color: 'bg-blue-500' },
+                  { name: 'Linda Sari', company: 'Shopee', message: 'Konsultasi mobile app', time: '4 jam', avatar: 'LS', color: 'bg-purple-500' },
+                  { name: 'Budi Santoso', company: 'OVO', message: 'Solusi e-commerce platform', time: '1 hari', avatar: 'BS', color: 'bg-emerald-500' }
+                ].map((message, index) => (
+                  <div key={index} className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                    <div className={`w-10 h-10 ${message.color} rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-sm`}>
                       {message.avatar}
                     </div>
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <h4 className="font-bold text-gray-900 text-lg">{message.name}</h4>
-                          <p className="text-sm text-gray-600 font-medium">{message.company}</p>
-                        </div>
-                        <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full font-medium">
-                          {message.time}
-                        </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <h4 className="text-sm font-semibold text-gray-900 truncate">{message.name}</h4>
+                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">{message.time}</span>
                       </div>
-                      <p className="text-gray-700 leading-relaxed">{message.message}</p>
+                      <p className="text-xs text-gray-600 mb-1">{message.company}</p>
+                      <p className="text-sm text-gray-700 line-clamp-2">{message.message}</p>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
@@ -409,7 +482,7 @@ const Admin = () => {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-blue-50/30">
+      <div className="min-h-screen bg-gray-50">
         <Navbar />
         
         <div className="pt-16">
@@ -422,7 +495,7 @@ const Admin = () => {
                   <SidebarTrigger className="text-gray-600 hover:text-purple-600 transition-colors" />
                   <div className="flex-1 flex items-center justify-between">
                     <div>
-                      <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                      <h1 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
                         Admin Dashboard
                       </h1>
                       <p className="text-sm text-gray-600">Kelola semua aspek bisnis Anda dengan mudah</p>
