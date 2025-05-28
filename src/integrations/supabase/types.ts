@@ -9,595 +9,271 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      app_settings: {
+      chat_conversations: {
         Row: {
-          category: string
+          assigned_to: string | null
           created_at: string
+          customer_name: string
+          customer_phone: string
+          customer_social_media: string | null
           id: string
-          settings: Json
-          updated_at: string
-          user_id: string | null
-        }
-        Insert: {
-          category: string
-          created_at?: string
-          id?: string
-          settings: Json
-          updated_at?: string
-          user_id?: string | null
-        }
-        Update: {
-          category?: string
-          created_at?: string
-          id?: string
-          settings?: Json
-          updated_at?: string
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "app_settings_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      chats: {
-        Row: {
-          ai_agent: string | null
-          assigned_agent: string | null
-          created_at: string
-          id: string
-          is_lead: boolean | null
-          last_message: string | null
+          last_message_content: string | null
           last_message_time: string | null
-          lead_id: string | null
-          name: string
-          phone: string
-          status: Database["public"]["Enums"]["chat_status"] | null
-          unread_count: number | null
-          updated_at: string
-        }
-        Insert: {
-          ai_agent?: string | null
-          assigned_agent?: string | null
-          created_at?: string
-          id?: string
-          is_lead?: boolean | null
-          last_message?: string | null
-          last_message_time?: string | null
-          lead_id?: string | null
-          name: string
-          phone: string
-          status?: Database["public"]["Enums"]["chat_status"] | null
-          unread_count?: number | null
-          updated_at?: string
-        }
-        Update: {
-          ai_agent?: string | null
-          assigned_agent?: string | null
-          created_at?: string
-          id?: string
-          is_lead?: boolean | null
-          last_message?: string | null
-          last_message_time?: string | null
-          lead_id?: string | null
-          name?: string
-          phone?: string
-          status?: Database["public"]["Enums"]["chat_status"] | null
-          unread_count?: number | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "chats_lead_id_fkey"
-            columns: ["lead_id"]
-            isOneToOne: false
-            referencedRelation: "leads"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      customer_profiles: {
-        Row: {
-          address: string | null
-          company: string | null
-          created_at: string
-          email: string | null
-          id: string
-          last_interaction: string | null
-          name: string
-          notes: string | null
-          phone: string
-          satisfaction_score: number | null
-          segment: string | null
-          tags: string[] | null
-          total_tickets: number | null
-          updated_at: string
-        }
-        Insert: {
-          address?: string | null
-          company?: string | null
-          created_at?: string
-          email?: string | null
-          id?: string
-          last_interaction?: string | null
-          name: string
-          notes?: string | null
-          phone: string
-          satisfaction_score?: number | null
-          segment?: string | null
-          tags?: string[] | null
-          total_tickets?: number | null
-          updated_at?: string
-        }
-        Update: {
-          address?: string | null
-          company?: string | null
-          created_at?: string
-          email?: string | null
-          id?: string
-          last_interaction?: string | null
-          name?: string
-          notes?: string | null
-          phone?: string
-          satisfaction_score?: number | null
-          segment?: string | null
-          tags?: string[] | null
-          total_tickets?: number | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      leads: {
-        Row: {
-          assigned_to: string | null
-          company: string | null
-          created_at: string
-          email: string | null
-          id: string
-          last_contact: string | null
-          name: string
-          notes: string | null
-          phone: string
-          potential: Database["public"]["Enums"]["lead_potential"]
-          source: string | null
-          status: Database["public"]["Enums"]["lead_status"]
-          updated_at: string
-          value: number | null
-        }
-        Insert: {
-          assigned_to?: string | null
-          company?: string | null
-          created_at?: string
-          email?: string | null
-          id?: string
-          last_contact?: string | null
-          name: string
-          notes?: string | null
-          phone: string
-          potential?: Database["public"]["Enums"]["lead_potential"]
-          source?: string | null
-          status?: Database["public"]["Enums"]["lead_status"]
-          updated_at?: string
-          value?: number | null
-        }
-        Update: {
-          assigned_to?: string | null
-          company?: string | null
-          created_at?: string
-          email?: string | null
-          id?: string
-          last_contact?: string | null
-          name?: string
-          notes?: string | null
-          phone?: string
-          potential?: Database["public"]["Enums"]["lead_potential"]
-          source?: string | null
-          status?: Database["public"]["Enums"]["lead_status"]
-          updated_at?: string
-          value?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "leads_assigned_to_fkey"
-            columns: ["assigned_to"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      messages: {
-        Row: {
-          chat_id: string
-          created_at: string
-          id: string
-          is_customer: boolean
-          message: string
-          sender_name: string
-          status: Database["public"]["Enums"]["message_status"] | null
-          updated_at: string
-        }
-        Insert: {
-          chat_id: string
-          created_at?: string
-          id?: string
-          is_customer?: boolean
-          message: string
-          sender_name: string
-          status?: Database["public"]["Enums"]["message_status"] | null
-          updated_at?: string
-        }
-        Update: {
-          chat_id?: string
-          created_at?: string
-          id?: string
-          is_customer?: boolean
-          message?: string
-          sender_name?: string
-          status?: Database["public"]["Enums"]["message_status"] | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "messages_chat_id_fkey"
-            columns: ["chat_id"]
-            isOneToOne: false
-            referencedRelation: "chats"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      profiles: {
-        Row: {
-          created_at: string
-          email: string
-          id: string
-          last_login: string | null
-          name: string
-          permissions: string[] | null
-          phone: string | null
-          role: Database["public"]["Enums"]["user_role"]
+          platform: string
           status: string
+          unread_count: number
           updated_at: string
+          whatsapp_device_id: string | null
         }
         Insert: {
+          assigned_to?: string | null
           created_at?: string
-          email: string
-          id: string
-          last_login?: string | null
-          name: string
-          permissions?: string[] | null
-          phone?: string | null
-          role?: Database["public"]["Enums"]["user_role"]
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          email?: string
-          id?: string
-          last_login?: string | null
-          name?: string
-          permissions?: string[] | null
-          phone?: string | null
-          role?: Database["public"]["Enums"]["user_role"]
-          status?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      quick_replies: {
-        Row: {
-          category: string | null
-          content: string
-          created_at: string
-          id: string
-          is_shared: boolean | null
-          title: string
-          updated_at: string
-          usage_count: number | null
-          user_id: string | null
-        }
-        Insert: {
-          category?: string | null
-          content: string
-          created_at?: string
-          id?: string
-          is_shared?: boolean | null
-          title: string
-          updated_at?: string
-          usage_count?: number | null
-          user_id?: string | null
-        }
-        Update: {
-          category?: string | null
-          content?: string
-          created_at?: string
-          id?: string
-          is_shared?: boolean | null
-          title?: string
-          updated_at?: string
-          usage_count?: number | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "quick_replies_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      ticket_messages: {
-        Row: {
-          created_at: string
-          id: string
-          is_internal: boolean | null
-          message: string
-          sender_name: string
-          sender_phone: string | null
-          sender_type: string
-          ticket_id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          is_internal?: boolean | null
-          message: string
-          sender_name: string
-          sender_phone?: string | null
-          sender_type: string
-          ticket_id: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          is_internal?: boolean | null
-          message?: string
-          sender_name?: string
-          sender_phone?: string | null
-          sender_type?: string
-          ticket_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ticket_messages_ticket_id_fkey"
-            columns: ["ticket_id"]
-            isOneToOne: false
-            referencedRelation: "tickets"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      tickets: {
-        Row: {
-          assigned_to: string | null
-          category: string | null
-          created_at: string
-          created_by: string | null
           customer_name: string
           customer_phone: string
-          description: string | null
-          first_response_at: string | null
-          id: string
-          last_response_at: string | null
-          priority: string
-          resolved_at: string | null
-          status: string
-          subject: string
-          ticket_number: string
-          updated_at: string
-        }
-        Insert: {
-          assigned_to?: string | null
-          category?: string | null
-          created_at?: string
-          created_by?: string | null
-          customer_name: string
-          customer_phone: string
-          description?: string | null
-          first_response_at?: string | null
+          customer_social_media?: string | null
           id?: string
-          last_response_at?: string | null
-          priority?: string
-          resolved_at?: string | null
+          last_message_content?: string | null
+          last_message_time?: string | null
+          platform: string
           status?: string
-          subject: string
-          ticket_number: string
+          unread_count?: number
           updated_at?: string
+          whatsapp_device_id?: string | null
         }
         Update: {
           assigned_to?: string | null
-          category?: string | null
           created_at?: string
-          created_by?: string | null
           customer_name?: string
           customer_phone?: string
-          description?: string | null
-          first_response_at?: string | null
+          customer_social_media?: string | null
           id?: string
-          last_response_at?: string | null
-          priority?: string
-          resolved_at?: string | null
+          last_message_content?: string | null
+          last_message_time?: string | null
+          platform?: string
           status?: string
-          subject?: string
-          ticket_number?: string
+          unread_count?: number
           updated_at?: string
+          whatsapp_device_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "tickets_assigned_to_fkey"
-            columns: ["assigned_to"]
+            foreignKeyName: "chat_conversations_whatsapp_device_id_fkey"
+            columns: ["whatsapp_device_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "tickets_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "whatsapp_devices"
             referencedColumns: ["id"]
           },
         ]
       }
-      whatsapp_accounts: {
+      chat_messages: {
         Row: {
-          account_name: string
-          api_key: string | null
-          assigned_agent: string | null
+          conversation_id: string
+          id: string
+          media_url: string | null
+          message_content: string
+          message_time: string
+          message_type: string | null
+          platform_message_id: string | null
+          sender_name: string | null
+          sender_type: string
+          whatsapp_message_id: string | null
+        }
+        Insert: {
+          conversation_id: string
+          id?: string
+          media_url?: string | null
+          message_content: string
+          message_time?: string
+          message_type?: string | null
+          platform_message_id?: string | null
+          sender_name?: string | null
+          sender_type: string
+          whatsapp_message_id?: string | null
+        }
+        Update: {
+          conversation_id?: string
+          id?: string
+          media_url?: string | null
+          message_content?: string
+          message_time?: string
+          message_type?: string | null
+          platform_message_id?: string | null
+          sender_name?: string | null
+          sender_type?: string
+          whatsapp_message_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chat_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_base: {
+        Row: {
+          agent_type: string | null
+          content: string
           created_at: string
           id: string
           is_active: boolean | null
-          phone_number: string
+          title: string
           updated_at: string
-          webhook_url: string | null
+          user_id: string
         }
         Insert: {
-          account_name: string
-          api_key?: string | null
-          assigned_agent?: string | null
+          agent_type?: string | null
+          content: string
           created_at?: string
           id?: string
           is_active?: boolean | null
-          phone_number: string
+          title: string
           updated_at?: string
-          webhook_url?: string | null
+          user_id: string
         }
         Update: {
-          account_name?: string
-          api_key?: string | null
-          assigned_agent?: string | null
+          agent_type?: string | null
+          content?: string
           created_at?: string
           id?: string
           is_active?: boolean | null
-          phone_number?: string
+          title?: string
           updated_at?: string
-          webhook_url?: string | null
+          user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "whatsapp_accounts_assigned_agent_fkey"
-            columns: ["assigned_agent"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
-      whatsapp_settings: {
+      profiles: {
         Row: {
-          ai_auto_analysis: boolean | null
-          ai_enabled: boolean | null
-          ai_response_template: string | null
-          auto_reply: boolean | null
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      whatsapp_configs: {
+        Row: {
+          access_token: string | null
+          api_key: string | null
+          app_id: string | null
+          app_secret: string | null
+          base_url: string | null
+          business_account_id: string | null
+          config_type: string
           created_at: string
           id: string
-          is_connected: boolean | null
-          phone_number: string | null
+          is_active: boolean
+          is_configured: boolean
+          phone_number_id: string | null
           updated_at: string
-          user_id: string | null
+          user_id: string
           webhook_url: string | null
-          welcome_message: string | null
-          working_hours_enabled: boolean | null
-          working_hours_end: string | null
-          working_hours_start: string | null
         }
         Insert: {
-          ai_auto_analysis?: boolean | null
-          ai_enabled?: boolean | null
-          ai_response_template?: string | null
-          auto_reply?: boolean | null
+          access_token?: string | null
+          api_key?: string | null
+          app_id?: string | null
+          app_secret?: string | null
+          base_url?: string | null
+          business_account_id?: string | null
+          config_type: string
           created_at?: string
           id?: string
-          is_connected?: boolean | null
-          phone_number?: string | null
+          is_active?: boolean
+          is_configured?: boolean
+          phone_number_id?: string | null
           updated_at?: string
-          user_id?: string | null
+          user_id: string
           webhook_url?: string | null
-          welcome_message?: string | null
-          working_hours_enabled?: boolean | null
-          working_hours_end?: string | null
-          working_hours_start?: string | null
         }
         Update: {
-          ai_auto_analysis?: boolean | null
-          ai_enabled?: boolean | null
-          ai_response_template?: string | null
-          auto_reply?: boolean | null
+          access_token?: string | null
+          api_key?: string | null
+          app_id?: string | null
+          app_secret?: string | null
+          base_url?: string | null
+          business_account_id?: string | null
+          config_type?: string
           created_at?: string
           id?: string
-          is_connected?: boolean | null
-          phone_number?: string | null
+          is_active?: boolean
+          is_configured?: boolean
+          phone_number_id?: string | null
           updated_at?: string
-          user_id?: string | null
+          user_id?: string
           webhook_url?: string | null
-          welcome_message?: string | null
-          working_hours_enabled?: boolean | null
-          working_hours_end?: string | null
-          working_hours_start?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "whatsapp_settings_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
+      }
+      whatsapp_devices: {
+        Row: {
+          connection_status: string
+          created_at: string
+          device_name: string
+          id: string
+          last_connected_at: string | null
+          phone_number: string
+          qr_code_data: string | null
+          updated_at: string
+          user_id: string
+          webhook_url: string | null
+        }
+        Insert: {
+          connection_status?: string
+          created_at?: string
+          device_name: string
+          id?: string
+          last_connected_at?: string | null
+          phone_number: string
+          qr_code_data?: string | null
+          updated_at?: string
+          user_id: string
+          webhook_url?: string | null
+        }
+        Update: {
+          connection_status?: string
+          created_at?: string
+          device_name?: string
+          id?: string
+          last_connected_at?: string | null
+          phone_number?: string
+          qr_code_data?: string | null
+          updated_at?: string
+          user_id?: string
+          webhook_url?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      generate_ticket_number: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      process_webhook_message: {
-        Args: {
-          p_phone: string
-          p_message: string
-          p_name?: string
-          p_timestamp?: string
-        }
-        Returns: Json
-      }
-      process_whatsapp_message: {
-        Args: {
-          p_phone: string
-          p_message: string
-          p_name?: string
-          p_timestamp?: string
-          p_whatsapp_number?: string
-        }
-        Returns: Json
-      }
+      [_ in never]: never
     }
     Enums: {
-      chat_status: "online" | "offline" | "away"
-      lead_potential: "Hot" | "Warm" | "Cold" | "Medium" | "High"
-      lead_status:
-        | "new"
-        | "contacted"
-        | "qualified"
-        | "proposal"
-        | "negotiation"
-        | "closed_won"
-        | "closed_lost"
-      message_status: "sent" | "delivered" | "read"
-      user_role: "admin" | "manager" | "agent" | "viewer"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -712,20 +388,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      chat_status: ["online", "offline", "away"],
-      lead_potential: ["Hot", "Warm", "Cold", "Medium", "High"],
-      lead_status: [
-        "new",
-        "contacted",
-        "qualified",
-        "proposal",
-        "negotiation",
-        "closed_won",
-        "closed_lost",
-      ],
-      message_status: ["sent", "delivered", "read"],
-      user_role: ["admin", "manager", "agent", "viewer"],
-    },
+    Enums: {},
   },
 } as const
