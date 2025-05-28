@@ -1,11 +1,12 @@
-
 import { useState } from 'react';
 import { Send, Phone, Mail, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useContactInfo } from '@/hooks/useContactInfo';
 
 const ContactForm = () => {
   const { toast } = useToast();
+  const { contactInfo, operatingHours, loading } = useContactInfo();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -14,11 +15,11 @@ const ContactForm = () => {
     service: '',
     message: ''
   });
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setSubmitting(true);
 
     try {
       const { error } = await supabase
@@ -56,7 +57,7 @@ const ContactForm = () => {
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
@@ -65,6 +66,15 @@ const ContactForm = () => {
       ...formData,
       [e.target.name]: e.target.value
     });
+  };
+
+  const formatAddress = (address: string) => {
+    return address.split('\n').map((line, index) => (
+      <span key={index}>
+        {line}
+        {index < address.split('\n').length - 1 && <br />}
+      </span>
+    ));
   };
 
   return (
@@ -91,59 +101,60 @@ const ContactForm = () => {
               </p>
             </div>
 
-            <div className="space-y-6">
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center justify-center w-12 h-12 bg-blue-600 rounded-lg">
-                  <Phone className="h-6 w-6 text-white" />
+            {!loading && (
+              <div className="space-y-6">
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center justify-center w-12 h-12 bg-blue-600 rounded-lg">
+                    <Phone className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-900">Telepon</h4>
+                    <p className="text-gray-600">{contactInfo.company_phone}</p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="text-lg font-semibold text-gray-900">Telepon</h4>
-                  <p className="text-gray-600">+62 21 5555 1234</p>
-                </div>
-              </div>
 
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center justify-center w-12 h-12 bg-blue-600 rounded-lg">
-                  <Mail className="h-6 w-6 text-white" />
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center justify-center w-12 h-12 bg-blue-600 rounded-lg">
+                    <Mail className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-900">Email</h4>
+                    <p className="text-gray-600">{contactInfo.company_email}</p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="text-lg font-semibold text-gray-900">Email</h4>
-                  <p className="text-gray-600">hello@visualmediax.com</p>
-                </div>
-              </div>
 
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center justify-center w-12 h-12 bg-blue-600 rounded-lg">
-                  <MapPin className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h4 className="text-lg font-semibold text-gray-900">Alamat</h4>
-                  <p className="text-gray-600">
-                    Menara BCA Lt. 25<br />
-                    Jl. MH Thamrin No. 1<br />
-                    Jakarta Pusat 10310
-                  </p>
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center justify-center w-12 h-12 bg-blue-600 rounded-lg">
+                    <MapPin className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-900">Alamat</h4>
+                    <p className="text-gray-600">
+                      {formatAddress(contactInfo.company_address)}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
-            <div className="bg-white p-6 rounded-xl shadow-lg">
-              <h4 className="text-lg font-semibold text-gray-900 mb-4">Jam Operasional</h4>
-              <div className="space-y-2 text-gray-600">
-                <div className="flex justify-between">
-                  <span>Senin - Jumat</span>
-                  <span>09:00 - 18:00 WIB</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Sabtu</span>
-                  <span>09:00 - 15:00 WIB</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Minggu</span>
-                  <span>Tutup</span>
+            {!loading && operatingHours.length > 0 && (
+              <div className="bg-white p-6 rounded-xl shadow-lg">
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">Jam Operasional</h4>
+                <div className="space-y-2 text-gray-600">
+                  {operatingHours.map((hour, index) => (
+                    <div key={index} className="flex justify-between">
+                      <span>{hour.day}</span>
+                      <span>
+                        {hour.is_closed 
+                          ? 'Tutup' 
+                          : `${hour.open_time} - ${hour.close_time} WIB`
+                        }
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Contact Form */}
@@ -254,11 +265,11 @@ const ContactForm = () => {
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={submitting}
                 className="w-full bg-blue-600 text-white py-4 px-6 rounded-lg hover:bg-blue-700 transition-all duration-300 flex items-center justify-center space-x-2 font-semibold text-lg shadow-lg hover:shadow-xl disabled:opacity-50"
               >
                 <Send className="h-5 w-5" />
-                <span>{loading ? 'Mengirim...' : 'Kirim Pesan'}</span>
+                <span>{submitting ? 'Mengirim...' : 'Kirim Pesan'}</span>
               </button>
             </form>
           </div>

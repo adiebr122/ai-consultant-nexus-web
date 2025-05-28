@@ -1,8 +1,20 @@
 
 import { Code, Mail, Phone, MapPin, Facebook, Instagram, Linkedin, Youtube } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useContactInfo } from '@/hooks/useContactInfo';
 
 const Footer = () => {
+  const { contactInfo, loading } = useContactInfo();
+
+  const formatAddress = (address: string) => {
+    return address.split('\n').map((line, index) => (
+      <span key={index}>
+        {line}
+        {index < address.split('\n').length - 1 && <br />}
+      </span>
+    ));
+  };
+
   return (
     <footer className="bg-gray-900 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -62,24 +74,24 @@ const Footer = () => {
           {/* Contact Info */}
           <div>
             <h3 className="text-lg font-semibold mb-6">Kontak</h3>
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <Phone className="h-5 w-5 text-blue-400" />
-                <span className="text-gray-300">+62 21 5555 1234</span>
+            {!loading && (
+              <div className="space-y-4">
+                <div className="flex items-center space-x-3">
+                  <Phone className="h-5 w-5 text-blue-400" />
+                  <span className="text-gray-300">{contactInfo.company_phone}</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <Mail className="h-5 w-5 text-blue-400" />
+                  <span className="text-gray-300">{contactInfo.company_email}</span>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <MapPin className="h-5 w-5 text-blue-400 mt-1" />
+                  <span className="text-gray-300">
+                    {formatAddress(contactInfo.company_address)}
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center space-x-3">
-                <Mail className="h-5 w-5 text-blue-400" />
-                <span className="text-gray-300">hello@visualmediax.com</span>
-              </div>
-              <div className="flex items-start space-x-3">
-                <MapPin className="h-5 w-5 text-blue-400 mt-1" />
-                <span className="text-gray-300">
-                  Menara BCA Lt. 25<br />
-                  Jl. MH Thamrin No. 1<br />
-                  Jakarta Pusat 10310
-                </span>
-              </div>
-            </div>
+            )}
           </div>
         </div>
 
