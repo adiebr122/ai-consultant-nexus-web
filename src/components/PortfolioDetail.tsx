@@ -1,6 +1,6 @@
-
-import { ArrowLeft, ExternalLink, Github, Calendar, Users, Target, CheckCircle, Award } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Github, Calendar, Users, Target, CheckCircle, Award, Phone, Mail, MessageCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { useWhatsAppSettings } from '@/hooks/useWhatsAppSettings';
 
 interface Project {
   title: string;
@@ -26,6 +26,27 @@ interface PortfolioDetailProps {
 }
 
 const PortfolioDetail = ({ project, onBack }: PortfolioDetailProps) => {
+  const { createWhatsAppLink } = useWhatsAppSettings();
+
+  const handleConsultation = () => {
+    const message = `Halo! Saya tertarik dengan proyek ${project.title} yang ada di portfolio Anda. Bisakah kita berdiskusi tentang proyek serupa untuk bisnis saya?`;
+    const whatsappUrl = createWhatsAppLink(message);
+    window.open(whatsappUrl, '_blank');
+  };
+
+  const handleContactForm = () => {
+    const element = document.getElementById('contact');
+    if (element) {
+      window.scrollTo({
+        top: element.offsetTop - 80,
+        behavior: 'smooth'
+      });
+    } else {
+      // If not on main page, navigate to contact section
+      window.location.href = '/#contact';
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center space-x-4">
@@ -190,6 +211,65 @@ const PortfolioDetail = ({ project, onBack }: PortfolioDetailProps) => {
           </div>
         </div>
       )}
+
+      {/* Call to Action Section */}
+      <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl p-8 mt-12">
+        <div className="text-center text-white">
+          <h2 className="text-3xl font-bold mb-4">Tertarik dengan Proyek Serupa?</h2>
+          <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+            Kami siap membantu mewujudkan visi digital Anda dengan solusi yang inovatif dan berkualitas tinggi seperti proyek {project.title}.
+          </p>
+          
+          <div className="grid md:grid-cols-3 gap-6 mb-8">
+            <div className="text-center">
+              <div className="bg-white/10 rounded-full p-4 w-16 h-16 mx-auto mb-3 flex items-center justify-center">
+                <MessageCircle className="h-8 w-8" />
+              </div>
+              <h3 className="font-semibold mb-2">Konsultasi Gratis</h3>
+              <p className="text-blue-100 text-sm">Diskusi kebutuhan proyek Anda</p>
+            </div>
+            
+            <div className="text-center">
+              <div className="bg-white/10 rounded-full p-4 w-16 h-16 mx-auto mb-3 flex items-center justify-center">
+                <Target className="h-8 w-8" />
+              </div>
+              <h3 className="font-semibold mb-2">Solusi Custom</h3>
+              <p className="text-blue-100 text-sm">Dibuat sesuai kebutuhan bisnis</p>
+            </div>
+            
+            <div className="text-center">
+              <div className="bg-white/10 rounded-full p-4 w-16 h-16 mx-auto mb-3 flex items-center justify-center">
+                <CheckCircle className="h-8 w-8" />
+              </div>
+              <h3 className="font-semibold mb-2">Hasil Berkualitas</h3>
+              <p className="text-blue-100 text-sm">Standar industri terbaik</p>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <button
+              onClick={handleConsultation}
+              className="bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center space-x-2 min-w-[200px] justify-center"
+            >
+              <MessageCircle className="h-5 w-5" />
+              <span>Konsultasi via WhatsApp</span>
+            </button>
+            
+            <button
+              onClick={handleContactForm}
+              className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-colors flex items-center space-x-2 min-w-[200px] justify-center"
+            >
+              <Mail className="h-5 w-5" />
+              <span>Kirim Pesan</span>
+            </button>
+          </div>
+
+          <p className="text-blue-100 text-sm mt-4">
+            <Phone className="h-4 w-4 inline mr-1" />
+            Atau hubungi langsung: <span className="font-medium">085674722278</span>
+          </p>
+        </div>
+      </div>
     </div>
   );
 };
