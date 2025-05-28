@@ -19,7 +19,8 @@ import {
   Lightbulb,
   CheckCircle,
   TrendingUp,
-  ExternalLink
+  ExternalLink,
+  FileText
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -348,11 +349,10 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
     }
   };
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>, field: 'image_url' | 'gallery') => {
-    const file = event.target.files?.[0];
-    if (!file || !editingProject) return;
+  const handleImageUpload = async (file: File) => {
+    if (!file) return;
 
-    setUploadingImage(true);
+    setUploading(true);
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}.${fileExt}`;
@@ -368,12 +368,7 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
         .from('portfolio-images')
         .getPublicUrl(filePath);
 
-      if (field === 'image_url') {
-        setEditingProject({ ...editingProject, image_url: urlData.publicUrl });
-      } else {
-        const newGallery = [...(editingProject.gallery_images || []), urlData.publicUrl];
-        setEditingProject({ ...editingProject, gallery_images: newGallery });
-      }
+      setNewProject({ ...newProject, image_url: urlData.publicUrl });
       
       toast({
         title: "Berhasil",
@@ -387,7 +382,7 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
         variant: "destructive",
       });
     } finally {
-      setUploadingImage(false);
+      setUploading(false);
     }
   };
 
