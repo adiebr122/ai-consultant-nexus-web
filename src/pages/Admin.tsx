@@ -12,7 +12,6 @@ import {
   Trash2,
   Plus,
   LogOut,
-  Globe,
   MessageCircle,
   Package,
   UserCheck,
@@ -20,7 +19,6 @@ import {
   Home
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
-import CMSEditor from '@/components/CMSEditor';
 import HeroEditor from '@/components/HeroEditor';
 import FormSubmissions from '@/components/FormSubmissions';
 import LiveChatManager from '@/components/LiveChatManager';
@@ -125,7 +123,6 @@ const Admin = () => {
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
     { id: 'hero', label: 'Hero Section', icon: Home },
-    { id: 'cms', label: 'CMS', icon: Globe },
     { id: 'portfolio', label: 'Portfolio', icon: Briefcase },
     { id: 'submissions', label: 'Form Submissions', icon: MessageSquare },
     { id: 'livechat', label: 'Live Chat', icon: MessageCircle },
@@ -180,7 +177,6 @@ const Admin = () => {
             <div className="bg-gray-50 rounded-xl p-6">
               {activeTab === 'dashboard' && renderDashboard()}
               {activeTab === 'hero' && <HeroEditor />}
-              {activeTab === 'cms' && <CMSEditor />}
               {activeTab === 'portfolio' && <PortfolioManager />}
               {activeTab === 'submissions' && <FormSubmissions />}
               {activeTab === 'livechat' && <LiveChatManager />}
