@@ -1,18 +1,25 @@
 
 import { useState, useEffect } from 'react';
-import { ExternalLink, Github, ArrowRight } from 'lucide-react';
+import { ExternalLink, Github, ArrowRight, Clock, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Project {
   title: string;
   description: string;
+  detailed_description?: string;
   image_url: string;
+  gallery_images?: string[];
   client: string;
   category: string;
   technologies: string[];
   demo_url?: string;
   github_url?: string;
+  project_duration?: string;
+  team_size?: string;
+  challenges?: string;
+  solutions?: string;
+  results?: string;
 }
 
 interface PortfolioContent {
@@ -212,6 +219,23 @@ const Portfolio = () => {
                       </span>
                     )}
                   </div>
+                  
+                  {(project.project_duration || project.team_size) && (
+                    <div className="flex flex-wrap gap-4 mb-4 text-sm text-gray-600">
+                      {project.project_duration && (
+                        <div className="flex items-center">
+                          <Clock className="h-3 w-3 mr-1" />
+                          <span>{project.project_duration}</span>
+                        </div>
+                      )}
+                      {project.team_size && (
+                        <div className="flex items-center">
+                          <Users className="h-3 w-3 mr-1" />
+                          <span>{project.team_size}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   
                   <div className="flex items-center justify-between">
                     <div className="flex space-x-2">

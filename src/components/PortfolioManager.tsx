@@ -1,19 +1,28 @@
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Upload, Save, X, ExternalLink, Github } from 'lucide-react';
+import { Plus, Edit, Trash2, Upload, Save, X, ExternalLink, Github, Image, FileText } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface Project {
   id?: string;
   title: string;
   description: string;
+  detailed_description: string;
   image_url: string;
+  gallery_images: string[];
   client: string;
   category: string;
   technologies: string[];
   demo_url?: string;
   github_url?: string;
+  project_duration: string;
+  team_size: string;
+  challenges: string;
+  solutions: string;
+  results: string;
 }
 
 interface PortfolioContent {
@@ -33,6 +42,7 @@ const PortfolioManager = () => {
   const [saving, setSaving] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [showProjectForm, setShowProjectForm] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
     fetchContent();
@@ -92,16 +102,57 @@ const PortfolioManager = () => {
     }
   };
 
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>, field: 'image_url' | 'gallery') => {
+    const file = event.target.files?.[0];
+    if (!file || !editingProject) return;
+
+    setUploadingImage(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `portfolio/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('portfolio-images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('portfolio-images')
+        .getPublicUrl(filePath);
+
+      if (field === 'image_url') {
+        setEditingProject({ ...editingProject, image_url: urlData.publicUrl });
+      } else {
+        const newGallery = [...(editingProject.gallery_images || []), urlData.publicUrl];
+        setEditingProject({ ...editingProject, gallery_images: newGallery });
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Error uploading image');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const addProject = () => {
     setEditingProject({
       title: '',
       description: '',
+      detailed_description: '',
       image_url: '',
+      gallery_images: [],
       client: '',
       category: '',
       technologies: [],
       demo_url: '',
-      github_url: ''
+      github_url: '',
+      project_duration: '',
+      team_size: '',
+      challenges: '',
+      solutions: '',
+      results: ''
     });
     setShowProjectForm(true);
   };
@@ -124,12 +175,10 @@ const PortfolioManager = () => {
     const newProjects = [...content.projects];
     
     if (editingProject.id && editingProject.id !== 'new') {
-      // Edit existing project
       const index = parseInt(editingProject.id);
       newProjects[index] = { ...editingProject };
       delete newProjects[index].id;
     } else {
-      // Add new project
       const { id, ...projectData } = editingProject;
       newProjects.push(projectData);
     }
@@ -143,6 +192,12 @@ const PortfolioManager = () => {
     if (!editingProject) return;
     const technologies = value.split(',').map(tech => tech.trim()).filter(tech => tech);
     setEditingProject({ ...editingProject, technologies });
+  };
+
+  const removeGalleryImage = (index: number) => {
+    if (!editingProject) return;
+    const newGallery = editingProject.gallery_images.filter((_, i) => i !== index);
+    setEditingProject({ ...editingProject, gallery_images: newGallery });
   };
 
   if (loading) {
@@ -168,9 +223,11 @@ const PortfolioManager = () => {
       </div>
 
       {/* Header Content */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-        <h3 className="text-lg font-semibold mb-4">Header Content</h3>
-        <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Header Content</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
             <input
@@ -182,20 +239,20 @@ const PortfolioManager = () => {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-            <textarea
+            <Textarea
               value={content.description}
               onChange={(e) => setContent({ ...content, description: e.target.value })}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full"
             />
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Projects Section */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-lg font-semibold">Projects</h3>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Projects</CardTitle>
           <button
             onClick={addProject}
             className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center space-x-2"
@@ -203,74 +260,91 @@ const PortfolioManager = () => {
             <Plus className="h-4 w-4" />
             <span>Add Project</span>
           </button>
-        </div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {content.projects.map((project, index) => (
-            <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
-              <img 
-                src={project.image_url} 
-                alt={project.title}
-                className="w-full h-32 object-cover"
-                onError={(e) => {
-                  e.currentTarget.src = 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80';
-                }}
-              />
-              <div className="p-4">
-                <h4 className="font-semibold mb-1">{project.title}</h4>
-                <p className="text-sm text-gray-600 mb-2">{project.client}</p>
-                <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full mb-2">
-                  {project.category}
-                </span>
-                <p className="text-sm text-gray-700 mb-3 line-clamp-2">{project.description}</p>
-                <div className="flex justify-between items-center">
-                  <div className="flex space-x-2">
-                    {project.demo_url && (
-                      <ExternalLink className="h-4 w-4 text-blue-600" />
-                    )}
-                    {project.github_url && (
-                      <Github className="h-4 w-4 text-gray-600" />
-                    )}
-                  </div>
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => editProject(project, index)}
-                      className="text-blue-600 hover:text-blue-800"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => deleteProject(index)}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+        </CardHeader>
+        <CardContent>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {content.projects.map((project, index) => (
+              <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
+                <div className="relative">
+                  <img 
+                    src={project.image_url} 
+                    alt={project.title}
+                    className="w-full h-48 object-cover"
+                    onError={(e) => {
+                      e.currentTarget.src = 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80';
+                    }}
+                  />
+                </div>
+                <div className="p-4">
+                  <h4 className="font-semibold mb-1">{project.title}</h4>
+                  <p className="text-sm text-gray-600 mb-2">{project.client}</p>
+                  <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full mb-2">
+                    {project.category}
+                  </span>
+                  <p className="text-sm text-gray-700 mb-3 line-clamp-2">{project.description}</p>
+                  {project.detailed_description && (
+                    <div className="mb-3">
+                      <span className="text-xs text-green-600 font-medium">
+                        Detailed description available
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center">
+                    <div className="flex space-x-2">
+                      {project.demo_url && (
+                        <ExternalLink className="h-4 w-4 text-blue-600" />
+                      )}
+                      {project.github_url && (
+                        <Github className="h-4 w-4 text-gray-600" />
+                      )}
+                      {(project.gallery_images?.length > 0) && (
+                        <Image className="h-4 w-4 text-purple-600" />
+                      )}
+                    </div>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => editProject(project, index)}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => deleteProject(index)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Project Form Modal */}
       {showProjectForm && editingProject && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-semibold">
-                  {editingProject.id && editingProject.id !== 'new' ? 'Edit Project' : 'Add New Project'}
-                </h3>
-                <button
-                  onClick={() => setShowProjectForm(false)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
+          <div className="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white z-10 p-6 border-b border-gray-200 flex justify-between items-center">
+              <h3 className="text-lg font-semibold">
+                {editingProject.id && editingProject.id !== 'new' ? 'Edit Project' : 'Add New Project'}
+              </h3>
+              <button
+                onClick={() => setShowProjectForm(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
 
-              <div className="space-y-4">
+            <div className="p-6">
+              <div className="space-y-6">
+                <h4 className="font-semibold text-blue-600 flex items-center gap-2">
+                  <FileText className="h-4 w-4" /> Basic Information
+                </h4>
+                
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Project Title</label>
@@ -293,12 +367,12 @@ const PortfolioManager = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                  <textarea
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Short Description (shown in cards)</label>
+                  <Textarea
                     value={editingProject.description}
                     onChange={(e) => setEditingProject({ ...editingProject, description: e.target.value })}
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Brief description of the project (1-2 sentences)"
+                    className="w-full"
                   />
                 </div>
 
@@ -314,12 +388,13 @@ const PortfolioManager = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Image URL</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Project Duration</label>
                     <input
-                      type="url"
-                      value={editingProject.image_url}
-                      onChange={(e) => setEditingProject({ ...editingProject, image_url: e.target.value })}
+                      type="text"
+                      value={editingProject.project_duration}
+                      onChange={(e) => setEditingProject({ ...editingProject, project_duration: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="e.g., 3 months, Jan-Mar 2023"
                     />
                   </div>
                 </div>
@@ -356,7 +431,152 @@ const PortfolioManager = () => {
                   </div>
                 </div>
 
-                <div className="flex justify-end space-x-3 pt-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Team Size</label>
+                  <input
+                    type="text"
+                    value={editingProject.team_size || ''}
+                    onChange={(e) => setEditingProject({ ...editingProject, team_size: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="e.g., 5 developers, 1 designer, 1 project manager"
+                  />
+                </div>
+
+                <div className="border-t border-gray-200 pt-6">
+                  <h4 className="font-semibold text-blue-600 mb-4 flex items-center gap-2">
+                    <Image className="h-4 w-4" /> Images
+                  </h4>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Main Project Image
+                      </label>
+                      {editingProject.image_url && (
+                        <div className="mb-4 relative w-40 h-40">
+                          <img 
+                            src={editingProject.image_url} 
+                            alt="Project thumbnail" 
+                            className="w-full h-full object-cover rounded-md border border-gray-200"
+                          />
+                        </div>
+                      )}
+                      <div className="flex items-center space-x-2">
+                        <label className="cursor-pointer bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-2 rounded-lg border border-blue-200">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => handleImageUpload(e, 'image_url')}
+                            disabled={uploadingImage}
+                          />
+                          <span className="flex items-center">
+                            <Upload className="h-4 w-4 mr-2" />
+                            {uploadingImage ? 'Uploading...' : 'Upload Image'}
+                          </span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Gallery Images
+                      </label>
+                      {editingProject.gallery_images && editingProject.gallery_images.length > 0 && (
+                        <div className="grid grid-cols-3 gap-4 mb-4">
+                          {editingProject.gallery_images.map((img, idx) => (
+                            <div key={idx} className="relative">
+                              <img
+                                src={img}
+                                alt={`Gallery ${idx + 1}`}
+                                className="w-full h-32 object-cover rounded-md border border-gray-200"
+                              />
+                              <button
+                                onClick={() => removeGalleryImage(idx)}
+                                className="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1 hover:bg-red-700"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div className="flex items-center space-x-2">
+                        <label className="cursor-pointer bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-2 rounded-lg border border-blue-200">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => handleImageUpload(e, 'gallery')}
+                            disabled={uploadingImage}
+                          />
+                          <span className="flex items-center">
+                            <Upload className="h-4 w-4 mr-2" />
+                            {uploadingImage ? 'Uploading...' : 'Add Gallery Image'}
+                          </span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-200 pt-6">
+                  <h4 className="font-semibold text-blue-600 mb-4 flex items-center gap-2">
+                    <FileText className="h-4 w-4" /> Detailed Information (for project detail page)
+                  </h4>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Detailed Description
+                      </label>
+                      <Textarea
+                        value={editingProject.detailed_description || ''}
+                        onChange={(e) => setEditingProject({ ...editingProject, detailed_description: e.target.value })}
+                        placeholder="Comprehensive description of the project"
+                        className="w-full min-h-[150px]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Challenges
+                      </label>
+                      <Textarea
+                        value={editingProject.challenges || ''}
+                        onChange={(e) => setEditingProject({ ...editingProject, challenges: e.target.value })}
+                        placeholder="Technical or project challenges faced"
+                        className="w-full"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Solutions
+                      </label>
+                      <Textarea
+                        value={editingProject.solutions || ''}
+                        onChange={(e) => setEditingProject({ ...editingProject, solutions: e.target.value })}
+                        placeholder="How challenges were overcome"
+                        className="w-full"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Results
+                      </label>
+                      <Textarea
+                        value={editingProject.results || ''}
+                        onChange={(e) => setEditingProject({ ...editingProject, results: e.target.value })}
+                        placeholder="Outcomes and impact of the project"
+                        className="w-full"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
                   <button
                     onClick={() => setShowProjectForm(false)}
                     className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
