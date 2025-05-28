@@ -69,10 +69,11 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [showProjectForm, setShowProjectForm] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [newProject, setNewProject] = useState<Project>({
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [formProject, setFormProject] = useState<Project>({
     title: '',
     description: '',
     detailed_description: '',
@@ -89,8 +90,6 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
     solutions: '',
     results: ''
   });
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -137,82 +136,6 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
       challenges: 'Menangani traffic tinggi pada event flash sale dan mengintegrasikan multiple payment gateway dengan tingkat keamanan tinggi.',
       solutions: 'Implementasi microservices architecture dengan load balancing dan caching strategy yang optimal, serta enkripsi end-to-end untuk payment processing.',
       results: 'Platform mampu menangani 100,000+ concurrent users dengan uptime 99.9% dan peningkatan conversion rate 40%.'
-    },
-    {
-      title: 'Mobile App Ride Sharing',
-      description: 'Aplikasi ride sharing dengan AI route optimization yang mengurangi waktu tempuh hingga 25%.',
-      detailed_description: 'Aplikasi mobile ride sharing dengan teknologi GPS tracking real-time, sistem matching driver-passenger otomatis, dan algoritma optimasi rute berbasis AI untuk efisiensi maksimal.',
-      image_url: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-      gallery_images: [
-        'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
-      ],
-      client: 'Gojek Indonesia',
-      category: 'Mobile App',
-      technologies: ['React Native', 'Python', 'Machine Learning', 'Google Maps API', 'Firebase'],
-      demo_url: 'https://demo.example.com/ridesharing',
-      project_duration: '10 bulan',
-      team_size: '15 developer, 4 mobile specialist, 2 ML engineer',
-      challenges: 'Mengoptimalkan algoritma matching dan routing dalam kondisi traffic padat serta memastikan akurasi lokasi yang presisi.',
-      solutions: 'Pengembangan algoritma machine learning untuk prediksi traffic pattern dan implementasi GPS correction algorithm untuk akurasi lokasi.',
-      results: 'Pengurangan waktu tunggu driver rata-rata 30% dan efisiensi rute yang menghemat waktu tempuh hingga 25%.'
-    },
-    {
-      title: 'Sistem Manajemen Rumah Sakit',
-      description: 'Platform terintegrasi untuk manajemen rumah sakit dengan fitur AI diagnosis support dan electronic medical records.',
-      detailed_description: 'Sistem informasi rumah sakit komprehensif yang mengintegrasikan manajemen pasien, jadwal dokter, billing system, dan fitur AI assistant untuk membantu diagnosis awal berdasarkan gejala yang diinput.',
-      image_url: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-      gallery_images: [
-        'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
-      ],
-      client: 'RS Siloam',
-      category: 'Healthcare System',
-      technologies: ['Vue.js', 'Laravel', 'MySQL', 'AI/ML', 'HL7 FHIR', 'Docker'],
-      demo_url: 'https://demo.example.com/hospital',
-      project_duration: '12 bulan',
-      team_size: '20 developer, 5 healthcare specialist, 3 security expert',
-      challenges: 'Memastikan keamanan data kesehatan sesuai standar internasional dan integrasi dengan berbagai medical devices.',
-      solutions: 'Implementasi enkripsi tingkat enterprise, audit trail system, dan standardisasi HL7 FHIR untuk interoperability.',
-      results: 'Efisiensi operasional rumah sakit meningkat 60% dengan pengurangan waktu administrasi dan peningkatan akurasi diagnosis.'
-    },
-    {
-      title: 'Smart City Dashboard',
-      description: 'Dashboard analitik real-time untuk monitoring dan manajemen kota cerdas dengan IoT integration.',
-      detailed_description: 'Platform dashboard yang mengintegrasikan data dari berbagai sensor IoT di seluruh kota untuk monitoring traffic, kualitas udara, konsumsi energi, dan layanan publik dalam satu interface yang komprehensif.',
-      image_url: 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-      gallery_images: [
-        'https://images.unsplash.com/photo-1605810230434-7631ac76ec81?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1649972904349-6e44c42644a7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
-      ],
-      client: 'Pemerintah DKI Jakarta',
-      category: 'IoT & Analytics',
-      technologies: ['Angular', 'Spring Boot', 'Apache Kafka', 'Elasticsearch', 'Grafana', 'IoT Sensors'],
-      demo_url: 'https://demo.example.com/smartcity',
-      project_duration: '15 bulan',
-      team_size: '25 developer, 5 IoT specialist, 3 data scientist',
-      challenges: 'Mengintegrasikan data dari ribuan sensor dengan protokol berbeda dan memastikan real-time processing untuk data yang massive.',
-      solutions: 'Arsitektur event-driven dengan Apache Kafka untuk data streaming dan implementasi data lake untuk storage dan analytics.',
-      results: 'Peningkatan efisiensi traffic management 35% dan respons time emergency services berkurang 40%.'
-    },
-    {
-      title: 'Financial Trading Platform',
-      description: 'Platform trading online dengan algoritma AI untuk analisis pasar dan automated trading strategies.',
-      detailed_description: 'Platform trading saham dan cryptocurrency dengan fitur real-time market data, technical analysis tools, dan algoritma machine learning untuk prediksi trend pasar dan automated trading.',
-      image_url: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-      gallery_images: [
-        'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
-      ],
-      client: 'PT Indo Premier Sekuritas',
-      category: 'Fintech',
-      technologies: ['React', 'Python', 'TensorFlow', 'WebSocket', 'Redis', 'PostgreSQL'],
-      demo_url: 'https://demo.example.com/trading',
-      project_duration: '9 bulan',
-      team_size: '18 developer, 4 financial analyst, 3 ML engineer',
-      challenges: 'Memproses data market real-time dengan latency rendah dan memastikan keamanan transaksi finansial tingkat bank.',
-      solutions: 'Implementasi low-latency architecture dengan WebSocket connections and multi-layer security with 2FA and biometric authentication.',
-      results: 'Platform mampu memproses 50,000+ transaksi per detik dengan latency rata-rata 10ms and 99.99% security.'
     }
   ];
 
@@ -245,21 +168,16 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
         });
       } else {
         console.log('No portfolio data found, using default projects');
-        // Jika tidak ada data admin, gunakan data default
         const defaultProjects = getDefaultProjects();
         setContent({
           title: 'Portfolio Proyek Terbaik',
           description: 'Lihat hasil karya terbaik kami dalam mengembangkan solusi AI dan aplikasi untuk berbagai industri.',
           projects: defaultProjects
         });
-        
-        // Simpan data default ke database
-        await saveDefaultContent(defaultProjects);
       }
     } catch (error) {
       console.error('Error fetching portfolio content:', error);
       
-      // Fallback ke data default jika ada error
       const defaultProjects = getDefaultProjects();
       setContent({
         title: 'Portfolio Proyek Terbaik',
@@ -270,36 +188,10 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
       toast({
         title: "Info",
         description: "Menggunakan data portfolio default",
+        variant: "default",
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const saveDefaultContent = async (defaultProjects: Project[]) => {
-    if (!user) return;
-    
-    try {
-      const { error } = await supabase
-        .from('website_content')
-        .upsert({
-          section: 'portfolio',
-          title: 'Portfolio Proyek Terbaik',
-          content: 'Lihat hasil karya terbaik kami dalam mengembangkan solusi AI dan aplikasi untuk berbagai industri.',
-          metadata: { projects: defaultProjects } as any,
-          user_id: user.id,
-          is_active: true
-        }, {
-          onConflict: 'section,user_id'
-        });
-
-      if (error) {
-        console.error('Error saving default content:', error);
-      } else {
-        console.log('Default portfolio content saved successfully');
-      }
-    } catch (error) {
-      console.error('Error saving default content:', error);
     }
   };
 
@@ -336,6 +228,7 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
       toast({
         title: "Berhasil",
         description: "Konten portfolio berhasil disimpan",
+        variant: "success",
       });
     } catch (error) {
       console.error('Error saving portfolio content:', error);
@@ -368,11 +261,12 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
         .from('portfolio-images')
         .getPublicUrl(filePath);
 
-      setNewProject({ ...newProject, image_url: urlData.publicUrl });
+      setFormProject({ ...formProject, image_url: urlData.publicUrl });
       
       toast({
         title: "Berhasil",
         description: "Gambar berhasil diupload",
+        variant: "success",
       });
     } catch (error) {
       console.error('Error uploading image:', error);
@@ -386,147 +280,8 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
     }
   };
 
-  const addProject = () => {
-    setEditingProject({
-      title: '',
-      description: '',
-      detailed_description: '',
-      image_url: '',
-      gallery_images: [],
-      client: '',
-      category: '',
-      technologies: [],
-      demo_url: '',
-      github_url: '',
-      project_duration: '',
-      team_size: '',
-      challenges: '',
-      solutions: '',
-      results: ''
-    });
-    setShowProjectForm(true);
-  };
-
-  const editProject = (project: Project, index: number) => {
-    setEditingProject({ ...project, id: index.toString() });
-    setShowProjectForm(true);
-  };
-
-  const deleteProject = (index: number) => {
-    if (confirm('Apakah Anda yakin ingin menghapus proyek ini?')) {
-      const newProjects = content.projects.filter((_, i) => i !== index);
-      setContent({ ...content, projects: newProjects });
-      toast({
-        title: "Berhasil",
-        description: "Proyek berhasil dihapus",
-      });
-    }
-  };
-
-  const saveProject = () => {
-    if (!editingProject) return;
-
-    // Validasi form
-    if (!editingProject.title.trim()) {
-      toast({
-        title: "Error",
-        description: "Judul proyek harus diisi",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!editingProject.description.trim()) {
-      toast({
-        title: "Error",
-        description: "Deskripsi proyek harus diisi",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!editingProject.client.trim()) {
-      toast({
-        title: "Error",
-        description: "Nama klien harus diisi",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!editingProject.category.trim()) {
-      toast({
-        title: "Error",
-        description: "Kategori proyek harus diisi",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const newProjects = [...content.projects];
-    
-    if (editingProject.id && editingProject.id !== 'new') {
-      const index = parseInt(editingProject.id);
-      newProjects[index] = { ...editingProject };
-      delete newProjects[index].id;
-    } else {
-      const { id, ...projectData } = editingProject;
-      newProjects.push(projectData);
-    }
-
-    setContent({ ...content, projects: newProjects });
-    setShowProjectForm(false);
-    setEditingProject(null);
-    
-    toast({
-      title: "Berhasil",
-      description: "Proyek berhasil disimpan",
-    });
-  };
-
-  const handleTechnologiesChange = (value: string) => {
-    if (!editingProject) return;
-    const technologies = value.split(',').map(tech => tech.trim()).filter(tech => tech);
-    setEditingProject({ ...editingProject, technologies });
-  };
-
-  const removeGalleryImage = (index: number) => {
-    if (!editingProject) return;
-    const newGallery = editingProject.gallery_images.filter((_, i) => i !== index);
-    setEditingProject({ ...editingProject, gallery_images: newGallery });
-  };
-
-  const handleEditProject = (index: number) => {
-    setEditingIndex(index);
-    setNewProject(content.projects[index]);
-  };
-
-  const handleDeleteProject = (index: number) => {
-    if (confirm('Apakah Anda yakin ingin menghapus proyek ini?')) {
-      const newProjects = content.projects.filter((_, i) => i !== index);
-      setContent({ ...content, projects: newProjects });
-      toast({
-        title: "Berhasil",
-        description: "Proyek berhasil dihapus",
-      });
-    }
-  };
-
-  const handleSaveProject = () => {
-    if (!newProject.title || !newProject.description) {
-      toast({
-        title: "Error",
-        description: "Judul dan deskripsi proyek harus diisi",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const newProjects = [...content.projects];
-    newProjects.push(newProject);
-    setContent({ ...content, projects: newProjects });
-    setShowProjectForm(false);
-    setNewProject({
+  const resetForm = () => {
+    setFormProject({
       title: '',
       description: '',
       detailed_description: '',
@@ -544,31 +299,80 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
       results: ''
     });
     setEditingIndex(null);
-    resetForm();
-    toast({
-      title: "Berhasil",
-      description: "Proyek berhasil disimpan",
-    });
+    setShowProjectForm(false);
   };
 
-  const resetForm = () => {
-    setNewProject({
-      title: '',
-      description: '',
-      detailed_description: '',
-      image_url: '',
-      gallery_images: [],
-      client: '',
-      category: '',
-      technologies: [],
-      demo_url: '',
-      github_url: '',
-      project_duration: '',
-      team_size: '',
-      challenges: '',
-      solutions: '',
-      results: ''
-    });
+  const addProject = () => {
+    resetForm();
+    setShowProjectForm(true);
+  };
+
+  const editProject = (project: Project, index: number) => {
+    setFormProject({ ...project });
+    setEditingIndex(index);
+    setShowProjectForm(true);
+  };
+
+  const deleteProject = (index: number) => {
+    if (window.confirm('Apakah Anda yakin ingin menghapus proyek ini?')) {
+      const newProjects = content.projects.filter((_, i) => i !== index);
+      setContent({ ...content, projects: newProjects });
+      
+      toast({
+        title: "Berhasil",
+        description: "Proyek berhasil dihapus",
+        variant: "success",
+      });
+    }
+  };
+
+  const saveProject = () => {
+    // Validasi form
+    if (!formProject.title.trim()) {
+      toast({
+        title: "Error",
+        description: "Judul proyek harus diisi",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formProject.description.trim()) {
+      toast({
+        title: "Error",
+        description: "Deskripsi proyek harus diisi",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newProjects = [...content.projects];
+    
+    if (editingIndex !== null) {
+      // Edit existing project
+      newProjects[editingIndex] = { ...formProject };
+      toast({
+        title: "Berhasil",
+        description: "Proyek berhasil diperbarui",
+        variant: "success",
+      });
+    } else {
+      // Add new project
+      newProjects.push({ ...formProject });
+      toast({
+        title: "Berhasil",
+        description: "Proyek berhasil ditambahkan",
+        variant: "success",
+      });
+    }
+
+    setContent({ ...content, projects: newProjects });
+    resetForm();
+  };
+
+  const handleTechnologiesChange = (value: string) => {
+    const technologies = value.split(',').map(tech => tech.trim()).filter(tech => tech);
+    setFormProject({ ...formProject, technologies });
   };
 
   const renderProjectCard = (project: Project, index: number) => (
@@ -595,7 +399,7 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => handleEditProject(index)}
+              onClick={() => editProject(project, index)}
               className="h-8 w-8 p-0 hover:bg-yellow-50 hover:text-yellow-600"
             >
               <Edit className="h-4 w-4" />
@@ -603,7 +407,7 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => handleDeleteProject(index)}
+              onClick={() => deleteProject(index)}
               className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
             >
               <Trash2 className="h-4 w-4" />
@@ -702,8 +506,8 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
             <Input
               id="title"
               type="text"
-              value={newProject.title}
-              onChange={(e) => setNewProject({...newProject, title: e.target.value})}
+              value={formProject.title}
+              onChange={(e) => setFormProject({...formProject, title: e.target.value})}
               placeholder="Enter project title"
               className="border-gray-300 focus:border-blue-500"
             />
@@ -716,8 +520,8 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
             <Input
               id="category"
               type="text"
-              value={newProject.category}
-              onChange={(e) => setNewProject({...newProject, category: e.target.value})}
+              value={formProject.category}
+              onChange={(e) => setFormProject({...formProject, category: e.target.value})}
               placeholder="e.g., Web Development, Mobile App"
               className="border-gray-300 focus:border-blue-500"
             />
@@ -730,8 +534,8 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
           </Label>
           <Textarea
             id="description"
-            value={newProject.description}
-            onChange={(e) => setNewProject({...newProject, description: e.target.value})}
+            value={formProject.description}
+            onChange={(e) => setFormProject({...formProject, description: e.target.value})}
             placeholder="Brief description of the project"
             rows={2}
             className="border-gray-300 focus:border-blue-500"
@@ -744,8 +548,8 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
           </Label>
           <Textarea
             id="detailed_description"
-            value={newProject.detailed_description}
-            onChange={(e) => setNewProject({...newProject, detailed_description: e.target.value})}
+            value={formProject.detailed_description}
+            onChange={(e) => setFormProject({...formProject, detailed_description: e.target.value})}
             placeholder="Comprehensive project description"
             rows={4}
             className="border-gray-300 focus:border-blue-500"
@@ -761,8 +565,8 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
             <Input
               id="client"
               type="text"
-              value={newProject.client}
-              onChange={(e) => setNewProject({...newProject, client: e.target.value})}
+              value={formProject.client}
+              onChange={(e) => setFormProject({...formProject, client: e.target.value})}
               placeholder="Client name"
               className="border-gray-300 focus:border-blue-500"
             />
@@ -775,8 +579,8 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
             <Input
               id="project_duration"
               type="text"
-              value={newProject.project_duration}
-              onChange={(e) => setNewProject({...newProject, project_duration: e.target.value})}
+              value={formProject.project_duration}
+              onChange={(e) => setFormProject({...formProject, project_duration: e.target.value})}
               placeholder="e.g., 3 months"
               className="border-gray-300 focus:border-blue-500"
             />
@@ -790,8 +594,8 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
           <Input
             id="team_size"
             type="text"
-            value={newProject.team_size}
-            onChange={(e) => setNewProject({...newProject, team_size: e.target.value})}
+            value={formProject.team_size}
+            onChange={(e) => setFormProject({...formProject, team_size: e.target.value})}
             placeholder="e.g., 5 developers, 2 designers"
             className="border-gray-300 focus:border-blue-500"
           />
@@ -805,11 +609,8 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
           <Input
             id="technologies"
             type="text"
-            value={newProject.technologies.join(', ')}
-            onChange={(e) => setNewProject({
-              ...newProject, 
-              technologies: e.target.value.split(',').map(tech => tech.trim()).filter(tech => tech)
-            })}
+            value={formProject.technologies.join(', ')}
+            onChange={(e) => handleTechnologiesChange(e.target.value)}
             placeholder="React, Node.js, MongoDB (separate with commas)"
             className="border-gray-300 focus:border-blue-500"
           />
@@ -825,8 +626,8 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
             <Input
               id="demo_url"
               type="url"
-              value={newProject.demo_url || ''}
-              onChange={(e) => setNewProject({...newProject, demo_url: e.target.value})}
+              value={formProject.demo_url || ''}
+              onChange={(e) => setFormProject({...formProject, demo_url: e.target.value})}
               placeholder="https://demo.example.com"
               className="border-gray-300 focus:border-blue-500"
             />
@@ -840,8 +641,8 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
             <Input
               id="github_url"
               type="url"
-              value={newProject.github_url || ''}
-              onChange={(e) => setNewProject({...newProject, github_url: e.target.value})}
+              value={formProject.github_url || ''}
+              onChange={(e) => setFormProject({...formProject, github_url: e.target.value})}
               placeholder="https://github.com/user/repo"
               className="border-gray-300 focus:border-blue-500"
             />
@@ -854,8 +655,8 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
           <div className="flex items-center space-x-2">
             <Input
               type="text"
-              value={newProject.image_url}
-              onChange={(e) => setNewProject({...newProject, image_url: e.target.value})}
+              value={formProject.image_url}
+              onChange={(e) => setFormProject({...formProject, image_url: e.target.value})}
               placeholder="Image URL or upload file"
               className="flex-1 border-gray-300 focus:border-blue-500"
             />
@@ -882,10 +683,10 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
               )}
             </Button>
           </div>
-          {newProject.image_url && (
+          {formProject.image_url && (
             <div className="mt-2 border rounded-lg p-2 bg-gray-50">
               <img 
-                src={newProject.image_url} 
+                src={formProject.image_url} 
                 alt="Project preview"
                 className="max-h-32 max-w-full object-contain"
                 onError={(e) => {
@@ -905,8 +706,8 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
             </Label>
             <Textarea
               id="challenges"
-              value={newProject.challenges}
-              onChange={(e) => setNewProject({...newProject, challenges: e.target.value})}
+              value={formProject.challenges}
+              onChange={(e) => setFormProject({...formProject, challenges: e.target.value})}
               placeholder="What challenges did you face during this project?"
               rows={3}
               className="border-gray-300 focus:border-blue-500"
@@ -920,8 +721,8 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
             </Label>
             <Textarea
               id="solutions"
-              value={newProject.solutions}
-              onChange={(e) => setNewProject({...newProject, solutions: e.target.value})}
+              value={formProject.solutions}
+              onChange={(e) => setFormProject({...formProject, solutions: e.target.value})}
               placeholder="How did you solve the challenges?"
               rows={3}
               className="border-gray-300 focus:border-blue-500"
@@ -935,8 +736,8 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
             </Label>
             <Textarea
               id="results"
-              value={newProject.results}
-              onChange={(e) => setNewProject({...newProject, results: e.target.value})}
+              value={formProject.results}
+              onChange={(e) => setFormProject({...formProject, results: e.target.value})}
               placeholder="What were the outcomes and impact of the project?"
               rows={3}
               className="border-gray-300 focus:border-blue-500"
@@ -948,18 +749,15 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
         <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
           <Button
             variant="outline"
-            onClick={() => {
-              setEditingIndex(null);
-              resetForm();
-            }}
+            onClick={resetForm}
             className="flex items-center"
           >
             <X className="h-4 w-4 mr-1" />
             Cancel
           </Button>
           <Button
-            onClick={handleSaveProject}
-            disabled={saving || !newProject.title || !newProject.description}
+            onClick={saveProject}
+            disabled={saving || !formProject.title || !formProject.description}
             className="bg-blue-600 hover:bg-blue-700 flex items-center"
           >
             {saving ? (
@@ -1069,11 +867,7 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {content.projects.map((project, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
-                  {renderProjectCard(project, index)}
-                </div>
-              ))}
+              {content.projects.map((project, index) => renderProjectCard(project, index))}
             </div>
           )}
         </CardContent>
