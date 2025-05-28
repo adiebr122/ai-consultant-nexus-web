@@ -1,4 +1,5 @@
-import { useState } from 'react';
+
+import { useState, Suspense, lazy } from 'react';
 import { 
   Users, 
   BarChart3, 
@@ -10,18 +11,22 @@ import {
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import Navbar from '@/components/Navbar';
 import AdminSidebar from '@/components/AdminSidebar';
-import HeroEditor from '@/components/HeroEditor';
-import FormSubmissions from '@/components/FormSubmissions';
-import LiveChatManager from '@/components/LiveChatManager';
-import TestimonialManager from '@/components/TestimonialManager';
-import ServiceManager from '@/components/ServiceManager';
-import PortfolioManager from '@/components/PortfolioManager';
-import PortfolioDetail from '@/components/PortfolioDetail';
-import CRMManager from '@/components/CRMManager';
-import SettingsManager from '@/components/SettingsManager';
-import ClientLogosManager from '@/components/ClientLogosManager';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import AdminSkeleton from '@/components/AdminSkeleton';
+import LoadingWrapper from '@/components/LoadingWrapper';
 import { useAuth } from '@/hooks/useAuth';
+
+// Lazy load components untuk optimasi performa
+const HeroEditor = lazy(() => import('@/components/HeroEditor'));
+const FormSubmissions = lazy(() => import('@/components/FormSubmissions'));
+const LiveChatManager = lazy(() => import('@/components/LiveChatManager'));
+const TestimonialManager = lazy(() => import('@/components/TestimonialManager'));
+const ServiceManager = lazy(() => import('@/components/ServiceManager'));
+const PortfolioManager = lazy(() => import('@/components/PortfolioManager'));
+const PortfolioDetail = lazy(() => import('@/components/PortfolioDetail'));
+const CRMManager = lazy(() => import('@/components/CRMManager'));
+const SettingsManager = lazy(() => import('@/components/SettingsManager'));
+const ClientLogosManager = lazy(() => import('@/components/ClientLogosManager'));
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -31,9 +36,7 @@ const Admin = () => {
 
   const handleRefresh = () => {
     setRefreshKey(prev => prev + 1);
-    // Reset any selected state
     setSelectedProject(null);
-    // Force re-render of current component
     window.location.reload();
   };
 
@@ -126,10 +129,12 @@ const Admin = () => {
   const renderContent = () => {
     if (activeTab === 'portfolio' && selectedProject) {
       return (
-        <PortfolioDetail 
-          project={selectedProject} 
-          onBack={() => setSelectedProject(null)} 
-        />
+        <Suspense fallback={<AdminSkeleton />}>
+          <PortfolioDetail 
+            project={selectedProject} 
+            onBack={() => setSelectedProject(null)} 
+          />
+        </Suspense>
       );
     }
 
@@ -137,21 +142,53 @@ const Admin = () => {
       case 'dashboard':
         return renderDashboard();
       case 'hero':
-        return <HeroEditor key={refreshKey} />;
+        return (
+          <Suspense fallback={<AdminSkeleton />}>
+            <HeroEditor key={refreshKey} />
+          </Suspense>
+        );
       case 'portfolio':
-        return <PortfolioManager key={refreshKey} onProjectSelect={setSelectedProject} />;
+        return (
+          <Suspense fallback={<AdminSkeleton />}>
+            <PortfolioManager key={refreshKey} onProjectSelect={setSelectedProject} />
+          </Suspense>
+        );
       case 'clientlogos':
-        return <ClientLogosManager key={refreshKey} />;
+        return (
+          <Suspense fallback={<AdminSkeleton />}>
+            <ClientLogosManager key={refreshKey} />
+          </Suspense>
+        );
       case 'submissions':
-        return <FormSubmissions key={refreshKey} />;
+        return (
+          <Suspense fallback={<AdminSkeleton />}>
+            <FormSubmissions key={refreshKey} />
+          </Suspense>
+        );
       case 'livechat':
-        return <LiveChatManager key={refreshKey} />;
+        return (
+          <Suspense fallback={<AdminSkeleton />}>
+            <LiveChatManager key={refreshKey} />
+          </Suspense>
+        );
       case 'testimonials':
-        return <TestimonialManager key={refreshKey} />;
+        return (
+          <Suspense fallback={<AdminSkeleton />}>
+            <TestimonialManager key={refreshKey} />
+          </Suspense>
+        );
       case 'services':
-        return <ServiceManager key={refreshKey} />;
+        return (
+          <Suspense fallback={<AdminSkeleton />}>
+            <ServiceManager key={refreshKey} />
+          </Suspense>
+        );
       case 'crm':
-        return <CRMManager key={refreshKey} />;
+        return (
+          <Suspense fallback={<AdminSkeleton />}>
+            <CRMManager key={refreshKey} />
+          </Suspense>
+        );
       case 'users':
         return (
           <div className="text-center py-12">
@@ -161,7 +198,11 @@ const Admin = () => {
           </div>
         );
       case 'settings':
-        return <SettingsManager key={refreshKey} />;
+        return (
+          <Suspense fallback={<AdminSkeleton />}>
+            <SettingsManager key={refreshKey} />
+          </Suspense>
+        );
       default:
         return renderDashboard();
     }
