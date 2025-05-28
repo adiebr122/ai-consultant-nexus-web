@@ -37,15 +37,15 @@ const ClientLogos = () => {
   };
 
   // Default logos jika belum ada data
-  const defaultLogos = [
-    { id: '1', name: 'Telkom Indonesia', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Telkom_Indonesia_2013.svg/200px-Telkom_Indonesia_2013.svg.png', display_order: 1, is_active: true },
-    { id: '2', name: 'Bank Central Asia', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/BCA_logo.svg/200px-BCA_logo.svg.png', display_order: 2, is_active: true },
-    { id: '3', name: 'Gojek', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/Gojek_logo_2019.svg/200px-Gojek_logo_2019.svg.png', display_order: 3, is_active: true },
-    { id: '4', name: 'Tokopedia', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Tokopedia.svg/200px-Tokopedia.svg.png', display_order: 4, is_active: true },
-    { id: '5', name: 'Shopee', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Shopee_logo.svg/200px-Shopee_logo.svg.png', display_order: 5, is_active: true },
-    { id: '6', name: 'Grab', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Grab_%28application%29_logo.svg/200px-Grab_%28application%29_logo.svg.png', display_order: 6, is_active: true },
-    { id: '7', name: 'OVO', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Logo_ovo_purple.svg/200px-Logo_ovo_purple.svg.png', display_order: 7, is_active: true },
-    { id: '8', name: 'Bukalapak', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Bukalapak_official_logo.svg/200px-Bukalapak_official_logo.svg.png', display_order: 8, is_active: true }
+  const defaultLogos: ClientLogo[] = [
+    { id: '1', name: 'Telkom Indonesia', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Telkom_Indonesia_2013.svg/200px-Telkom_Indonesia_2013.svg.png', company_url: 'https://telkom.co.id', display_order: 1, is_active: true },
+    { id: '2', name: 'Bank Central Asia', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/BCA_logo.svg/200px-BCA_logo.svg.png', company_url: 'https://bca.co.id', display_order: 2, is_active: true },
+    { id: '3', name: 'Gojek', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/Gojek_logo_2019.svg/200px-Gojek_logo_2019.svg.png', company_url: 'https://gojek.com', display_order: 3, is_active: true },
+    { id: '4', name: 'Tokopedia', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Tokopedia.svg/200px-Tokopedia.svg.png', company_url: 'https://tokopedia.com', display_order: 4, is_active: true },
+    { id: '5', name: 'Shopee', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Shopee_logo.svg/200px-Shopee_logo.svg.png', company_url: 'https://shopee.co.id', display_order: 5, is_active: true },
+    { id: '6', name: 'Grab', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Grab_%28application%29_logo.svg/200px-Grab_%28application%29_logo.svg.png', company_url: 'https://grab.com', display_order: 6, is_active: true },
+    { id: '7', name: 'OVO', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Logo_ovo_purple.svg/200px-Logo_ovo_purple.svg.png', company_url: 'https://ovo.id', display_order: 7, is_active: true },
+    { id: '8', name: 'Bukalapak', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Bukalapak_official_logo.svg/200px-Bukalapak_official_logo.svg.png', company_url: 'https://bukalapak.com', display_order: 8, is_active: true }
   ];
 
   const displayLogos = logos.length > 0 ? logos : defaultLogos;
