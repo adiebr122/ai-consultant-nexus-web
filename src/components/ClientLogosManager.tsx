@@ -254,120 +254,153 @@ const ClientLogosManager = () => {
               Tambah Logo
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>{editingLogo ? 'Edit Logo' : 'Tambah Logo Baru'}</DialogTitle>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white border shadow-2xl">
+            <DialogHeader className="pb-6 border-b border-gray-200">
+              <DialogTitle className="text-2xl font-bold text-gray-900">
+                {editingLogo ? 'Edit Logo Klien' : 'Tambah Logo Klien Baru'}
+              </DialogTitle>
             </DialogHeader>
+            
             <form onSubmit={(e) => {
               const fileInput = document.getElementById('logo-file') as HTMLInputElement;
               const file = fileInput?.files?.[0];
               handleSubmit(e, file);
-            }} className="space-y-6">
+            }} className="space-y-8 pt-6">
               
-              {/* Logo Preview Section */}
-              <div className="space-y-3">
-                <Label>Preview Logo</Label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center bg-gray-50">
+              {/* Logo Preview Section - Enhanced */}
+              <div className="space-y-4">
+                <Label className="text-lg font-semibold text-gray-900">Preview Logo</Label>
+                <div className="border-2 border-dashed border-blue-300 rounded-xl p-8 text-center bg-gradient-to-br from-blue-50 to-indigo-50 min-h-[200px] flex items-center justify-center">
                   {previewUrl ? (
-                    <div className="space-y-3">
-                      <img
-                        src={previewUrl}
-                        alt="Preview"
-                        className="max-h-24 max-w-full mx-auto object-contain"
-                        onError={() => setPreviewUrl('')}
-                      />
-                      <p className="text-sm text-gray-600">Preview logo</p>
+                    <div className="space-y-4">
+                      <div className="bg-white rounded-lg p-4 shadow-md inline-block">
+                        <img
+                          src={previewUrl}
+                          alt="Preview"
+                          className="max-h-32 max-w-full mx-auto object-contain"
+                          onError={() => setPreviewUrl('')}
+                        />
+                      </div>
+                      <p className="text-sm text-gray-600 font-medium">Preview logo yang akan ditampilkan</p>
                     </div>
                   ) : (
-                    <div className="space-y-3">
-                      <ImageIcon className="h-12 w-12 text-gray-400 mx-auto" />
-                      <p className="text-sm text-gray-600">
-                        {editingLogo ? 'Logo saat ini akan tetap digunakan jika tidak mengupload logo baru' : 'Belum ada logo dipilih'}
-                      </p>
+                    <div className="space-y-4">
+                      <div className="bg-white rounded-full p-6 shadow-md inline-block">
+                        <ImageIcon className="h-16 w-16 text-blue-400 mx-auto" />
+                      </div>
+                      <div className="text-center">
+                        <p className="text-lg font-medium text-gray-700 mb-2">
+                          {editingLogo ? 'Logo Saat Ini' : 'Belum Ada Logo Dipilih'}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {editingLogo ? 'Logo saat ini akan tetap digunakan jika tidak mengupload logo baru' : 'Pilih file logo untuk melihat preview'}
+                        </p>
+                      </div>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* File Upload */}
-              <div className="space-y-2">
-                <Label htmlFor="logo-file">
+              {/* File Upload - Enhanced */}
+              <div className="space-y-3">
+                <Label htmlFor="logo-file" className="text-lg font-semibold text-gray-900">
+                  <Upload className="h-5 w-5 inline mr-2" />
                   Upload Logo {editingLogo ? '(Opsional)' : '*'}
                 </Label>
-                <Input
-                  id="logo-file"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  required={!editingLogo}
-                  className="cursor-pointer"
-                />
-                <p className="text-xs text-gray-500">
-                  Format yang didukung: JPG, PNG, GIF. Maksimal 5MB.
-                </p>
+                <div className="relative">
+                  <Input
+                    id="logo-file"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    required={!editingLogo}
+                    className="cursor-pointer text-sm border-2 border-gray-300 hover:border-blue-400 focus:border-blue-500 rounded-lg p-3 bg-white"
+                  />
+                </div>
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                  <p className="text-sm text-yellow-800">
+                    <strong>Format yang didukung:</strong> JPG, PNG, GIF | <strong>Ukuran maksimal:</strong> 5MB
+                  </p>
+                </div>
               </div>
 
-              {/* Company Name */}
-              <div className="space-y-2">
-                <Label htmlFor="name">Nama Perusahaan *</Label>
+              {/* Company Name - Enhanced */}
+              <div className="space-y-3">
+                <Label htmlFor="name" className="text-lg font-semibold text-gray-900">
+                  Nama Perusahaan *
+                </Label>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Contoh: PT. Teknologi Indonesia"
                   required
+                  className="border-2 border-gray-300 hover:border-blue-400 focus:border-blue-500 rounded-lg p-3 text-base"
                 />
               </div>
 
-              {/* Company URL */}
-              <div className="space-y-2">
-                <Label htmlFor="company_url">URL Perusahaan (Opsional)</Label>
+              {/* Company URL - Enhanced */}
+              <div className="space-y-3">
+                <Label htmlFor="company_url" className="text-lg font-semibold text-gray-900">
+                  <ExternalLink className="h-5 w-5 inline mr-2" />
+                  URL Perusahaan (Opsional)
+                </Label>
                 <Input
                   id="company_url"
                   type="url"
                   value={formData.company_url}
                   onChange={(e) => setFormData({ ...formData, company_url: e.target.value })}
                   placeholder="https://www.example.com"
+                  className="border-2 border-gray-300 hover:border-blue-400 focus:border-blue-500 rounded-lg p-3 text-base"
                 />
               </div>
 
-              {/* Display Order */}
-              <div className="space-y-2">
-                <Label htmlFor="display_order">Urutan Tampil</Label>
+              {/* Display Order - Enhanced */}
+              <div className="space-y-3">
+                <Label htmlFor="display_order" className="text-lg font-semibold text-gray-900">
+                  Urutan Tampil
+                </Label>
                 <Input
                   id="display_order"
                   type="number"
                   value={formData.display_order}
                   onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) || 0 })}
                   placeholder="0"
+                  className="border-2 border-gray-300 hover:border-blue-400 focus:border-blue-500 rounded-lg p-3 text-base"
                 />
-                <p className="text-xs text-gray-500">
-                  Semakin kecil angka, semakin awal ditampilkan
-                </p>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-sm text-blue-800">
+                    <strong>Tip:</strong> Semakin kecil angka, semakin awal logo ditampilkan di halaman utama
+                  </p>
+                </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex justify-end space-x-3 pt-4 border-t">
+              {/* Action Buttons - Enhanced */}
+              <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
                 <Button 
                   type="button" 
                   variant="outline" 
                   onClick={() => setIsDialogOpen(false)}
                   disabled={uploading}
+                  className="px-6 py-3 text-base border-2 hover:bg-gray-50"
                 >
                   Batal
                 </Button>
                 <Button 
                   type="submit" 
                   disabled={uploading}
-                  className="min-w-[100px]"
+                  className="min-w-[120px] px-6 py-3 text-base bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   {uploading ? (
                     <div className="flex items-center space-x-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      <span>Upload...</span>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      <span>Mengupload...</span>
                     </div>
                   ) : (
-                    editingLogo ? 'Update' : 'Simpan'
+                    <div className="flex items-center space-x-2">
+                      {editingLogo ? <Edit className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                      <span>{editingLogo ? 'Update Logo' : 'Simpan Logo'}</span>
+                    </div>
                   )}
                 </Button>
               </div>
