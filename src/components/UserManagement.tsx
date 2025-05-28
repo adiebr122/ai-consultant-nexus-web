@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -103,7 +102,14 @@ const UserManagement = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setUsers(data || []);
+      
+      // Convert JSON tags to string array and ensure proper types
+      const formattedUsers: UserRecord[] = (data || []).map(user => ({
+        ...user,
+        tags: Array.isArray(user.tags) ? user.tags : []
+      }));
+      
+      setUsers(formattedUsers);
     } catch (error: any) {
       console.error('Error fetching users:', error);
       toast({
@@ -134,7 +140,16 @@ const UserManagement = () => {
         const { error } = await supabase
           .from('user_management')
           .update({
-            ...newUser,
+            client_name: newUser.client_name,
+            client_email: newUser.client_email,
+            client_phone: newUser.client_phone,
+            client_company: newUser.client_company,
+            client_position: newUser.client_position,
+            lead_status: newUser.lead_status,
+            lead_source: newUser.lead_source,
+            estimated_value: newUser.estimated_value,
+            notes: newUser.notes,
+            tags: newUser.tags || [],
             updated_at: new Date().toISOString()
           })
           .eq('id', editingUser.id);
@@ -155,7 +170,16 @@ const UserManagement = () => {
         const { data, error } = await supabase
           .from('user_management')
           .insert({
-            ...newUser,
+            client_name: newUser.client_name!,
+            client_email: newUser.client_email!,
+            client_phone: newUser.client_phone,
+            client_company: newUser.client_company,
+            client_position: newUser.client_position,
+            lead_status: newUser.lead_status,
+            lead_source: newUser.lead_source,
+            estimated_value: newUser.estimated_value,
+            notes: newUser.notes,
+            tags: newUser.tags || [],
             admin_user_id: user.id
           })
           .select()
@@ -163,7 +187,12 @@ const UserManagement = () => {
 
         if (error) throw error;
         
-        setUsers(prev => [data, ...prev]);
+        const formattedUser: UserRecord = {
+          ...data,
+          tags: Array.isArray(data.tags) ? data.tags : []
+        };
+        
+        setUsers(prev => [formattedUser, ...prev]);
         
         toast({
           title: "Berhasil",

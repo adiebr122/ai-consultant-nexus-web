@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { 
   Settings, 
@@ -13,7 +12,7 @@ import {
   MapPin,
   Share2,
   Search,
-  Analytics,
+  BarChart3,
   Copyright,
   MessageCircle
 } from 'lucide-react';
@@ -69,7 +68,7 @@ const SettingsManager = () => {
     {
       id: 'analytics',
       label: 'Analytics',
-      icon: Analytics,
+      icon: BarChart3,
       description: 'Google Analytics & tracking',
       component: AnalyticsSettings
     },
