@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { 
   Users, 
@@ -17,8 +16,7 @@ import {
   Package,
   UserCheck,
   Briefcase,
-  Home,
-  Phone
+  Home
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import HeroEditor from '@/components/HeroEditor';
@@ -123,6 +121,13 @@ const Admin = () => {
     </div>
   );
 
+  const renderSettings = () => (
+    <div className="space-y-8">
+      <ContactInfoManager />
+      <SettingsManager />
+    </div>
+  );
+
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
     { id: 'hero', label: 'Hero Section', icon: Home },
@@ -131,7 +136,6 @@ const Admin = () => {
     { id: 'livechat', label: 'Live Chat', icon: MessageCircle },
     { id: 'testimonials', label: 'Testimoni', icon: Star },
     { id: 'services', label: 'Layanan', icon: Package },
-    { id: 'contact', label: 'Info Kontak', icon: Phone },
     { id: 'crm', label: 'CRM', icon: UserCheck },
     { id: 'users', label: 'Pengguna', icon: Users },
     { id: 'settings', label: 'Pengaturan', icon: Settings }
@@ -186,7 +190,6 @@ const Admin = () => {
               {activeTab === 'livechat' && <LiveChatManager />}
               {activeTab === 'testimonials' && <TestimonialManager />}
               {activeTab === 'services' && <ServiceManager />}
-              {activeTab === 'contact' && <ContactInfoManager />}
               {activeTab === 'crm' && <CRMManager />}
               {activeTab === 'users' && (
                 <div className="text-center py-12">
@@ -195,7 +198,7 @@ const Admin = () => {
                   <p className="text-gray-500">Fitur kelola pengguna akan segera tersedia</p>
                 </div>
               )}
-              {activeTab === 'settings' && <SettingsManager />}
+              {activeTab === 'settings' && renderSettings()}
             </div>
           </div>
         </div>

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Save, RefreshCw, Phone, Mail, MapPin, Clock, Plus, Trash2, Edit3 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface ContactInfo {
   id: string;
@@ -84,6 +85,7 @@ const ContactInfoManager = () => {
         }
       }
     } catch (error: any) {
+      console.error('Error fetching contact info:', error);
       toast({
         title: "Error",
         description: `Gagal memuat informasi kontak: ${error.message}`,
@@ -312,13 +314,13 @@ const ContactInfoManager = () => {
             <Clock className="h-5 w-5 mr-2 text-blue-600" />
             Jam Operasional
           </h3>
-          <button
+          <Button
             onClick={addOperatingHour}
-            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center space-x-2"
+            className="bg-green-600 hover:bg-green-700"
           >
-            <Plus className="h-4 w-4" />
-            <span>Tambah Hari</span>
-          </button>
+            <Plus className="h-4 w-4 mr-2" />
+            Tambah Hari
+          </Button>
         </div>
 
         <div className="space-y-4">
@@ -377,13 +379,14 @@ const ContactInfoManager = () => {
 
               <div>
                 {operatingHours.length > 1 && (
-                  <button
+                  <Button
                     onClick={() => removeOperatingHour(index)}
-                    className="text-red-600 hover:text-red-800 p-2 hover:bg-red-50 rounded-lg transition-colors"
-                    title="Hapus hari ini"
+                    variant="outline"
+                    size="sm"
+                    className="text-red-600 hover:text-red-800"
                   >
                     <Trash2 className="h-4 w-4" />
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
@@ -393,18 +396,23 @@ const ContactInfoManager = () => {
 
       {/* Save Button */}
       <div className="flex justify-end">
-        <button
+        <Button
           onClick={saveContactInfo}
           disabled={saving}
-          className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+          className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
         >
           {saving ? (
-            <RefreshCw className="h-5 w-5 animate-spin" />
+            <>
+              <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
+              Menyimpan...
+            </>
           ) : (
-            <Save className="h-5 w-5" />
+            <>
+              <Save className="h-5 w-5 mr-2" />
+              Simpan Perubahan
+            </>
           )}
-          <span>{saving ? 'Menyimpan...' : 'Simpan Perubahan'}</span>
-        </button>
+        </Button>
       </div>
     </div>
   );
