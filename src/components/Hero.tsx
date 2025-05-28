@@ -27,14 +27,14 @@ const Hero = () => {
     fetchHeroContent();
   }, []);
 
-  // Auto-rotate dynamic headlines
+  // Auto-rotate dynamic headlines every 4 seconds
   useEffect(() => {
     if (heroContent?.dynamic_headlines && heroContent.dynamic_headlines.length > 1) {
       const timer = setInterval(() => {
         setCurrentHeadlineIndex((prev) => 
           (prev + 1) % heroContent.dynamic_headlines!.length
         );
-      }, 3000); // Change every 3 seconds
+      }, 4000); // Change every 4 seconds for better readability
 
       return () => clearInterval(timer);
     }
@@ -71,7 +71,7 @@ const Hero = () => {
     }
   };
 
-  // Default content if no CMS data
+  // Default content with more attractive and dynamic headlines
   const defaultContent: HeroContent = {
     title: 'AI Consultant Pro',
     subtitle: 'Transformasi Digital dengan Teknologi AI',
@@ -80,10 +80,13 @@ const Hero = () => {
     cta_secondary: 'Lihat Portfolio',
     hero_image_url: null,
     dynamic_headlines: [
-      'Solusi AI Terdepan untuk Bisnis Modern',
-      'Transformasi Digital yang Menguntungkan',
-      'Otomatisasi Cerdas untuk Efisiensi Maksimal',
-      'Inovasi AI yang Mengubah Industri'
+      'Revolusi Bisnis dengan Kekuatan AI 🚀',
+      'Otomatisasi Cerdas untuk Masa Depan 💡',
+      'Transformasi Digital yang Menguntungkan 📈',
+      'Inovasi AI yang Mengubah Industri ⚡',
+      'Efisiensi Maksimal dengan Teknologi Terdepan 🎯',
+      'Solusi AI yang Meningkatkan Produktivitas 💪',
+      'Bisnis Modern dengan Teknologi Pintar 🌟'
     ],
     stats: [
       { icon: 'Users', label: 'Klien Terpercaya', value: '150+' },
@@ -147,15 +150,23 @@ const Hero = () => {
               {content.subtitle}
             </div>
             
-            <div className="space-y-4">
+            <div className="space-y-6">
               <h1 className="text-5xl lg:text-7xl font-bold bg-gradient-to-r from-gray-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent leading-tight">
                 {content.title}
               </h1>
               
-              {/* Dynamic Headlines */}
-              <div className="h-16 flex items-center">
-                <h2 className="text-2xl lg:text-3xl font-semibold text-blue-600 animate-fade-in">
-                  {currentHeadlines[currentHeadlineIndex]}
+              {/* Enhanced Dynamic Headlines with better animation */}
+              <div className="h-20 flex items-center">
+                <h2 className="text-2xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent transition-all duration-1000 ease-in-out transform">
+                  <span 
+                    key={currentHeadlineIndex}
+                    className="inline-block animate-fade-in"
+                    style={{
+                      animation: 'fadeInUp 1s ease-out',
+                    }}
+                  >
+                    {currentHeadlines[currentHeadlineIndex]}
+                  </span>
                 </h2>
               </div>
             </div>
@@ -218,6 +229,20 @@ const Hero = () => {
           </div>
         </div>
       </div>
+
+      {/* Add custom CSS for fade animation */}
+      <style jsx>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     </section>
   );
 };
