@@ -1,156 +1,214 @@
 
-import { ExternalLink, Github, ArrowRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ExternalLink, Github, ArrowRight, Briefcase, Calendar, Award } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+
+interface PortfolioContent {
+  title: string;
+  description: string;
+  projects: Array<{
+    title: string;
+    description: string;
+    image_url: string;
+    client: string;
+    category: string;
+    technologies: string[];
+    demo_url?: string;
+    github_url?: string;
+  }>;
+}
 
 const Portfolio = () => {
-  const projects = [
-    {
-      title: 'E-Commerce Platform',
-      category: 'Web Development',
-      image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?ixlib=rb-4.0.3&auto=format&fit=crop&w=2340&q=80',
-      description: 'Platform e-commerce modern dengan AI recommendation system dan payment gateway terintegrasi.',
-      technologies: ['React', 'Node.js', 'PostgreSQL', 'Stripe'],
-      demoUrl: '#',
-      githubUrl: '#'
-    },
-    {
-      title: 'Banking Mobile App',
-      category: 'Mobile App',
-      image: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?ixlib=rb-4.0.3&auto=format&fit=crop&w=2340&q=80',
-      description: 'Aplikasi mobile banking dengan fitur AI fraud detection dan biometric authentication.',
-      technologies: ['React Native', 'Firebase', 'TensorFlow', 'Biometric API'],
-      demoUrl: '#',
-      githubUrl: '#'
-    },
-    {
-      title: 'AI Customer Service Bot',
-      category: 'AI Development',
-      image: 'https://images.unsplash.com/photo-1531746790731-6c087fecd65a?ixlib=rb-4.0.3&auto=format&fit=crop&w=2340&q=80',
-      description: 'Chatbot AI yang dapat menangani 80% customer inquiries dengan natural language processing.',
-      technologies: ['Python', 'OpenAI', 'Dialogflow', 'WebSocket'],
-      demoUrl: '#',
-      githubUrl: '#'
-    },
-    {
-      title: 'Healthcare Management System',
-      category: 'Web Development',
-      image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?ixlib=rb-4.0.3&auto=format&fit=crop&w=2340&q=80',
-      description: 'Sistem manajemen rumah sakit dengan AI diagnostic assistance dan telemedicine features.',
-      technologies: ['Vue.js', 'Laravel', 'MySQL', 'WebRTC'],
-      demoUrl: '#',
-      githubUrl: '#'
-    },
-    {
-      title: 'Food Delivery App',
-      category: 'Mobile App',
-      image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?ixlib=rb-4.0.3&auto=format&fit=crop&w=2340&q=80',
-      description: 'Aplikasi food delivery dengan real-time tracking dan AI-powered restaurant recommendations.',
-      technologies: ['Flutter', 'Firebase', 'Google Maps', 'Machine Learning'],
-      demoUrl: '#',
-      githubUrl: '#'
-    },
-    {
-      title: 'Smart Analytics Dashboard',
-      category: 'AI Development',
-      image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=2340&q=80',
-      description: 'Dashboard analytics dengan AI insights untuk business intelligence dan predictive analytics.',
-      technologies: ['React', 'D3.js', 'Python', 'TensorFlow'],
-      demoUrl: '#',
-      githubUrl: '#'
-    }
-  ];
+  const [portfolioContent, setPortfolioContent] = useState<PortfolioContent | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const categories = ['All', 'Web Development', 'Mobile App', 'AI Development'];
+  useEffect(() => {
+    fetchPortfolioContent();
+  }, []);
+
+  const fetchPortfolioContent = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('website_content')
+        .select('*')
+        .eq('section', 'portfolio')
+        .eq('is_active', true)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+
+      if (data && data.metadata) {
+        const metadata = data.metadata as any;
+        setPortfolioContent({
+          title: data.title || 'Portfolio Proyek Terbaik',
+          description: data.content || 'Lihat hasil karya terbaik kami dalam mengembangkan solusi AI dan aplikasi untuk berbagai industri.',
+          projects: metadata.projects || []
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching portfolio content:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Default content if no CMS data
+  const defaultContent: PortfolioContent = {
+    title: 'Portfolio Proyek Terbaik',
+    description: 'Lihat hasil karya terbaik kami dalam mengembangkan solusi AI dan aplikasi untuk berbagai industri.',
+    projects: [
+      {
+        title: 'AI Banking Assistant',
+        description: 'Chatbot AI untuk customer service perbankan dengan Natural Language Processing yang mampu menangani 95% pertanyaan nasabah secara otomatis.',
+        image_url: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?ixlib=rb-4.0.3&auto=format&fit=crop&w=2850&q=80',
+        client: 'Bank Central Asia',
+        category: 'AI Chatbot',
+        technologies: ['Python', 'TensorFlow', 'NLP', 'React'],
+        demo_url: '#',
+        github_url: '#'
+      },
+      {
+        title: 'Smart Logistics Platform',
+        description: 'Platform AI untuk optimasi rute pengiriman yang berhasil mengurangi biaya operasional hingga 30% dan meningkatkan efisiensi delivery.',
+        image_url: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?ixlib=rb-4.0.3&auto=format&fit=crop&w=2850&q=80',
+        client: 'Gojek Indonesia',
+        category: 'Machine Learning',
+        technologies: ['Python', 'scikit-learn', 'Django', 'PostgreSQL'],
+        demo_url: '#'
+      },
+      {
+        title: 'E-commerce Analytics Dashboard',
+        description: 'Dashboard real-time analytics dengan AI untuk prediksi trend penjualan dan rekomendasi produk yang meningkatkan conversion rate 45%.',
+        image_url: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=2850&q=80',
+        client: 'Tokopedia',
+        category: 'Data Analytics',
+        technologies: ['React', 'D3.js', 'Node.js', 'MongoDB'],
+        demo_url: '#'
+      }
+    ]
+  };
+
+  const content = portfolioContent || defaultContent;
+
+  if (loading) {
+    return (
+      <section id="portfolio" className="py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16 animate-pulse">
+            <div className="h-8 bg-gray-300 rounded w-1/2 mx-auto mb-4"></div>
+            <div className="h-4 bg-gray-300 rounded w-3/4 mx-auto"></div>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[1, 2, 3].map((_, index) => (
+              <div key={index} className="bg-white rounded-2xl shadow-lg overflow-hidden animate-pulse">
+                <div className="h-48 bg-gray-300"></div>
+                <div className="p-6 space-y-4">
+                  <div className="h-6 bg-gray-300 rounded"></div>
+                  <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+                  <div className="space-y-2">
+                    <div className="h-3 bg-gray-300 rounded"></div>
+                    <div className="h-3 bg-gray-300 rounded w-2/3"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section id="portfolio" className="py-20 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-gray-900 mb-4">
-            Portfolio Proyek Kami
+            {content.title}
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Lihat berbagai proyek sukses yang telah kami kerjakan untuk klien dari berbagai industri. 
-            Setiap proyek dirancang dengan teknologi terdepan dan standar kualitas tinggi.
+            {content.description}
           </p>
         </div>
 
-        {/* Category Filter */}
-        <div className="flex flex-wrap justify-center gap-4 mb-12">
-          {categories.map((category, index) => (
-            <button
-              key={index}
-              className={`px-6 py-3 rounded-full font-medium transition-all duration-300 ${
-                index === 0 
-                  ? 'bg-blue-600 text-white shadow-lg' 
-                  : 'bg-white text-gray-600 hover:bg-blue-600 hover:text-white shadow-md'
-              }`}
-            >
-              {category}
-            </button>
-          ))}
-        </div>
-
-        {/* Portfolio Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {projects.map((project, index) => (
-            <div key={index} className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 group">
-              <div className="relative overflow-hidden">
-                <img 
-                  src={project.image} 
-                  alt={project.title}
-                  className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
-                />
-                <div className="absolute inset-0 bg-blue-600 bg-opacity-0 group-hover:bg-opacity-80 transition-all duration-300 flex items-center justify-center">
-                  <div className="flex space-x-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <a 
-                      href={project.demoUrl}
-                      className="bg-white text-blue-600 p-3 rounded-full hover:bg-gray-100 transition-colors"
-                    >
-                      <ExternalLink className="h-5 w-5" />
-                    </a>
-                    <a 
-                      href={project.githubUrl}
-                      className="bg-white text-blue-600 p-3 rounded-full hover:bg-gray-100 transition-colors"
-                    >
-                      <Github className="h-5 w-5" />
-                    </a>
+        {content.projects.length === 0 ? (
+          <div className="text-center py-12">
+            <Briefcase className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Belum Ada Portfolio</h3>
+            <p className="text-gray-500">Portfolio proyek akan ditampilkan di sini setelah ditambahkan di CMS</p>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {content.projects.map((project, index) => (
+              <div 
+                key={index} 
+                className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 group"
+              >
+                <div className="relative overflow-hidden">
+                  <img 
+                    src={project.image_url} 
+                    alt={project.title}
+                    className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
+                    onError={(e) => {
+                      e.currentTarget.src = 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80';
+                    }}
+                  />
+                  <div className="absolute top-4 right-4">
+                    <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-medium">
+                      {project.category}
+                    </span>
                   </div>
                 </div>
-                <div className="absolute top-4 left-4">
-                  <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-medium">
-                    {project.category}
-                  </span>
-                </div>
-              </div>
-              
-              <div className="p-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">{project.title}</h3>
-                <p className="text-gray-600 mb-4 leading-relaxed">{project.description}</p>
                 
-                <div className="mb-4">
-                  <div className="flex flex-wrap gap-2">
-                    {project.technologies.map((tech, idx) => (
-                      <span key={idx} className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">
+                <div className="p-6">
+                  <div className="flex items-center mb-2">
+                    <Award className="h-4 w-4 text-blue-600 mr-2" />
+                    <span className="text-sm text-blue-600 font-medium">{project.client}</span>
+                  </div>
+                  
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">{project.title}</h3>
+                  <p className="text-gray-600 mb-4 leading-relaxed">{project.description}</p>
+                  
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {project.technologies.map((tech, techIndex) => (
+                      <span 
+                        key={techIndex}
+                        className="bg-gray-100 text-gray-700 px-2 py-1 rounded-md text-xs"
+                      >
                         {tech}
                       </span>
                     ))}
                   </div>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <button className="text-blue-600 font-medium flex items-center hover:text-blue-700 transition-colors">
-                    View Details
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </button>
+                  
+                  <div className="flex items-center space-x-3">
+                    {project.demo_url && (
+                      <a 
+                        href={project.demo_url}
+                        className="flex items-center text-blue-600 hover:text-blue-800 transition-colors"
+                      >
+                        <ExternalLink className="h-4 w-4 mr-1" />
+                        <span className="text-sm font-medium">Demo</span>
+                      </a>
+                    )}
+                    {project.github_url && (
+                      <a 
+                        href={project.github_url}
+                        className="flex items-center text-gray-600 hover:text-gray-800 transition-colors"
+                      >
+                        <Github className="h-4 w-4 mr-1" />
+                        <span className="text-sm font-medium">Code</span>
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-
+            ))}
+          </div>
+        )}
+        
         <div className="text-center mt-12">
-          <button className="bg-blue-600 text-white px-8 py-4 rounded-lg hover:bg-blue-700 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl">
-            Lihat Semua Proyek
+          <button className="bg-blue-600 text-white px-8 py-3 rounded-xl hover:bg-blue-700 transition-colors duration-300 flex items-center mx-auto font-semibold">
+            Lihat Semua Portfolio
+            <ArrowRight className="ml-2 h-5 w-5" />
           </button>
         </div>
       </div>
