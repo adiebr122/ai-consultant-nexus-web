@@ -1,4 +1,3 @@
-
 import { useState, Suspense, lazy, useEffect } from 'react';
 import { 
   Users, 
@@ -12,12 +11,15 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/s
 import Navbar from '@/components/Navbar';
 import AdminSidebar from '@/components/AdminSidebar';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import AdminSkeleton from '@/components/AdminSkeleton';
+import LoadingWrapper from '@/components/LoadingWrapper';
 import { useAuth } from '@/hooks/useAuth';
 
-// Lazy load components
-const HeroEditor = lazy(() => import('@/components/HeroEditor'));
-const FormSubmissions = lazy(() => import('@/components/FormSubmissions'));
+// Import critical components directly (no lazy loading for frequently used ones)
+import HeroEditor from '@/components/HeroEditor';
+import FormSubmissions from '@/components/FormSubmissions';
+import UserManagement from '@/components/UserManagement';
+
+// Keep lazy loading only for less frequently used components
 const LiveChatManager = lazy(() => import('@/components/LiveChatManager'));
 const TestimonialManager = lazy(() => import('@/components/TestimonialManager'));
 const ServiceManager = lazy(() => import('@/components/ServiceManager'));
@@ -26,17 +28,24 @@ const PortfolioDetail = lazy(() => import('@/components/PortfolioDetail'));
 const CRMManager = lazy(() => import('@/components/CRMManager'));
 const SettingsManager = lazy(() => import('@/components/SettingsManager'));
 const ClientLogosManager = lazy(() => import('@/components/ClientLogosManager'));
-const UserManagement = lazy(() => import('@/components/UserManagement'));
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedProject, setSelectedProject] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
 
   const handleRefresh = () => {
     setRefreshKey(prev => prev + 1);
     setSelectedProject(null);
+  };
+
+  const handleTabChange = (tab: string) => {
+    setIsLoading(true);
+    setActiveTab(tab);
+    // Simulate quick loading for better UX
+    setTimeout(() => setIsLoading(false), 200);
   };
 
   const stats = [
@@ -128,7 +137,7 @@ const Admin = () => {
   const renderContent = () => {
     if (activeTab === 'portfolio' && selectedProject) {
       return (
-        <Suspense fallback={<AdminSkeleton />}>
+        <Suspense fallback={<LoadingWrapper loading={true} loadingText="Memuat detail portfolio..." />}>
           <PortfolioDetail 
             project={selectedProject} 
             onBack={() => setSelectedProject(null)} 
@@ -137,79 +146,68 @@ const Admin = () => {
       );
     }
 
-    const QuickSkeleton = () => (
-      <div className="space-y-4 animate-pulse">
-        <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-        <div className="h-32 bg-gray-100 rounded"></div>
-      </div>
-    );
+    const content = (() => {
+      switch (activeTab) {
+        case 'dashboard':
+          return renderDashboard();
+        case 'hero':
+          return <HeroEditor key={refreshKey} />;
+        case 'portfolio':
+          return (
+            <Suspense fallback={<LoadingWrapper loading={true} loadingText="Memuat portfolio..." />}>
+              <PortfolioManager key={refreshKey} onProjectSelect={setSelectedProject} />
+            </Suspense>
+          );
+        case 'clientlogos':
+          return (
+            <Suspense fallback={<LoadingWrapper loading={true} loadingText="Memuat client logos..." />}>
+              <ClientLogosManager key={refreshKey} />
+            </Suspense>
+          );
+        case 'submissions':
+          return <FormSubmissions key={refreshKey} />;
+        case 'livechat':
+          return (
+            <Suspense fallback={<LoadingWrapper loading={true} loadingText="Memuat live chat..." />}>
+              <LiveChatManager key={refreshKey} />
+            </Suspense>
+          );
+        case 'testimonials':
+          return (
+            <Suspense fallback={<LoadingWrapper loading={true} loadingText="Memuat testimonial..." />}>
+              <TestimonialManager key={refreshKey} />
+            </Suspense>
+          );
+        case 'services':
+          return (
+            <Suspense fallback={<LoadingWrapper loading={true} loadingText="Memuat services..." />}>
+              <ServiceManager key={refreshKey} />
+            </Suspense>
+          );
+        case 'crm':
+          return (
+            <Suspense fallback={<LoadingWrapper loading={true} loadingText="Memuat CRM..." />}>
+              <CRMManager key={refreshKey} />
+            </Suspense>
+          );
+        case 'users':
+          return <UserManagement key={refreshKey} />;
+        case 'settings':
+          return (
+            <Suspense fallback={<LoadingWrapper loading={true} loadingText="Memuat settings..." />}>
+              <SettingsManager key={refreshKey} />
+            </Suspense>
+          );
+        default:
+          return renderDashboard();
+      }
+    })();
 
-    switch (activeTab) {
-      case 'dashboard':
-        return renderDashboard();
-      case 'hero':
-        return (
-          <Suspense fallback={<QuickSkeleton />}>
-            <HeroEditor key={refreshKey} />
-          </Suspense>
-        );
-      case 'portfolio':
-        return (
-          <Suspense fallback={<QuickSkeleton />}>
-            <PortfolioManager key={refreshKey} onProjectSelect={setSelectedProject} />
-          </Suspense>
-        );
-      case 'clientlogos':
-        return (
-          <Suspense fallback={<QuickSkeleton />}>
-            <ClientLogosManager key={refreshKey} />
-          </Suspense>
-        );
-      case 'submissions':
-        return (
-          <Suspense fallback={<QuickSkeleton />}>
-            <FormSubmissions key={refreshKey} />
-          </Suspense>
-        );
-      case 'livechat':
-        return (
-          <Suspense fallback={<QuickSkeleton />}>
-            <LiveChatManager key={refreshKey} />
-          </Suspense>
-        );
-      case 'testimonials':
-        return (
-          <Suspense fallback={<QuickSkeleton />}>
-            <TestimonialManager key={refreshKey} />
-          </Suspense>
-        );
-      case 'services':
-        return (
-          <Suspense fallback={<QuickSkeleton />}>
-            <ServiceManager key={refreshKey} />
-          </Suspense>
-        );
-      case 'crm':
-        return (
-          <Suspense fallback={<QuickSkeleton />}>
-            <CRMManager key={refreshKey} />
-          </Suspense>
-        );
-      case 'users':
-        return (
-          <Suspense fallback={<QuickSkeleton />}>
-            <UserManagement key={refreshKey} />
-          </Suspense>
-        );
-      case 'settings':
-        return (
-          <Suspense fallback={<QuickSkeleton />}>
-            <SettingsManager key={refreshKey} />
-          </Suspense>
-        );
-      default:
-        return renderDashboard();
-    }
+    return (
+      <LoadingWrapper loading={isLoading} loadingText="Memuat halaman...">
+        {content}
+      </LoadingWrapper>
+    );
   };
 
   return (
@@ -220,7 +218,7 @@ const Admin = () => {
         <div className="pt-16">
           <SidebarProvider>
             <div className="flex min-h-screen w-full">
-              <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} />
+              <AdminSidebar activeTab={activeTab} onTabChange={handleTabChange} />
               
               <SidebarInset>
                 <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4 bg-white">
