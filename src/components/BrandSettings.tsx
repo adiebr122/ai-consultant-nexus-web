@@ -30,47 +30,25 @@ const BrandSettings = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    initializeStorage();
     fetchBrandSettings();
   }, []);
 
-  const initializeStorage = async () => {
-    try {
-      // Check if bucket exists
-      const { data: buckets } = await supabase.storage.listBuckets();
-      const brandBucketExists = buckets?.some(bucket => bucket.name === 'brand-assets');
-
-      if (!brandBucketExists) {
-        // Create bucket if it doesn't exist
-        const { error } = await supabase.storage.createBucket('brand-assets', {
-          public: true,
-          fileSizeLimit: 10485760, // 10MB
-          allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
-        });
-
-        if (error) {
-          console.error('Error creating bucket:', error);
-          toast({
-            title: "Info",
-            description: "Menggunakan URL langsung untuk gambar. Bucket storage tidak tersedia.",
-            variant: "default",
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Error initializing storage:', error);
-    }
-  };
-
   const fetchBrandSettings = async () => {
     try {
+      console.log('Fetching brand settings...');
       setLoading(true);
+      
       const { data, error } = await supabase
         .from('app_settings')
         .select('*')
         .eq('setting_category', 'brand_config');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching brand settings:', error);
+        throw error;
+      }
+
+      console.log('Fetched brand settings:', data);
 
       if (data && data.length > 0) {
         const updatedSettings = settings.map(setting => {
@@ -82,6 +60,7 @@ const BrandSettings = () => {
           } : setting;
         });
         setSettings(updatedSettings);
+        console.log('Updated settings state:', updatedSettings);
       }
     } catch (error: any) {
       console.error('Error fetching brand settings:', error);
@@ -96,6 +75,7 @@ const BrandSettings = () => {
   };
 
   const handleInputChange = (index: number, value: string) => {
+    console.log(`Updating setting at index ${index} with value:`, value);
     const updated = [...settings];
     updated[index] = { ...updated[index], setting_value: value };
     setSettings(updated);
@@ -104,6 +84,7 @@ const BrandSettings = () => {
   const handleImageUpload = async (index: number, file: File) => {
     try {
       setUploading(settings[index].setting_key);
+      console.log('Uploading file:', file.name, 'for setting:', settings[index].setting_key);
       
       // Validate file
       if (!file.type.startsWith('image/')) {
@@ -118,7 +99,9 @@ const BrandSettings = () => {
       const fileExt = file.name.split('.').pop();
       const fileName = `${settings[index].setting_key}_${Date.now()}.${fileExt}`;
       
-      // Try to upload to storage first
+      console.log('Uploading to storage with filename:', fileName);
+      
+      // Try to upload to storage
       const { data, error } = await supabase.storage
         .from('brand-assets')
         .upload(fileName, file, {
@@ -127,6 +110,7 @@ const BrandSettings = () => {
         });
 
       if (error) {
+        console.error('Storage upload error:', error);
         // If upload fails, create a local URL as fallback
         const localUrl = URL.createObjectURL(file);
         handleInputChange(index, localUrl);
@@ -137,11 +121,14 @@ const BrandSettings = () => {
           variant: "default",
         });
       } else {
+        console.log('Upload successful:', data);
         // Get public URL
         const { data: { publicUrl } } = supabase.storage
           .from('brand-assets')
           .getPublicUrl(fileName);
 
+        console.log('Public URL:', publicUrl);
+        
         // Update the setting value with the URL
         handleInputChange(index, publicUrl);
 
@@ -164,49 +151,106 @@ const BrandSettings = () => {
 
   const saveBrandSettings = async () => {
     try {
+      console.log('Starting to save brand settings...');
       setSaving(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User tidak terautentikasi');
+      
+      // Check authentication
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError) {
+        console.error('Auth error:', authError);
+        throw new Error('Error checking authentication');
+      }
+      
+      if (!user) {
+        console.error('No authenticated user found');
+        throw new Error('User tidak terautentikasi');
+      }
+
+      console.log('Authenticated user:', user.id);
+      console.log('Settings to save:', settings);
+
+      let successCount = 0;
+      let errorCount = 0;
 
       for (const setting of settings) {
-        const settingData = {
-          setting_category: 'brand_config',
-          setting_key: setting.setting_key,
-          setting_value: setting.setting_value,
-          setting_type: setting.setting_key.includes('color') ? 'color' : 'text',
-          description: setting.description,
-          is_public: true,
-          updated_at: new Date().toISOString()
-        };
+        try {
+          console.log(`Processing setting: ${setting.setting_key} with value: ${setting.setting_value}`);
+          
+          const settingData = {
+            setting_category: 'brand_config',
+            setting_key: setting.setting_key,
+            setting_value: setting.setting_value || '',
+            setting_type: setting.setting_key.includes('color') ? 'color' : 'text',
+            description: setting.description,
+            is_public: true,
+            updated_at: new Date().toISOString()
+          };
 
-        if (setting.id) {
-          const { error } = await supabase
-            .from('app_settings')
-            .update(settingData)
-            .eq('id', setting.id);
-          if (error) throw error;
-        } else {
-          const { error } = await supabase
-            .from('app_settings')
-            .insert({
-              user_id: user.id,
-              ...settingData
-            });
-          if (error) throw error;
+          if (setting.id) {
+            console.log(`Updating existing setting with ID: ${setting.id}`);
+            const { error } = await supabase
+              .from('app_settings')
+              .update(settingData)
+              .eq('id', setting.id);
+            
+            if (error) {
+              console.error(`Error updating setting ${setting.setting_key}:`, error);
+              errorCount++;
+            } else {
+              console.log(`Successfully updated setting: ${setting.setting_key}`);
+              successCount++;
+            }
+          } else {
+            console.log(`Inserting new setting: ${setting.setting_key}`);
+            const { data: insertedData, error } = await supabase
+              .from('app_settings')
+              .insert({
+                user_id: user.id,
+                ...settingData
+              })
+              .select();
+            
+            if (error) {
+              console.error(`Error inserting setting ${setting.setting_key}:`, error);
+              errorCount++;
+            } else {
+              console.log(`Successfully inserted setting: ${setting.setting_key}`, insertedData);
+              // Update the setting with the returned ID
+              const updatedSettings = [...settings];
+              const settingIndex = updatedSettings.findIndex(s => s.setting_key === setting.setting_key);
+              if (settingIndex !== -1 && insertedData && insertedData[0]) {
+                updatedSettings[settingIndex].id = insertedData[0].id;
+                setSettings(updatedSettings);
+              }
+              successCount++;
+            }
+          }
+        } catch (settingError: any) {
+          console.error(`Error processing setting ${setting.setting_key}:`, settingError);
+          errorCount++;
         }
       }
 
-      toast({
-        title: "Berhasil!",
-        description: "Pengaturan brand berhasil disimpan dan akan segera terupdate di website",
-      });
+      console.log(`Save completed. Success: ${successCount}, Errors: ${errorCount}`);
 
-      // Trigger a page refresh to apply new settings
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+      if (errorCount === 0) {
+        toast({
+          title: "Berhasil!",
+          description: "Semua pengaturan brand berhasil disimpan",
+        });
+      } else if (successCount > 0) {
+        toast({
+          title: "Sebagian Berhasil",
+          description: `${successCount} pengaturan berhasil disimpan, ${errorCount} gagal`,
+          variant: "default",
+        });
+      } else {
+        throw new Error('Semua pengaturan gagal disimpan');
+      }
 
+      // Refresh the settings from database
       await fetchBrandSettings();
+      
     } catch (error: any) {
       console.error('Error saving brand settings:', error);
       toast({
