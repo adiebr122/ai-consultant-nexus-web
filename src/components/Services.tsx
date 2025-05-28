@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { ArrowRight, Code, Brain, Smartphone, Globe, Database, Shield } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useWhatsAppSettings } from '@/hooks/useWhatsAppSettings';
 
 interface Service {
   id: string;
@@ -25,6 +26,7 @@ const Services = () => {
   const [services, setServices] = useState<Service[]>([]);
   const [content, setContent] = useState<ServicesContent | null>(null);
   const [loading, setLoading] = useState(true);
+  const { createWhatsAppLink } = useWhatsAppSettings();
 
   useEffect(() => {
     fetchContent();
@@ -185,6 +187,12 @@ const Services = () => {
     }
   };
 
+  const handleServiceClick = (serviceName: string) => {
+    const message = `Halo, saya tertarik dengan layanan ${serviceName}. Bisakah kita berdiskusi lebih lanjut mengenai konsultasi gratis?`;
+    const whatsappLink = createWhatsAppLink(message);
+    window.open(whatsappLink, '_blank');
+  };
+
   if (loading) {
     return (
       <section id="layanan" className="py-20 bg-white">
@@ -277,13 +285,13 @@ const Services = () => {
                     </div>
                   </div>
                   
-                  <Link
-                    to={`/service/${service.id}`}
+                  <button
+                    onClick={() => handleServiceClick(service.service_name)}
                     className="group/btn bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 flex items-center justify-center font-semibold shadow-lg hover:shadow-xl w-full"
                   >
-                    Pelajari Lebih Lanjut
+                    Konsultasi Gratis
                     <ArrowRight className="ml-2 h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
-                  </Link>
+                  </button>
                 </div>
               );
             })}

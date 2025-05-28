@@ -1,7 +1,7 @@
-
 import { useState, useEffect } from 'react';
 import { ArrowRight, Play, Star, Users, Award, TrendingUp, Sparkles, Zap, Rocket, Target } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useWhatsAppSettings } from '@/hooks/useWhatsAppSettings';
 
 interface HeroContent {
   title: string;
@@ -24,6 +24,7 @@ const Hero = () => {
   const [loading, setLoading] = useState(true);
   const [currentHeadlineIndex, setCurrentHeadlineIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
+  const { createWhatsAppLink } = useWhatsAppSettings();
 
   useEffect(() => {
     fetchHeroContent();
@@ -84,7 +85,7 @@ const Hero = () => {
     description: 'Solusi AI terdepan untuk bisnis modern. Kami membantu perusahaan mengoptimalkan operasional, meningkatkan efisiensi, dan mencapai pertumbuhan berkelanjutan melalui implementasi teknologi Artificial Intelligence yang tepat sasaran.',
     cta_primary: 'Konsultasi Gratis',
     cta_secondary: 'Lihat Portfolio',
-    cta_primary_url: 'https://wa.me/6281234567890',
+    cta_primary_url: '',
     hero_image_url: null,
     dynamic_headlines: [
       'Revolusi Bisnis dengan Kekuatan AI 🚀',
@@ -117,11 +118,12 @@ const Hero = () => {
   };
 
   const handlePrimaryClick = () => {
-    window.open(content.cta_primary_url, '_blank');
+    const whatsappLink = createWhatsAppLink();
+    window.open(whatsappLink, '_blank');
   };
 
   const handleSecondaryClick = () => {
-    window.location.href = '/portfolio';
+    window.location.href = '#portfolio';
   };
 
   if (loading) {

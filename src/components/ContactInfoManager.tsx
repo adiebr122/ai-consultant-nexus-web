@@ -1,94 +1,58 @@
 
 import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { Phone, Mail, MapPin, MessageCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Save, RefreshCw, Phone, Mail, MapPin, Clock, Plus, Trash2, Edit3 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-
-interface ContactInfo {
-  id: string;
-  setting_key: string;
-  setting_value: string;
-  description: string;
-}
-
-interface OperatingHour {
-  day: string;
-  open_time: string;
-  close_time: string;
-  is_closed: boolean;
-}
 
 const ContactInfoManager = () => {
-  const [contactInfo, setContactInfo] = useState<ContactInfo[]>([]);
-  const [operatingHours, setOperatingHours] = useState<OperatingHour[]>([
-    { day: 'Senin - Jumat', open_time: '09:00', close_time: '18:00', is_closed: false },
-    { day: 'Sabtu', open_time: '09:00', close_time: '15:00', is_closed: false },
-    { day: 'Minggu', open_time: '', close_time: '', is_closed: true }
-  ]);
-  const [loading, setLoading] = useState(true);
+  const [contactInfo, setContactInfo] = useState({
+    company_phone: '',
+    company_email: '',
+    company_address: '',
+    whatsapp_number: '085674722278', // Default number
+    whatsapp_message: 'Halo, saya tertarik untuk konsultasi gratis mengenai layanan AI dan digital transformation. Bisakah kita berdiskusi lebih lanjut?'
+  });
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
-
-  const defaultContactFields = [
-    { key: 'company_phone', label: 'Nomor Telepon', icon: Phone, placeholder: '+62 21 5555 1234' },
-    { key: 'company_email', label: 'Email', icon: Mail, placeholder: 'hello@visualmediax.com' },
-    { key: 'company_address', label: 'Alamat Lengkap', icon: MapPin, placeholder: 'Menara BCA Lt. 25\nJl. MH Thamrin No. 1\nJakarta Pusat 10310' }
-  ];
 
   useEffect(() => {
     fetchContactInfo();
   }, []);
 
   const fetchContactInfo = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
       const { data, error } = await supabase
-        .from('app_settings')
-        .select('*')
-        .eq('setting_category', 'contact_info')
-        .order('setting_key');
+        .from('site_settings')
+        .select('key, value')
+        .in('key', ['company_phone', 'company_email', 'company_address', 'whatsapp_number', 'whatsapp_message']);
 
       if (error) throw error;
 
-      // Initialize with default fields if no data exists
-      if (!data || data.length === 0) {
-        const initialData = defaultContactFields.map(field => ({
-          id: '',
-          setting_key: field.key,
-          setting_value: field.placeholder,
-          description: field.label
-        }));
-        setContactInfo(initialData);
-      } else {
-        setContactInfo(data.map(item => ({
-          id: item.id,
-          setting_key: item.setting_key,
-          setting_value: item.setting_value || '',
-          description: item.description || ''
-        })));
-      }
+      const settings = data?.reduce((acc, setting) => {
+        acc[setting.key] = setting.value || '';
+        return acc;
+      }, {} as Record<string, string>) || {};
 
-      // Fetch operating hours
-      const { data: hoursData } = await supabase
-        .from('app_settings')
-        .select('*')
-        .eq('setting_category', 'operating_hours')
-        .eq('setting_key', 'business_hours')
-        .maybeSingle();
-
-      if (hoursData && hoursData.setting_value) {
-        try {
-          setOperatingHours(JSON.parse(hoursData.setting_value));
-        } catch (e) {
-          console.error('Error parsing operating hours:', e);
-        }
-      }
-    } catch (error: any) {
+      setContactInfo({
+        company_phone: settings.company_phone || '',
+        company_email: settings.company_email || '',
+        company_address: settings.company_address || '',
+        whatsapp_number: settings.whatsapp_number || '085674722278',
+        whatsapp_message: settings.whatsapp_message || 'Halo, saya tertarik untuk konsultasi gratis mengenai layanan AI dan digital transformation. Bisakah kita berdiskusi lebih lanjut?'
+      });
+    } catch (error) {
       console.error('Error fetching contact info:', error);
       toast({
         title: "Error",
-        description: `Gagal memuat informasi kontak: ${error.message}`,
+        description: "Gagal mengambil informasi kontak",
         variant: "destructive",
       });
     } finally {
@@ -96,144 +60,38 @@ const ContactInfoManager = () => {
     }
   };
 
-  const handleContactChange = (index: number, field: 'setting_value' | 'description', value: string) => {
-    const updated = [...contactInfo];
-    updated[index] = { ...updated[index], [field]: value };
-    setContactInfo(updated);
-  };
-
-  const handleOperatingHourChange = (index: number, field: keyof OperatingHour, value: string | boolean) => {
-    const updated = [...operatingHours];
-    updated[index] = { ...updated[index], [field]: value };
-    setOperatingHours(updated);
-  };
-
-  const addOperatingHour = () => {
-    setOperatingHours([...operatingHours, { day: '', open_time: '09:00', close_time: '17:00', is_closed: false }]);
-  };
-
-  const removeOperatingHour = (index: number) => {
-    if (operatingHours.length > 1) {
-      setOperatingHours(operatingHours.filter((_, i) => i !== index));
-    }
-  };
-
-  const saveContactInfo = async () => {
+  const handleSave = async () => {
+    setSaving(true);
     try {
-      setSaving(true);
-      console.log('Starting to save contact info...');
-      
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('User tidak terautentikasi');
-      }
+      const updates = Object.entries(contactInfo).map(([key, value]) => ({
+        key,
+        value,
+        description: getFieldDescription(key),
+        user_id: '00000000-0000-0000-0000-000000000000' // Default system user
+      }));
 
-      console.log('User authenticated:', user.id);
+      // First, delete existing settings
+      await supabase
+        .from('site_settings')
+        .delete()
+        .in('key', Object.keys(contactInfo));
 
-      // Save contact info
-      for (const info of contactInfo) {
-        console.log('Saving contact info:', info);
-        
-        const contactData = {
-          setting_category: 'contact_info',
-          setting_key: info.setting_key,
-          setting_value: info.setting_value,
-          setting_type: 'text',
-          description: info.description,
-          is_public: true,
-          updated_at: new Date().toISOString()
-        };
+      // Then insert new settings
+      const { error } = await supabase
+        .from('site_settings')
+        .insert(updates);
 
-        if (info.id) {
-          console.log('Updating existing contact info with ID:', info.id);
-          const { error } = await supabase
-            .from('app_settings')
-            .update(contactData)
-            .eq('id', info.id);
-          
-          if (error) {
-            console.error('Error updating contact info:', error);
-            throw error;
-          }
-        } else {
-          console.log('Creating new contact info');
-          const { error } = await supabase
-            .from('app_settings')
-            .insert({
-              user_id: user.id,
-              ...contactData
-            });
-          
-          if (error) {
-            console.error('Error creating contact info:', error);
-            throw error;
-          }
-        }
-      }
-
-      console.log('Contact info saved successfully');
-
-      // Save operating hours
-      console.log('Saving operating hours:', operatingHours);
-      
-      const { data: existingHours } = await supabase
-        .from('app_settings')
-        .select('id')
-        .eq('setting_category', 'operating_hours')
-        .eq('setting_key', 'business_hours')
-        .maybeSingle();
-
-      const hoursData = {
-        setting_category: 'operating_hours',
-        setting_key: 'business_hours',
-        setting_value: JSON.stringify(operatingHours),
-        setting_type: 'json',
-        description: 'Jam operasional bisnis',
-        is_public: true,
-        updated_at: new Date().toISOString()
-      };
-
-      if (existingHours) {
-        console.log('Updating existing operating hours with ID:', existingHours.id);
-        const { error } = await supabase
-          .from('app_settings')
-          .update(hoursData)
-          .eq('id', existingHours.id);
-        
-        if (error) {
-          console.error('Error updating operating hours:', error);
-          throw error;
-        }
-      } else {
-        console.log('Creating new operating hours');
-        const { error } = await supabase
-          .from('app_settings')
-          .insert({
-            user_id: user.id,
-            ...hoursData
-          });
-        
-        if (error) {
-          console.error('Error creating operating hours:', error);
-          throw error;
-        }
-      }
-
-      console.log('Operating hours saved successfully');
+      if (error) throw error;
 
       toast({
-        title: "Berhasil!",
-        description: "Informasi kontak dan jam operasional berhasil disimpan",
+        title: "Berhasil",
+        description: "Informasi kontak berhasil disimpan",
       });
-
-      // Refresh data to get updated IDs
-      await fetchContactInfo();
-      
-    } catch (error: any) {
-      console.error('Error in saveContactInfo:', error);
+    } catch (error) {
+      console.error('Error saving contact info:', error);
       toast({
         title: "Error",
-        description: `Gagal menyimpan: ${error.message}`,
+        description: "Gagal menyimpan informasi kontak",
         variant: "destructive",
       });
     } finally {
@@ -241,180 +99,144 @@ const ContactInfoManager = () => {
     }
   };
 
+  const getFieldDescription = (key: string) => {
+    const descriptions = {
+      company_phone: 'Nomor telepon perusahaan',
+      company_email: 'Email perusahaan',
+      company_address: 'Alamat perusahaan',
+      whatsapp_number: 'Nomor WhatsApp untuk konsultasi',
+      whatsapp_message: 'Pesan default untuk konsultasi WhatsApp'
+    };
+    return descriptions[key as keyof typeof descriptions] || '';
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setContactInfo(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <RefreshCw className="h-8 w-8 animate-spin text-blue-600 mr-3" />
-        <span className="text-lg">Memuat informasi kontak...</span>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Informasi Kontak</CardTitle>
+          <CardDescription>Kelola informasi kontak perusahaan</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="animate-pulse space-y-4">
+            <div className="h-4 bg-gray-300 rounded w-1/3"></div>
+            <div className="h-10 bg-gray-300 rounded"></div>
+            <div className="h-4 bg-gray-300 rounded w-1/3"></div>
+            <div className="h-10 bg-gray-300 rounded"></div>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="space-y-8">
-      {/* Contact Information Section */}
-      <div className="bg-white p-6 rounded-xl shadow-lg border">
-        <h3 className="text-lg font-semibold mb-6 flex items-center">
-          <Phone className="h-5 w-5 mr-2 text-blue-600" />
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Phone className="h-5 w-5" />
           Informasi Kontak
-        </h3>
+        </CardTitle>
+        <CardDescription>
+          Kelola informasi kontak perusahaan dan pengaturan WhatsApp
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="grid gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="company_phone" className="flex items-center gap-2">
+              <Phone className="h-4 w-4" />
+              Nomor Telepon Perusahaan
+            </Label>
+            <Input
+              id="company_phone"
+              value={contactInfo.company_phone}
+              onChange={(e) => handleInputChange('company_phone', e.target.value)}
+              placeholder="Contoh: +62 21 1234 5678"
+            />
+          </div>
 
-        <div className="space-y-6">
-          {contactInfo.map((info, index) => {
-            const field = defaultContactFields.find(f => f.key === info.setting_key);
-            const IconComponent = field?.icon || Edit3;
+          <div className="space-y-2">
+            <Label htmlFor="company_email" className="flex items-center gap-2">
+              <Mail className="h-4 w-4" />
+              Email Perusahaan
+            </Label>
+            <Input
+              id="company_email"
+              type="email"
+              value={contactInfo.company_email}
+              onChange={(e) => handleInputChange('company_email', e.target.value)}
+              placeholder="Contoh: info@perusahaan.com"
+            />
+          </div>
 
-            return (
-              <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-                    <IconComponent className="h-4 w-4 mr-2" />
-                    {field?.label || 'Label'}
-                  </label>
-                  <input
-                    type="text"
-                    value={info.description}
-                    onChange={(e) => handleContactChange(index, 'description', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Label field"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nilai
-                  </label>
-                  {info.setting_key === 'company_address' ? (
-                    <textarea
-                      value={info.setting_value}
-                      onChange={(e) => handleContactChange(index, 'setting_value', e.target.value)}
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
-                      placeholder={field?.placeholder}
-                    />
-                  ) : (
-                    <input
-                      type={info.setting_key === 'company_email' ? 'email' : 'text'}
-                      value={info.setting_value}
-                      onChange={(e) => handleContactChange(index, 'setting_value', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder={field?.placeholder}
-                    />
-                  )}
-                </div>
-              </div>
-            );
-          })}
+          <div className="space-y-2">
+            <Label htmlFor="company_address" className="flex items-center gap-2">
+              <MapPin className="h-4 w-4" />
+              Alamat Perusahaan
+            </Label>
+            <Textarea
+              id="company_address"
+              value={contactInfo.company_address}
+              onChange={(e) => handleInputChange('company_address', e.target.value)}
+              placeholder="Alamat lengkap perusahaan"
+              rows={3}
+            />
+          </div>
         </div>
-      </div>
 
-      {/* Operating Hours Section */}
-      <div className="bg-white p-6 rounded-xl shadow-lg border">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold flex items-center">
-            <Clock className="h-5 w-5 mr-2 text-blue-600" />
-            Jam Operasional
-          </h3>
-          <Button
-            onClick={addOperatingHour}
-            className="bg-green-600 hover:bg-green-700"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Tambah Hari
-          </Button>
-        </div>
+        <Separator />
 
         <div className="space-y-4">
-          {operatingHours.map((hour, index) => (
-            <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Hari
-                </label>
-                <input
-                  type="text"
-                  value={hour.day}
-                  onChange={(e) => handleOperatingHourChange(index, 'day', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Senin - Jumat"
-                />
-              </div>
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+            <MessageCircle className="h-5 w-5 text-green-600" />
+            Pengaturan WhatsApp
+          </h3>
+          
+          <div className="space-y-2">
+            <Label htmlFor="whatsapp_number">
+              Nomor WhatsApp (untuk tombol konsultasi)
+            </Label>
+            <Input
+              id="whatsapp_number"
+              value={contactInfo.whatsapp_number}
+              onChange={(e) => handleInputChange('whatsapp_number', e.target.value)}
+              placeholder="Contoh: 085674722278"
+            />
+            <p className="text-sm text-gray-500">
+              Masukkan nomor tanpa tanda +62 atau 0. Contoh: 85674722278
+            </p>
+          </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Jam Buka
-                </label>
-                <input
-                  type="time"
-                  value={hour.open_time}
-                  onChange={(e) => handleOperatingHourChange(index, 'open_time', e.target.value)}
-                  disabled={hour.is_closed}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Jam Tutup
-                </label>
-                <input
-                  type="time"
-                  value={hour.close_time}
-                  onChange={(e) => handleOperatingHourChange(index, 'close_time', e.target.value)}
-                  disabled={hour.is_closed}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-                />
-              </div>
-
-              <div>
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={hour.is_closed}
-                    onChange={(e) => handleOperatingHourChange(index, 'is_closed', e.target.checked)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="text-sm text-gray-700">Tutup</span>
-                </label>
-              </div>
-
-              <div>
-                {operatingHours.length > 1 && (
-                  <Button
-                    onClick={() => removeOperatingHour(index)}
-                    variant="outline"
-                    size="sm"
-                    className="text-red-600 hover:text-red-800"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-            </div>
-          ))}
+          <div className="space-y-2">
+            <Label htmlFor="whatsapp_message">
+              Pesan Default WhatsApp
+            </Label>
+            <Textarea
+              id="whatsapp_message"
+              value={contactInfo.whatsapp_message}
+              onChange={(e) => handleInputChange('whatsapp_message', e.target.value)}
+              placeholder="Pesan yang akan dikirim saat tombol konsultasi diklik"
+              rows={4}
+            />
+          </div>
         </div>
-      </div>
 
-      {/* Save Button */}
-      <div className="flex justify-end">
-        <Button
-          onClick={saveContactInfo}
+        <Button 
+          onClick={handleSave} 
           disabled={saving}
-          className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+          className="w-full"
         >
-          {saving ? (
-            <>
-              <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
-              Menyimpan...
-            </>
-          ) : (
-            <>
-              <Save className="h-5 w-5 mr-2" />
-              Simpan Perubahan
-            </>
-          )}
+          {saving ? 'Menyimpan...' : 'Simpan Pengaturan'}
         </Button>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 
