@@ -77,7 +77,7 @@ const ClientLogos = () => {
         </div>
 
         {/* Running Text Logo Slider */}
-        <div className="relative mb-16">
+        <div className="relative mb-16 marquee-container">
           <div className="flex overflow-hidden">
             <div className="flex animate-marquee whitespace-nowrap">
               {/* First set of logos */}
@@ -174,31 +174,6 @@ const ClientLogos = () => {
           </div>
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes marquee {
-          0% {
-            transform: translate3d(0, 0, 0);
-          }
-          100% {
-            transform: translate3d(-100%, 0, 0);
-          }
-        }
-        @keyframes marquee2 {
-          0% {
-            transform: translate3d(100%, 0, 0);
-          }
-          100% {
-            transform: translate3d(0, 0, 0);
-          }
-        }
-        .animate-marquee {
-          animation: marquee 25s linear infinite;
-        }
-        .animate-marquee2 {
-          animation: marquee2 25s linear infinite;
-        }
-      `}</style>
     </section>
   );
 };

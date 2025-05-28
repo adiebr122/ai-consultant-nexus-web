@@ -29,6 +29,14 @@ export const setupStorage = async () => {
           fileSizeLimit: 10485760, // 10MB
           allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
         }
+      },
+      {
+        id: 'client-logos',
+        options: {
+          public: true,
+          fileSizeLimit: 2097152, // 2MB
+          allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']
+        }
       }
     ];
     
@@ -73,8 +81,9 @@ export const checkStorageAvailability = async () => {
     
     const hasBrandAssets = buckets?.some(b => b.name === 'brand-assets');
     const hasPortfolioImages = buckets?.some(b => b.name === 'portfolio-images');
+    const hasClientLogos = buckets?.some(b => b.name === 'client-logos');
     
-    return hasBrandAssets && hasPortfolioImages;
+    return hasBrandAssets && hasPortfolioImages && hasClientLogos;
   } catch (error) {
     console.warn('Storage check failed:', error);
     return false;

@@ -17,6 +17,7 @@ import ServiceManager from '@/components/ServiceManager';
 import PortfolioManager from '@/components/PortfolioManager';
 import CRMManager from '@/components/CRMManager';
 import SettingsManager from '@/components/SettingsManager';
+import ClientLogosManager from '@/components/ClientLogosManager';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/hooks/useAuth';
 
