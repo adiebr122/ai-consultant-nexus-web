@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -6,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { checkStorageAvailability } from '@/integrations/supabase/setup';
+import { useAuth } from '@/hooks/useAuth';
 
 interface BrandSetting {
   id?: string;
@@ -29,11 +31,14 @@ const BrandSettings = () => {
   const [uploading, setUploading] = useState<string | null>(null);
   const [storageAvailable, setStorageAvailable] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
-    fetchBrandSettings();
-    checkStorage();
-  }, []);
+    if (user) {
+      fetchBrandSettings();
+      checkStorage();
+    }
+  }, [user]);
 
   const checkStorage = async () => {
     const available = await checkStorageAvailability();
@@ -42,14 +47,17 @@ const BrandSettings = () => {
   };
 
   const fetchBrandSettings = async () => {
+    if (!user) return;
+    
     try {
-      console.log('Fetching brand settings...');
+      console.log('Fetching brand settings for user:', user.id);
       setLoading(true);
       
       const { data, error } = await supabase
         .from('app_settings')
         .select('*')
-        .eq('setting_category', 'brand_config');
+        .eq('setting_category', 'brand_config')
+        .eq('user_id', user.id);
 
       if (error) {
         console.error('Error fetching brand settings:', error);
@@ -162,27 +170,20 @@ const BrandSettings = () => {
   };
 
   const saveBrandSettings = async () => {
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "User tidak ditemukan. Silakan login ulang.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      console.log('Starting to save brand settings...');
+      console.log('Starting to save brand settings for user:', user.id);
       setSaving(true);
-      
-      // Check authentication
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError) {
-        console.error('Auth error:', authError);
-        throw new Error('Error checking authentication');
-      }
-      
-      if (!user) {
-        console.error('No authenticated user found');
-        throw new Error('User tidak terautentikasi');
-      }
 
-      console.log('Authenticated user:', user.id);
       console.log('Settings to save:', settings);
-
-      let successCount = 0;
-      let errorCount = 0;
 
       for (const setting of settings) {
         try {
@@ -195,7 +196,8 @@ const BrandSettings = () => {
             setting_type: setting.setting_key.includes('color') ? 'color' : 'text',
             description: setting.description,
             is_public: true,
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
+            user_id: user.id
           };
 
           if (setting.id) {
@@ -207,58 +209,43 @@ const BrandSettings = () => {
             
             if (error) {
               console.error(`Error updating setting ${setting.setting_key}:`, error);
-              errorCount++;
+              throw error;
             } else {
               console.log(`Successfully updated setting: ${setting.setting_key}`);
-              successCount++;
             }
           } else {
             console.log(`Inserting new setting: ${setting.setting_key}`);
             const { data: insertedData, error } = await supabase
               .from('app_settings')
-              .insert({
-                user_id: user.id,
-                ...settingData
-              })
+              .insert(settingData)
               .select();
             
             if (error) {
               console.error(`Error inserting setting ${setting.setting_key}:`, error);
-              errorCount++;
+              throw error;
             } else {
               console.log(`Successfully inserted setting: ${setting.setting_key}`, insertedData);
               // Update the setting with the returned ID
-              const updatedSettings = [...settings];
-              const settingIndex = updatedSettings.findIndex(s => s.setting_key === setting.setting_key);
-              if (settingIndex !== -1 && insertedData && insertedData[0]) {
-                updatedSettings[settingIndex].id = insertedData[0].id;
-                setSettings(updatedSettings);
+              if (insertedData && insertedData[0]) {
+                const updatedSettings = [...settings];
+                const settingIndex = updatedSettings.findIndex(s => s.setting_key === setting.setting_key);
+                if (settingIndex !== -1) {
+                  updatedSettings[settingIndex].id = insertedData[0].id;
+                  setSettings(updatedSettings);
+                }
               }
-              successCount++;
             }
           }
         } catch (settingError: any) {
           console.error(`Error processing setting ${setting.setting_key}:`, settingError);
-          errorCount++;
+          throw settingError;
         }
       }
 
-      console.log(`Save completed. Success: ${successCount}, Errors: ${errorCount}`);
-
-      if (errorCount === 0) {
-        toast({
-          title: "Berhasil!",
-          description: "Semua pengaturan brand berhasil disimpan",
-        });
-      } else if (successCount > 0) {
-        toast({
-          title: "Sebagian Berhasil",
-          description: `${successCount} pengaturan berhasil disimpan, ${errorCount} gagal`,
-          variant: "default",
-        });
-      } else {
-        throw new Error('Semua pengaturan gagal disimpan');
-      }
+      toast({
+        title: "Berhasil!",
+        description: "Pengaturan brand berhasil disimpan dan akan segera terupdate di website",
+      });
 
       // Refresh the settings from database
       await fetchBrandSettings();
