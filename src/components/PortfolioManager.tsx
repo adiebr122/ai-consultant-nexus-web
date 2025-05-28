@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Upload, Save, X, ExternalLink, Github, Image, FileText } from 'lucide-react';
+import { Plus, Edit, Trash2, Upload, Save, X, ExternalLink, Github, Image, FileText, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Textarea } from '@/components/ui/textarea';
@@ -32,7 +31,11 @@ interface PortfolioContent {
   projects: Project[];
 }
 
-const PortfolioManager = () => {
+interface PortfolioManagerProps {
+  onProjectSelect?: (project: Project) => void;
+}
+
+const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [content, setContent] = useState<PortfolioContent>({
@@ -395,6 +398,15 @@ const PortfolioManager = () => {
                       )}
                     </div>
                     <div className="flex space-x-2">
+                      {onProjectSelect && (
+                        <button
+                          onClick={() => onProjectSelect(project)}
+                          className="text-green-600 hover:text-green-800"
+                          title="Lihat Detail"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                      )}
                       <button
                         onClick={() => editProject(project, index)}
                         className="text-blue-600 hover:text-blue-800"

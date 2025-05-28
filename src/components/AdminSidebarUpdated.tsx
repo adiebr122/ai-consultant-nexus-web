@@ -30,7 +30,7 @@ const AdminSidebarUpdated = () => {
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/admin', exact: true },
     { icon: FileText, label: 'Konten Website', path: '/admin#content' },
-    { icon: Briefcase, label: 'Portfolio', path: '/admin/portfolio' },
+    { icon: Briefcase, label: 'Portfolio', path: '/admin#portfolio' },
     { icon: Settings, label: 'Layanan', path: '/admin#services' },
     { icon: Star, label: 'Testimonial', path: '/admin#testimonials' },
     { icon: Image, label: 'Client Logos', path: '/admin#client-logos' },

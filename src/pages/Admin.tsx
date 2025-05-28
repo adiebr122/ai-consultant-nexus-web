@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { 
   Users, 
@@ -15,6 +16,7 @@ import LiveChatManager from '@/components/LiveChatManager';
 import TestimonialManager from '@/components/TestimonialManager';
 import ServiceManager from '@/components/ServiceManager';
 import PortfolioManager from '@/components/PortfolioManager';
+import PortfolioDetail from '@/components/PortfolioDetail';
 import CRMManager from '@/components/CRMManager';
 import SettingsManager from '@/components/SettingsManager';
 import ClientLogosManager from '@/components/ClientLogosManager';
@@ -23,6 +25,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [selectedProject, setSelectedProject] = useState(null);
   const { user } = useAuth();
 
   const stats = [
@@ -112,13 +115,22 @@ const Admin = () => {
   );
 
   const renderContent = () => {
+    if (activeTab === 'portfolio' && selectedProject) {
+      return (
+        <PortfolioDetail 
+          project={selectedProject} 
+          onBack={() => setSelectedProject(null)} 
+        />
+      );
+    }
+
     switch (activeTab) {
       case 'dashboard':
         return renderDashboard();
       case 'hero':
         return <HeroEditor />;
       case 'portfolio':
-        return <PortfolioManager />;
+        return <PortfolioManager onProjectSelect={setSelectedProject} />;
       case 'clientlogos':
         return <ClientLogosManager />;
       case 'submissions':

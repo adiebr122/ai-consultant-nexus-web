@@ -9,7 +9,6 @@ import Admin from "./pages/Admin";
 import Auth from "./pages/Auth";
 import ServiceDetail from "./pages/ServiceDetail";
 import PortfolioDetail from "./pages/PortfolioDetail";
-import PortfolioAdmin from "./pages/PortfolioAdmin";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -31,14 +30,6 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <Admin />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/portfolio"
-            element={
-              <ProtectedRoute>
-                <PortfolioAdmin />
               </ProtectedRoute>
             }
           />
