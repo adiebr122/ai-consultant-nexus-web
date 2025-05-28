@@ -1,4 +1,3 @@
-
 import { Mail, Phone, MapPin, Facebook, Instagram, Linkedin, Youtube } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useContactInfo } from '@/hooks/useContactInfo';
@@ -25,7 +24,7 @@ const Footer = () => {
               <img 
                 src="/lovable-uploads/a31e965f-5dde-4e87-8495-27e1458b7a39.png" 
                 alt="Visual Media X" 
-                className="h-10 w-auto"
+                className="h-16 w-auto"
               />
             </div>
             <p className="text-gray-300 leading-relaxed">

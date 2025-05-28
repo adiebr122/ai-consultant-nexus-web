@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
@@ -26,7 +25,7 @@ const Navbar = () => {
               <img 
                 src="/lovable-uploads/a31e965f-5dde-4e87-8495-27e1458b7a39.png" 
                 alt="Visual Media X" 
-                className="h-10 w-auto"
+                className="h-16 w-auto"
               />
             </Link>
           </div>
