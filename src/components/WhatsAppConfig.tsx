@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,6 +16,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import QRCodeModal from './QRCodeModal';
 
 interface WhatsAppDevice {
   id: string;
@@ -43,6 +43,11 @@ const WhatsAppConfig = () => {
   const queryClient = useQueryClient();
   const [showAddDevice, setShowAddDevice] = useState(false);
   const [showConfig, setShowConfig] = useState(false);
+  const [qrModal, setQrModal] = useState<{isOpen: boolean, deviceId: string, deviceName: string}>({
+    isOpen: false,
+    deviceId: '',
+    deviceName: ''
+  });
   const [newDevice, setNewDevice] = useState({
     device_name: '',
     phone_number: ''
@@ -159,6 +164,31 @@ const WhatsAppConfig = () => {
     }
   });
 
+  const disconnectDeviceMutation = useMutation({
+    mutationFn: async (deviceId: string) => {
+      const { data, error } = await supabase.functions.invoke('whatsapp-qr', {
+        body: { deviceId, action: 'disconnect' }
+      });
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['whatsapp_devices'] });
+      toast({
+        title: "Device Disconnected",
+        description: "WhatsApp device berhasil diputus",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Gagal memutus koneksi device: " + error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
   const handleAddDevice = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newDevice.device_name || !newDevice.phone_number) return;
@@ -169,6 +199,44 @@ const WhatsAppConfig = () => {
     e.preventDefault();
     saveConfigMutation.mutate(configData);
   };
+
+  const handleQRCode = (deviceId: string, deviceName: string) => {
+    setQrModal({
+      isOpen: true,
+      deviceId,
+      deviceName
+    });
+  };
+
+  const handleDisconnect = (deviceId: string) => {
+    disconnectDeviceMutation.mutate(deviceId);
+  };
+
+  const deleteDeviceMutation = useMutation({
+    mutationFn: async (deviceId: string) => {
+      const { error } = await supabase
+        .from('whatsapp_devices')
+        .delete()
+        .eq('id', deviceId)
+        .eq('user_id', user?.id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['whatsapp_devices'] });
+      toast({
+        title: "Device Deleted",
+        description: "WhatsApp device berhasil dihapus",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Gagal menghapus device: " + error.message,
+        variant: "destructive",
+      });
+    }
+  });
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -408,11 +476,27 @@ const WhatsAppConfig = () => {
                   </p>
                 )}
                 <div className="flex space-x-2">
-                  <button className="flex-1 bg-blue-600 text-white py-2 px-3 rounded text-sm hover:bg-blue-700 flex items-center justify-center">
-                    <QrCode className="h-3 w-3 mr-1" />
-                    QR Code
-                  </button>
-                  <button className="bg-red-600 text-white p-2 rounded hover:bg-red-700">
+                  {device.connection_status === 'connected' ? (
+                    <button 
+                      onClick={() => handleDisconnect(device.id)}
+                      className="flex-1 bg-red-600 text-white py-2 px-3 rounded text-sm hover:bg-red-700 flex items-center justify-center"
+                    >
+                      <WifiOff className="h-3 w-3 mr-1" />
+                      Disconnect
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={() => handleQRCode(device.id, device.device_name)}
+                      className="flex-1 bg-blue-600 text-white py-2 px-3 rounded text-sm hover:bg-blue-700 flex items-center justify-center"
+                    >
+                      <QrCode className="h-3 w-3 mr-1" />
+                      Connect
+                    </button>
+                  )}
+                  <button 
+                    onClick={() => deleteDeviceMutation.mutate(device.id)}
+                    className="bg-red-600 text-white p-2 rounded hover:bg-red-700"
+                  >
                     <Trash2 className="h-3 w-3" />
                   </button>
                 </div>
@@ -421,6 +505,17 @@ const WhatsAppConfig = () => {
           </div>
         )}
       </div>
+
+      <QRCodeModal
+        isOpen={qrModal.isOpen}
+        onClose={() => setQrModal({isOpen: false, deviceId: '', deviceName: ''})}
+        deviceId={qrModal.deviceId}
+        deviceName={qrModal.deviceName}
+        onConnectionSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['whatsapp_devices'] });
+          queryClient.invalidateQueries({ queryKey: ['chat_stats'] });
+        }}
+      />
     </div>
   );
 };
