@@ -151,6 +151,39 @@ export type Database = {
           },
         ]
       }
+      client_logos: {
+        Row: {
+          company_url: string | null
+          created_at: string
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          logo_url: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          company_url?: string | null
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          logo_url: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          company_url?: string | null
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       form_submissions: {
         Row: {
           company: string | null

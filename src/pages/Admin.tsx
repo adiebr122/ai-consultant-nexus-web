@@ -118,6 +118,8 @@ const Admin = () => {
         return <HeroEditor />;
       case 'portfolio':
         return <PortfolioManager />;
+      case 'clientlogos':
+        return <ClientLogosManager />;
       case 'submissions':
         return <FormSubmissions />;
       case 'livechat':
