@@ -1,4 +1,5 @@
-import { useState, Suspense, lazy, useEffect } from 'react';
+
+import { useState, Suspense, lazy, useEffect, useCallback } from 'react';
 import { 
   Users, 
   BarChart3, 
@@ -34,20 +35,52 @@ const Admin = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedProject, setSelectedProject] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-  const { user } = useAuth();
+  const [isTabLoading, setIsTabLoading] = useState(false);
+  const { user, loading: authLoading, error: authError } = useAuth();
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     setRefreshKey(prev => prev + 1);
     setSelectedProject(null);
-  };
+  }, []);
 
-  const handleTabChange = (tab: string) => {
-    setIsLoading(true);
+  const handleTabChange = useCallback((tab: string) => {
+    if (tab === activeTab) return; // Prevent unnecessary changes
+    
+    setIsTabLoading(true);
     setActiveTab(tab);
-    // Quick loading for better UX
-    setTimeout(() => setIsLoading(false), 100);
-  };
+    
+    // Very quick loading state for better UX
+    setTimeout(() => setIsTabLoading(false), 50);
+  }, [activeTab]);
+
+  // Show loading if auth is still loading
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Memuat halaman admin...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error if auth failed
+  if (authError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Error: {authError}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Reload Page
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const stats = [
     { title: 'Total Proyek', value: '156', change: '+12%', icon: FileText },
@@ -205,7 +238,7 @@ const Admin = () => {
     })();
 
     return (
-      <LoadingWrapper loading={isLoading} loadingText="Memuat halaman...">
+      <LoadingWrapper loading={isTabLoading} loadingText="Memuat...">
         {content}
       </LoadingWrapper>
     );
