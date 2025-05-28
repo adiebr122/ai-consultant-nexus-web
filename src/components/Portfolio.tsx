@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { ExternalLink, Github, ArrowRight, Briefcase, Calendar, Award } from 'lucide-react';
+import { ExternalLink, Github, ArrowRight, Briefcase, Calendar, Award, Star } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface PortfolioContent {
@@ -92,11 +92,11 @@ const Portfolio = () => {
 
   if (loading) {
     return (
-      <section id="portfolio" className="py-20 bg-gray-50">
+      <section id="portfolio" className="py-20 bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16 animate-pulse">
-            <div className="h-8 bg-gray-300 rounded w-1/2 mx-auto mb-4"></div>
-            <div className="h-4 bg-gray-300 rounded w-3/4 mx-auto"></div>
+            <div className="h-12 bg-gray-300 rounded w-1/2 mx-auto mb-6"></div>
+            <div className="h-6 bg-gray-300 rounded w-3/4 mx-auto"></div>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[1, 2, 3].map((_, index) => (
@@ -119,85 +119,117 @@ const Portfolio = () => {
   }
 
   return (
-    <section id="portfolio" className="py-20 bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">
+    <section id="portfolio" className="py-20 bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 relative overflow-hidden">
+      {/* Background Decorations */}
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-500 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-500 rounded-full blur-3xl"></div>
+      </div>
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+        <div className="text-center mb-16 animate-fade-in">
+          <div className="inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 text-sm font-medium mb-4">
+            <Briefcase className="w-4 h-4 mr-2" />
+            Portofolio Kami
+          </div>
+          <h2 className="text-5xl font-bold bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 bg-clip-text text-transparent mb-6">
             {content.title}
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
             {content.description}
           </p>
         </div>
 
         {content.projects.length === 0 ? (
-          <div className="text-center py-12">
-            <Briefcase className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Belum Ada Portfolio</h3>
-            <p className="text-gray-500">Portfolio proyek akan ditampilkan di sini setelah ditambahkan di CMS</p>
+          <div className="text-center py-16">
+            <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-12 max-w-md mx-auto shadow-xl">
+              <Briefcase className="h-16 w-16 mx-auto text-gray-400 mb-6" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">Belum Ada Portfolio</h3>
+              <p className="text-gray-500">Portfolio proyek akan ditampilkan di sini setelah ditambahkan di CMS</p>
+            </div>
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {content.projects.map((project, index) => (
               <div 
                 key={index} 
-                className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 group"
+                className="group bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-500 hover:scale-105 animate-slide-up"
+                style={{ animationDelay: `${index * 100}ms` }}
               >
                 <div className="relative overflow-hidden">
                   <img 
                     src={project.image_url} 
                     alt={project.title}
-                    className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
+                    className="w-full h-56 object-cover group-hover:scale-110 transition-transform duration-500"
                     onError={(e) => {
                       e.currentTarget.src = 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80';
                     }}
                   />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   <div className="absolute top-4 right-4">
-                    <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-medium">
+                    <span className="bg-white/90 backdrop-blur-sm text-blue-700 px-3 py-1 rounded-full text-xs font-semibold shadow-lg">
                       {project.category}
                     </span>
+                  </div>
+                  <div className="absolute bottom-4 left-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="flex space-x-2">
+                      {project.demo_url && (
+                        <a 
+                          href={project.demo_url}
+                          className="bg-white/90 backdrop-blur-sm p-2 rounded-full shadow-lg hover:bg-white transition-colors"
+                        >
+                          <ExternalLink className="h-4 w-4 text-blue-600" />
+                        </a>
+                      )}
+                      {project.github_url && (
+                        <a 
+                          href={project.github_url}
+                          className="bg-white/90 backdrop-blur-sm p-2 rounded-full shadow-lg hover:bg-white transition-colors"
+                        >
+                          <Github className="h-4 w-4 text-gray-700" />
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
                 
                 <div className="p-6">
-                  <div className="flex items-center mb-2">
-                    <Award className="h-4 w-4 text-blue-600 mr-2" />
-                    <span className="text-sm text-blue-600 font-medium">{project.client}</span>
+                  <div className="flex items-center mb-3">
+                    <Award className="h-4 w-4 text-amber-500 mr-2" />
+                    <span className="text-sm text-amber-600 font-semibold">{project.client}</span>
                   </div>
                   
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">{project.title}</h3>
-                  <p className="text-gray-600 mb-4 leading-relaxed">{project.description}</p>
+                  <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors">
+                    {project.title}
+                  </h3>
+                  <p className="text-gray-600 mb-4 leading-relaxed line-clamp-3">{project.description}</p>
                   
                   <div className="flex flex-wrap gap-2 mb-4">
-                    {project.technologies.map((tech, techIndex) => (
+                    {project.technologies.slice(0, 4).map((tech, techIndex) => (
                       <span 
                         key={techIndex}
-                        className="bg-gray-100 text-gray-700 px-2 py-1 rounded-md text-xs"
+                        className="bg-gradient-to-r from-blue-50 to-purple-50 text-blue-700 px-3 py-1 rounded-full text-xs font-medium border border-blue-100"
                       >
                         {tech}
                       </span>
                     ))}
+                    {project.technologies.length > 4 && (
+                      <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs">
+                        +{project.technologies.length - 4} more
+                      </span>
+                    )}
                   </div>
                   
-                  <div className="flex items-center space-x-3">
-                    {project.demo_url && (
-                      <a 
-                        href={project.demo_url}
-                        className="flex items-center text-blue-600 hover:text-blue-800 transition-colors"
-                      >
-                        <ExternalLink className="h-4 w-4 mr-1" />
-                        <span className="text-sm font-medium">Demo</span>
-                      </a>
-                    )}
-                    {project.github_url && (
-                      <a 
-                        href={project.github_url}
-                        className="flex items-center text-gray-600 hover:text-gray-800 transition-colors"
-                      >
-                        <Github className="h-4 w-4 mr-1" />
-                        <span className="text-sm font-medium">Code</span>
-                      </a>
-                    )}
+                  <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                    <div className="flex items-center space-x-3 text-sm text-gray-500">
+                      <Calendar className="h-4 w-4" />
+                      <span>2024</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star key={star} className="h-4 w-4 fill-amber-400 text-amber-400" />
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -205,10 +237,10 @@ const Portfolio = () => {
           </div>
         )}
         
-        <div className="text-center mt-12">
-          <button className="bg-blue-600 text-white px-8 py-3 rounded-xl hover:bg-blue-700 transition-colors duration-300 flex items-center mx-auto font-semibold">
+        <div className="text-center mt-16">
+          <button className="group bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-2xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 flex items-center mx-auto font-semibold shadow-xl hover:shadow-2xl transform hover:scale-105">
             Lihat Semua Portfolio
-            <ArrowRight className="ml-2 h-5 w-5" />
+            <ArrowRight className="ml-3 h-5 w-5 group-hover:translate-x-1 transition-transform" />
           </button>
         </div>
       </div>

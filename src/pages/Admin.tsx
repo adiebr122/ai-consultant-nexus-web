@@ -16,7 +16,8 @@ import {
   Globe,
   MessageCircle,
   Package,
-  UserCheck
+  UserCheck,
+  Briefcase
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import CMSEditor from '@/components/CMSEditor';
@@ -24,6 +25,7 @@ import FormSubmissions from '@/components/FormSubmissions';
 import LiveChatManager from '@/components/LiveChatManager';
 import TestimonialManager from '@/components/TestimonialManager';
 import ServiceManager from '@/components/ServiceManager';
+import PortfolioManager from '@/components/PortfolioManager';
 import CRMManager from '@/components/CRMManager';
 import SettingsManager from '@/components/SettingsManager';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -122,6 +124,7 @@ const Admin = () => {
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
     { id: 'cms', label: 'CMS', icon: Globe },
+    { id: 'portfolio', label: 'Portfolio', icon: Briefcase },
     { id: 'submissions', label: 'Form Submissions', icon: MessageSquare },
     { id: 'livechat', label: 'Live Chat', icon: MessageCircle },
     { id: 'testimonials', label: 'Testimoni', icon: Star },
@@ -175,6 +178,7 @@ const Admin = () => {
             <div className="bg-gray-50 rounded-xl p-6">
               {activeTab === 'dashboard' && renderDashboard()}
               {activeTab === 'cms' && <CMSEditor />}
+              {activeTab === 'portfolio' && <PortfolioManager />}
               {activeTab === 'submissions' && <FormSubmissions />}
               {activeTab === 'livechat' && <LiveChatManager />}
               {activeTab === 'testimonials' && <TestimonialManager />}
