@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { 
   Users, 
@@ -16,7 +17,8 @@ import {
   Package,
   UserCheck,
   Briefcase,
-  Home
+  Home,
+  Phone
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import HeroEditor from '@/components/HeroEditor';
@@ -27,6 +29,7 @@ import ServiceManager from '@/components/ServiceManager';
 import PortfolioManager from '@/components/PortfolioManager';
 import CRMManager from '@/components/CRMManager';
 import SettingsManager from '@/components/SettingsManager';
+import ContactInfoManager from '@/components/ContactInfoManager';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -128,6 +131,7 @@ const Admin = () => {
     { id: 'livechat', label: 'Live Chat', icon: MessageCircle },
     { id: 'testimonials', label: 'Testimoni', icon: Star },
     { id: 'services', label: 'Layanan', icon: Package },
+    { id: 'contact', label: 'Info Kontak', icon: Phone },
     { id: 'crm', label: 'CRM', icon: UserCheck },
     { id: 'users', label: 'Pengguna', icon: Users },
     { id: 'settings', label: 'Pengaturan', icon: Settings }
@@ -182,6 +186,7 @@ const Admin = () => {
               {activeTab === 'livechat' && <LiveChatManager />}
               {activeTab === 'testimonials' && <TestimonialManager />}
               {activeTab === 'services' && <ServiceManager />}
+              {activeTab === 'contact' && <ContactInfoManager />}
               {activeTab === 'crm' && <CRMManager />}
               {activeTab === 'users' && (
                 <div className="text-center py-12">
