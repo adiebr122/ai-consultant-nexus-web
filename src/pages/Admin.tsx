@@ -1,4 +1,3 @@
-
 import { useState, Suspense, lazy, useEffect } from 'react';
 import { 
   Users, 
@@ -29,6 +28,7 @@ const PortfolioDetail = lazy(() => import('@/components/PortfolioDetail'));
 const CRMManager = lazy(() => import('@/components/CRMManager'));
 const SettingsManager = lazy(() => import('@/components/SettingsManager'));
 const ClientLogosManager = lazy(() => import('@/components/ClientLogosManager'));
+const UserManagement = lazy(() => import('@/components/UserManagement'));
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -226,11 +226,9 @@ const Admin = () => {
         );
       case 'users':
         return (
-          <div className="text-center py-8">
-            <Users className="h-10 w-10 text-gray-400 mx-auto mb-3" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Kelola Pengguna</h3>
-            <p className="text-gray-500 text-sm">Fitur kelola pengguna akan segera tersedia</p>
-          </div>
+          <Suspense fallback={<ComponentSkeleton />}>
+            <UserManagement key={refreshKey} />
+          </Suspense>
         );
       case 'settings':
         return (
