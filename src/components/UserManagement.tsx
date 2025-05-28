@@ -1,104 +1,110 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { 
   Users, 
   Plus, 
-  Edit, 
+  Search, 
+  Filter, 
+  Edit3, 
   Trash2, 
-  Save, 
-  X, 
-  Mail, 
-  Phone, 
-  Building, 
-  User,
+  Download,
+  UserPlus,
+  Star,
+  Phone,
+  Mail,
+  Building,
+  MapPin,
   Calendar,
   DollarSign,
-  Tag,
-  Clock,
-  UserCheck,
-  Search,
-  Filter,
-  MoreHorizontal,
-  Star,
+  Target,
+  Activity,
   TrendingUp,
-  Archive,
-  RefreshCw,
-  Download,
   Eye
 } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { useAuth } from '@/hooks/useAuth';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface UserRecord {
   id: string;
-  admin_user_id: string;
   client_name: string;
   client_email: string;
-  client_phone: string;
-  client_company: string;
-  client_position: string;
+  client_phone: string | null;
+  client_company: string | null;
+  client_position: string | null;
   lead_status: string;
   lead_source: string;
-  assigned_to: string;
-  estimated_value: number;
-  last_contact_date: string;
-  next_follow_up: string;
-  notes: string;
+  estimated_value: number | null;
+  notes: string | null;
   tags: string[];
   created_at: string;
   updated_at: string;
+  admin_user_id: string;
+  assigned_to: string | null;
+}
+
+interface NewUser {
+  client_name?: string;
+  client_email?: string;
+  client_phone?: string;
+  client_company?: string;
+  client_position?: string;
+  lead_status: string;
+  lead_source: string;
+  estimated_value?: number;
+  notes?: string;
+  tags?: string[];
 }
 
 const UserManagement = () => {
-  const { user } = useAuth();
-  const { toast } = useToast();
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [editingUser, setEditingUser] = useState<UserRecord | null>(null);
-  const [showUserForm, setShowUserForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<UserRecord | null>(null);
   const [selectedUser, setSelectedUser] = useState<UserRecord | null>(null);
-  const [deleting, setDeleting] = useState<string | null>(null);
-
-  const [newUser, setNewUser] = useState<Partial<UserRecord>>({
-    client_name: '',
-    client_email: '',
-    client_phone: '',
-    client_company: '',
-    client_position: '',
+  const [newUser, setNewUser] = useState<NewUser>({
     lead_status: 'new',
-    lead_source: '',
-    estimated_value: 0,
-    notes: '',
+    lead_source: 'website',
     tags: []
   });
 
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  const leadStatuses = [
+    { value: 'new', label: 'New Lead', color: 'bg-blue-500', lightColor: 'bg-blue-50 text-blue-700 border-blue-200' },
+    { value: 'contacted', label: 'Contacted', color: 'bg-yellow-500', lightColor: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
+    { value: 'qualified', label: 'Qualified', color: 'bg-green-500', lightColor: 'bg-green-50 text-green-700 border-green-200' },
+    { value: 'proposal', label: 'Proposal Sent', color: 'bg-purple-500', lightColor: 'bg-purple-50 text-purple-700 border-purple-200' },
+    { value: 'negotiation', label: 'Negotiation', color: 'bg-orange-500', lightColor: 'bg-orange-50 text-orange-700 border-orange-200' },
+    { value: 'closed_won', label: 'Closed Won', color: 'bg-emerald-500', lightColor: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+    { value: 'closed_lost', label: 'Closed Lost', color: 'bg-red-500', lightColor: 'bg-red-50 text-red-700 border-red-200' }
+  ];
+
+  const leadSources = [
+    'website', 'social_media', 'referral', 'cold_outreach', 'advertising', 'event', 'partnership', 'other'
+  ];
+
   useEffect(() => {
-    if (user) {
-      fetchUsers();
-    }
-  }, [user]);
+    fetchUsers();
+  }, []);
 
   const fetchUsers = async () => {
-    if (!user) return;
-    
     try {
       setLoading(true);
       const { data, error } = await supabase
         .from('user_management')
         .select('*')
-        .eq('admin_user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -106,7 +112,9 @@ const UserManagement = () => {
       // Convert JSON tags to string array and ensure proper types
       const formattedUsers: UserRecord[] = (data || []).map(user => ({
         ...user,
-        tags: Array.isArray(user.tags) ? user.tags : []
+        tags: Array.isArray(user.tags) 
+          ? user.tags.filter((tag): tag is string => typeof tag === 'string')
+          : []
       }));
       
       setUsers(formattedUsers);
@@ -114,7 +122,7 @@ const UserManagement = () => {
       console.error('Error fetching users:', error);
       toast({
         title: "Error",
-        description: "Gagal memuat data users",
+        description: "Failed to fetch users",
         variant: "destructive",
       });
     } finally {
@@ -122,21 +130,13 @@ const UserManagement = () => {
     }
   };
 
-  const saveUser = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!user) return;
-    if (!newUser.client_name || !newUser.client_email) {
-      toast({
-        title: "Error",
-        description: "Nama dan email client harus diisi",
-        variant: "destructive",
-      });
-      return;
-    }
 
     try {
-      setSaving(true);
-      
       if (editingUser) {
+        // Update existing user
         const { error } = await supabase
           .from('user_management')
           .update({
@@ -155,18 +155,19 @@ const UserManagement = () => {
           .eq('id', editingUser.id);
 
         if (error) throw error;
-        
+
         setUsers(prev => prev.map(u => 
           u.id === editingUser.id 
-            ? { ...u, ...newUser, updated_at: new Date().toISOString() } as UserRecord
+            ? { ...u, ...newUser, tags: newUser.tags || [] }
             : u
         ));
-        
+
         toast({
           title: "Berhasil",
-          description: "Data user berhasil diperbarui",
+          description: "User berhasil diperbarui",
         });
       } else {
+        // Create new user
         const { data, error } = await supabase
           .from('user_management')
           .insert({
@@ -189,7 +190,9 @@ const UserManagement = () => {
         
         const formattedUser: UserRecord = {
           ...data,
-          tags: Array.isArray(data.tags) ? data.tags : []
+          tags: Array.isArray(data.tags) 
+            ? data.tags.filter((tag): tag is string => typeof tag === 'string')
+            : []
         };
         
         setUsers(prev => [formattedUser, ...prev]);
@@ -200,34 +203,34 @@ const UserManagement = () => {
         });
       }
 
-      resetForm();
-      setShowUserForm(false);
+      // Reset form
+      setNewUser({
+        lead_status: 'new',
+        lead_source: 'website',
+        tags: []
+      });
+      setEditingUser(null);
+      setIsDialogOpen(false);
     } catch (error: any) {
       console.error('Error saving user:', error);
       toast({
         title: "Error",
-        description: "Gagal menyimpan data user",
+        description: "Failed to save user",
         variant: "destructive",
       });
-    } finally {
-      setSaving(false);
     }
   };
 
-  const deleteUser = async (id: string) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus user ini?')) return;
-
+  const deleteUser = async (userId: string) => {
     try {
-      setDeleting(id);
       const { error } = await supabase
         .from('user_management')
         .delete()
-        .eq('id', id);
+        .eq('id', userId);
 
       if (error) throw error;
-      
-      setUsers(prev => prev.filter(u => u.id !== id));
-      
+
+      setUsers(prev => prev.filter(u => u.id !== userId));
       toast({
         title: "Berhasil",
         description: "User berhasil dihapus",
@@ -236,64 +239,15 @@ const UserManagement = () => {
       console.error('Error deleting user:', error);
       toast({
         title: "Error",
-        description: "Gagal menghapus user",
+        description: "Failed to delete user",
         variant: "destructive",
       });
-    } finally {
-      setDeleting(null);
     }
   };
 
-  const resetForm = () => {
-    setNewUser({
-      client_name: '',
-      client_email: '',
-      client_phone: '',
-      client_company: '',
-      client_position: '',
-      lead_status: 'new',
-      lead_source: '',
-      estimated_value: 0,
-      notes: '',
-      tags: []
-    });
-    setEditingUser(null);
-  };
-
-  const startEdit = (user: UserRecord) => {
-    setEditingUser(user);
-    setNewUser(user);
-    setShowUserForm(true);
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'new': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'contacted': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'qualified': return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'proposal': return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'negotiation': return 'bg-indigo-100 text-indigo-800 border-indigo-200';
-      case 'closed_won': return 'bg-green-100 text-green-800 border-green-200';
-      case 'closed_lost': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = 
-      user.client_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.client_email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.client_company?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || user.lead_status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
-
-  const exportToCSV = () => {
-    const headers = ['Name', 'Email', 'Phone', 'Company', 'Position', 'Status', 'Estimated Value', 'Created At'];
+  const exportToCsv = () => {
     const csvContent = [
-      headers.join(','),
+      ['Name', 'Email', 'Phone', 'Company', 'Position', 'Status', 'Source', 'Value', 'Created'],
       ...filteredUsers.map(user => [
         user.client_name,
         user.client_email,
@@ -301,33 +255,53 @@ const UserManagement = () => {
         user.client_company || '',
         user.client_position || '',
         user.lead_status,
-        user.estimated_value || 0,
+        user.lead_source,
+        user.estimated_value?.toString() || '',
         new Date(user.created_at).toLocaleDateString()
-      ].join(','))
-    ].join('\n');
+      ])
+    ].map(row => row.join(',')).join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `user-management-${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = 'users.csv';
     a.click();
     window.URL.revokeObjectURL(url);
   };
 
-  if (!user) {
-    return (
-      <div className="text-center py-12">
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Login Diperlukan</h3>
-        <p className="text-gray-500">Anda harus login untuk mengelola users</p>
-      </div>
-    );
-  }
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = user.client_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         user.client_email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (user.client_company && user.client_company.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesStatus = statusFilter === 'all' || user.lead_status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const stats = {
+    total: users.length,
+    new: users.filter(u => u.lead_status === 'new').length,
+    qualified: users.filter(u => u.lead_status === 'qualified').length,
+    closed_won: users.filter(u => u.lead_status === 'closed_won').length,
+    totalValue: users.reduce((sum, u) => sum + (u.estimated_value || 0), 0)
+  };
+
+  const getStatusConfig = (status: string) => {
+    return leadStatuses.find(s => s.value === status) || leadStatuses[0];
+  };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+      <div className="space-y-8">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-24 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+          <div className="h-96 bg-gray-200 rounded"></div>
+        </div>
       </div>
     );
   }
@@ -344,438 +318,322 @@ const UserManagement = () => {
                 User Management
               </CardTitle>
               <CardDescription className="text-purple-100 text-lg">
-                Kelola leads, clients, dan customer relationship
+                Kelola semua pengguna dan leads dengan mudah
               </CardDescription>
             </div>
-            <div className="text-right">
-              <div className="text-4xl font-bold">{users.length}</div>
-              <div className="text-purple-200">Total Users</div>
+            <div className="hidden md:block">
+              <Activity className="h-16 w-16 text-purple-200" />
             </div>
           </div>
         </CardHeader>
       </Card>
 
-      {/* Filters and Actions */}
-      <Card className="border-0 shadow-lg">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        {[
+          { title: 'Total Users', value: stats.total, icon: Users, gradient: 'from-blue-500 to-purple-600', bgGradient: 'from-blue-50 to-purple-50' },
+          { title: 'New Leads', value: stats.new, icon: UserPlus, gradient: 'from-emerald-500 to-teal-600', bgGradient: 'from-emerald-50 to-teal-50' },
+          { title: 'Qualified', value: stats.qualified, icon: Star, gradient: 'from-yellow-500 to-orange-600', bgGradient: 'from-yellow-50 to-orange-50' },
+          { title: 'Closed Won', value: stats.closed_won, icon: Target, gradient: 'from-green-500 to-emerald-600', bgGradient: 'from-green-50 to-emerald-50' },
+          { title: 'Total Value', value: `$${stats.totalValue.toLocaleString()}`, icon: DollarSign, gradient: 'from-purple-500 to-pink-600', bgGradient: 'from-purple-50 to-pink-50' }
+        ].map((stat, index) => {
+          const IconComponent = stat.icon;
+          return (
+            <Card key={index} className={`relative overflow-hidden bg-gradient-to-br ${stat.bgGradient} border-2 border-gray-200 hover:shadow-2xl transition-all duration-500 hover:scale-105 hover:-translate-y-1 group`}>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                      {stat.title}
+                    </p>
+                    <p className="text-3xl font-bold text-gray-900 group-hover:scale-110 transition-transform duration-300">
+                      {stat.value}
+                    </p>
+                  </div>
+                  <div className={`bg-gradient-to-r ${stat.gradient} p-3 rounded-2xl shadow-lg group-hover:rotate-12 transition-transform duration-300`}>
+                    <IconComponent className="h-6 w-6 text-white" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Controls */}
+      <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-gray-50">
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-            <div className="flex flex-1 gap-4 items-center">
-              <div className="relative flex-1 max-w-md">
+            <div className="flex flex-col md:flex-row gap-4 flex-1">
+              <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  placeholder="Cari nama, email, perusahaan..."
+                  placeholder="Search users..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 border-2 border-gray-200 focus:border-purple-500"
+                  className="pl-10 bg-white border-2 border-gray-200 focus:border-purple-400 transition-colors"
                 />
               </div>
               
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-48 border-2 border-gray-200 focus:border-purple-500">
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Filter Status" />
+                <SelectTrigger className="w-48 bg-white border-2 border-gray-200 focus:border-purple-400">
+                  <Filter className="h-4 w-4 mr-2 text-gray-400" />
+                  <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Semua Status</SelectItem>
-                  <SelectItem value="new">Baru</SelectItem>
-                  <SelectItem value="contacted">Dihubungi</SelectItem>
-                  <SelectItem value="qualified">Qualified</SelectItem>
-                  <SelectItem value="proposal">Proposal</SelectItem>
-                  <SelectItem value="negotiation">Negosiasi</SelectItem>
-                  <SelectItem value="closed_won">Closed Won</SelectItem>
-                  <SelectItem value="closed_lost">Closed Lost</SelectItem>
+                  <SelectItem value="all">All Status</SelectItem>
+                  {leadStatuses.map(status => (
+                    <SelectItem key={status.value} value={status.value}>{status.label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
             <div className="flex gap-3">
               <Button
-                onClick={exportToCSV}
+                onClick={exportToCsv}
                 variant="outline"
-                className="flex items-center gap-2 border-2 border-gray-200 hover:border-purple-500"
+                className="flex items-center gap-2 bg-white hover:bg-gray-50 border-2 border-gray-200 hover:border-gray-300 transition-all duration-300"
               >
                 <Download className="h-4 w-4" />
                 Export CSV
               </Button>
               
-              <Button
-                onClick={() => {
-                  resetForm();
-                  setShowUserForm(true);
-                }}
-                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Tambah User
-              </Button>
-              
-              <Button
-                onClick={fetchUsers}
-                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 flex items-center gap-2"
-              >
-                <RefreshCw className="h-4 w-4" />
-                Refresh
-              </Button>
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button 
+                    className="bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 text-white font-medium px-6 py-2 rounded-xl transition-all duration-300 hover:scale-105 shadow-lg"
+                    onClick={() => {
+                      setEditingUser(null);
+                      setNewUser({
+                        lead_status: 'new',
+                        lead_source: 'website',
+                        tags: []
+                      });
+                    }}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add New User
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[600px] bg-white border-0 shadow-2xl">
+                  <DialogHeader>
+                    <DialogTitle>{editingUser ? 'Edit User' : 'Add New User'}</DialogTitle>
+                    <DialogDescription>
+                      {editingUser ? 'Update user details here.' : 'Enter the details for the new user.'}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                      <Label htmlFor="name">Name</Label>
+                      <Input
+                        type="text"
+                        id="name"
+                        value={newUser.client_name || ''}
+                        onChange={(e) => setNewUser({ ...newUser, client_name: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        type="email"
+                        id="email"
+                        value={newUser.client_email || ''}
+                        onChange={(e) => setNewUser({ ...newUser, client_email: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="phone">Phone</Label>
+                      <Input
+                        type="tel"
+                        id="phone"
+                        value={newUser.client_phone || ''}
+                        onChange={(e) => setNewUser({ ...newUser, client_phone: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="company">Company</Label>
+                      <Input
+                        type="text"
+                        id="company"
+                        value={newUser.client_company || ''}
+                        onChange={(e) => setNewUser({ ...newUser, client_company: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="position">Position</Label>
+                      <Input
+                        type="text"
+                        id="position"
+                        value={newUser.client_position || ''}
+                        onChange={(e) => setNewUser({ ...newUser, client_position: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="lead_status">Lead Status</Label>
+                      <Select value={newUser.lead_status} onValueChange={(value) => setNewUser({ ...newUser, lead_status: value })}>
+                        <SelectTrigger className="bg-white border-2 border-gray-200 focus:border-purple-400">
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {leadStatuses.map(status => (
+                            <SelectItem key={status.value} value={status.value}>{status.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="lead_source">Lead Source</Label>
+                      <Select value={newUser.lead_source} onValueChange={(value) => setNewUser({ ...newUser, lead_source: value })}>
+                        <SelectTrigger className="bg-white border-2 border-gray-200 focus:border-purple-400">
+                          <SelectValue placeholder="Select source" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {leadSources.map(source => (
+                            <SelectItem key={source} value={source}>{source}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="estimated_value">Estimated Value</Label>
+                      <Input
+                        type="number"
+                        id="estimated_value"
+                        value={newUser.estimated_value || ''}
+                        onChange={(e) => setNewUser({ ...newUser, estimated_value: parseFloat(e.target.value) })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="notes">Notes</Label>
+                      <Textarea
+                        id="notes"
+                        value={newUser.notes || ''}
+                        onChange={(e) => setNewUser({ ...newUser, notes: e.target.value })}
+                        className="bg-white border-2 border-gray-200 focus:border-purple-400 transition-colors"
+                      />
+                    </div>
+                    <Button type="submit" className="bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 text-white font-medium px-6 py-3 rounded-xl transition-all duration-300 hover:scale-105 shadow-lg">
+                      {editingUser ? 'Update User' : 'Save User'}
+                    </Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Users List */}
-      <div className="grid gap-6">
-        {filteredUsers.length === 0 ? (
-          <Card className="border-2 border-dashed border-gray-200">
-            <CardContent className="py-12 text-center">
-              <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {users.length === 0 ? 'Belum Ada User' : 'Tidak Ada Hasil'}
-              </h3>
-              <p className="text-gray-500 mb-4">
-                {users.length === 0 
-                  ? 'Mulai dengan menambahkan user pertama' 
-                  : 'Coba ubah filter atau kata kunci pencarian'
-                }
-              </p>
-              {users.length === 0 && (
-                <Button 
-                  onClick={() => {
-                    resetForm();
-                    setShowUserForm(true);
-                  }}
-                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Tambah User Pertama
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        ) : (
-          filteredUsers.map((user) => (
-            <Card key={user.id} className="border-2 border-gray-100 hover:border-purple-200 hover:shadow-lg transition-all duration-300">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-4">
-                      <h3 className="text-xl font-bold text-gray-900">{user.client_name}</h3>
-                      <Badge className={`flex items-center gap-1 ${getStatusColor(user.lead_status)}`}>
-                        {user.lead_status.replace('_', ' ').toUpperCase()}
-                      </Badge>
-                      {user.estimated_value > 0 && (
-                        <Badge variant="outline" className="text-green-600 border-green-200">
-                          <DollarSign className="h-3 w-3 mr-1" />
-                          {new Intl.NumberFormat('id-ID', { 
-                            style: 'currency', 
-                            currency: 'IDR',
-                            minimumFractionDigits: 0
-                          }).format(user.estimated_value)}
-                        </Badge>
-                      )}
+      {/* Users Table */}
+      <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-gray-50">
+        <CardContent className="p-6">
+          <div className="space-y-4">
+            {filteredUsers.map((user) => {
+              const statusConfig = getStatusConfig(user.lead_status);
+              return (
+                <div key={user.id} className="bg-white border-2 border-gray-100 rounded-2xl p-6 hover:shadow-lg transition-all duration-300 hover:border-purple-200 group">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900">{user.client_name}</h3>
+                      <p className="text-gray-600">{user.client_company || 'No Company'}</p>
                     </div>
-
-                    <div className="grid md:grid-cols-2 gap-4 mb-4">
-                      <div className="flex items-center text-gray-600">
-                        <Mail className="h-4 w-4 mr-2 text-purple-500" />
-                        <a href={`mailto:${user.client_email}`} className="hover:text-purple-600 transition-colors">
-                          {user.client_email}
-                        </a>
-                      </div>
-                      
-                      {user.client_phone && (
-                        <div className="flex items-center text-gray-600">
-                          <Phone className="h-4 w-4 mr-2 text-green-500" />
-                          <a href={`tel:${user.client_phone}`} className="hover:text-green-600 transition-colors">
-                            {user.client_phone}
-                          </a>
-                        </div>
-                      )}
-                      
-                      {user.client_company && (
-                        <div className="flex items-center text-gray-600">
-                          <Building className="h-4 w-4 mr-2 text-blue-500" />
-                          {user.client_company}
-                          {user.client_position && (
-                            <span className="ml-2 text-gray-500">• {user.client_position}</span>
-                          )}
-                        </div>
-                      )}
-                      
-                      <div className="flex items-center text-gray-600">
-                        <Calendar className="h-4 w-4 mr-2 text-orange-500" />
-                        {new Date(user.created_at).toLocaleDateString('id-ID')}
-                      </div>
-                    </div>
-
-                    {user.notes && (
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <p className="text-gray-700 text-sm leading-relaxed">{user.notes}</p>
-                      </div>
-                    )}
+                    <Badge className={`uppercase text-xs font-bold rounded-full px-3 py-1 border ${statusConfig.lightColor} text-white`} style={{ backgroundColor: statusConfig.lightColor }}>
+                      {statusConfig.label}
+                    </Badge>
                   </div>
-
-                  <div className="ml-6 flex flex-col gap-2">
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedUser(user)}
-                          className="w-full"
-                        >
-                          <Eye className="h-4 w-4 mr-1" />
-                          Detail
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-2xl">
-                        <DialogHeader>
-                          <DialogTitle className="flex items-center gap-2">
-                            <User className="h-5 w-5" />
-                            Detail User - {user.client_name}
-                          </DialogTitle>
-                          <DialogDescription>
-                            Lead created on {new Date(user.created_at).toLocaleDateString('id-ID')}
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4 mt-4">
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <label className="font-semibold text-gray-700">Email:</label>
-                              <p className="text-gray-600">{user.client_email}</p>
-                            </div>
-                            <div>
-                              <label className="font-semibold text-gray-700">Phone:</label>
-                              <p className="text-gray-600">{user.client_phone || 'N/A'}</p>
-                            </div>
-                            <div>
-                              <label className="font-semibold text-gray-700">Company:</label>
-                              <p className="text-gray-600">{user.client_company || 'N/A'}</p>
-                            </div>
-                            <div>
-                              <label className="font-semibold text-gray-700">Position:</label>
-                              <p className="text-gray-600">{user.client_position || 'N/A'}</p>
-                            </div>
-                            <div>
-                              <label className="font-semibold text-gray-700">Lead Source:</label>
-                              <p className="text-gray-600">{user.lead_source || 'N/A'}</p>
-                            </div>
-                            <div>
-                              <label className="font-semibold text-gray-700">Estimated Value:</label>
-                              <p className="text-gray-600">
-                                {user.estimated_value > 0 
-                                  ? new Intl.NumberFormat('id-ID', { 
-                                      style: 'currency', 
-                                      currency: 'IDR',
-                                      minimumFractionDigits: 0
-                                    }).format(user.estimated_value)
-                                  : 'N/A'
-                                }
-                              </p>
-                            </div>
-                          </div>
-                          {user.notes && (
-                            <div>
-                              <label className="font-semibold text-gray-700">Notes:</label>
-                              <p className="text-gray-600 mt-2 p-4 bg-gray-50 rounded-lg">{user.notes}</p>
-                            </div>
-                          )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <div className="flex items-center text-gray-700 mb-2">
+                        <Mail className="h-4 w-4 mr-2 text-purple-400" />
+                        {user.client_email}
+                      </div>
+                      {user.client_phone && (
+                        <div className="flex items-center text-gray-700">
+                          <Phone className="h-4 w-4 mr-2 text-blue-400" />
+                          {user.client_phone}
                         </div>
-                      </DialogContent>
-                    </Dialog>
-
+                      )}
+                    </div>
+                    <div>
+                      {user.client_position && (
+                        <div className="flex items-center text-gray-700 mb-2">
+                          <Building className="h-4 w-4 mr-2 text-green-400" />
+                          {user.client_position}
+                        </div>
+                      )}
+                      <div className="flex items-center text-gray-700">
+                        <Calendar className="h-4 w-4 mr-2 text-orange-400" />
+                        Created: {new Date(user.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-4 flex justify-end gap-3">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => startEdit(user)}
-                      className="w-full"
+                      className="bg-white hover:bg-gray-50 border-2 border-gray-200 hover:border-gray-300 transition-all duration-300"
+                      onClick={() => {
+                        setSelectedUser(user);
+                        setNewUser({
+                          client_name: user.client_name,
+                          client_email: user.client_email,
+                          client_phone: user.client_phone || '',
+                          client_company: user.client_company || '',
+                          client_position: user.client_position || '',
+                          lead_status: user.lead_status,
+                          lead_source: user.lead_source,
+                          estimated_value: user.estimated_value || 0,
+                          notes: user.notes || '',
+                          tags: user.tags || []
+                        });
+                        setEditingUser(user);
+                        setIsDialogOpen(true);
+                      }}
                     >
-                      <Edit className="h-4 w-4 mr-1" />
+                      <Edit3 className="h-4 w-4 mr-2" />
                       Edit
                     </Button>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => deleteUser(user.id)}
-                      disabled={deleting === user.id}
-                      className="w-full text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
-                    >
-                      {deleting === user.id ? (
-                        <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
-                      ) : (
-                        <Trash2 className="h-4 w-4 mr-1" />
-                      )}
-                      Delete
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="hover:bg-red-600 transition-all duration-300"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. Are you sure you want to delete this user?
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => deleteUser(user.id)}>Delete</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
-
-      {/* User Form Modal */}
-      {showUserForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <Card className="border-0">
-              <CardHeader className="bg-gradient-to-r from-purple-500 to-blue-600 text-white rounded-t-xl">
-                <CardTitle className="flex items-center">
-                  {editingUser ? <Edit className="h-5 w-5 mr-2" /> : <Plus className="h-5 w-5 mr-2" />}
-                  {editingUser ? 'Edit User' : 'Tambah User Baru'}
-                </CardTitle>
-                <CardDescription className="text-purple-100">
-                  {editingUser ? 'Update informasi user' : 'Tambahkan user baru ke sistem'}
-                </CardDescription>
-              </CardHeader>
-              
-              <CardContent className="p-6 space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="client_name">Nama Lengkap *</Label>
-                    <Input
-                      id="client_name"
-                      value={newUser.client_name || ''}
-                      onChange={(e) => setNewUser({ ...newUser, client_name: e.target.value })}
-                      placeholder="Nama lengkap client"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="client_email">Email *</Label>
-                    <Input
-                      id="client_email"
-                      type="email"
-                      value={newUser.client_email || ''}
-                      onChange={(e) => setNewUser({ ...newUser, client_email: e.target.value })}
-                      placeholder="email@example.com"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="client_phone">Nomor Telepon</Label>
-                    <Input
-                      id="client_phone"
-                      value={newUser.client_phone || ''}
-                      onChange={(e) => setNewUser({ ...newUser, client_phone: e.target.value })}
-                      placeholder="+62 xxx xxxx xxxx"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="client_company">Perusahaan</Label>
-                    <Input
-                      id="client_company"
-                      value={newUser.client_company || ''}
-                      onChange={(e) => setNewUser({ ...newUser, client_company: e.target.value })}
-                      placeholder="Nama perusahaan"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="client_position">Posisi</Label>
-                    <Input
-                      id="client_position"
-                      value={newUser.client_position || ''}
-                      onChange={(e) => setNewUser({ ...newUser, client_position: e.target.value })}
-                      placeholder="CEO, Manager, etc."
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="lead_status">Status Lead</Label>
-                    <Select 
-                      value={newUser.lead_status || 'new'} 
-                      onValueChange={(value) => setNewUser({ ...newUser, lead_status: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="new">Baru</SelectItem>
-                        <SelectItem value="contacted">Dihubungi</SelectItem>
-                        <SelectItem value="qualified">Qualified</SelectItem>
-                        <SelectItem value="proposal">Proposal</SelectItem>
-                        <SelectItem value="negotiation">Negosiasi</SelectItem>
-                        <SelectItem value="closed_won">Closed Won</SelectItem>
-                        <SelectItem value="closed_lost">Closed Lost</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="lead_source">Sumber Lead</Label>
-                    <Input
-                      id="lead_source"
-                      value={newUser.lead_source || ''}
-                      onChange={(e) => setNewUser({ ...newUser, lead_source: e.target.value })}
-                      placeholder="Website, Referral, Social Media, etc."
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="estimated_value">Estimasi Nilai (IDR)</Label>
-                    <Input
-                      id="estimated_value"
-                      type="number"
-                      value={newUser.estimated_value || 0}
-                      onChange={(e) => setNewUser({ ...newUser, estimated_value: Number(e.target.value) })}
-                      placeholder="0"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="notes">Catatan</Label>
-                  <Textarea
-                    id="notes"
-                    value={newUser.notes || ''}
-                    onChange={(e) => setNewUser({ ...newUser, notes: e.target.value })}
-                    placeholder="Catatan tambahan tentang client ini..."
-                    rows={4}
-                  />
-                </div>
-
-                <div className="flex justify-end space-x-3 pt-4 border-t">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setShowUserForm(false);
-                      resetForm();
-                    }}
-                  >
-                    <X className="h-4 w-4 mr-1" />
-                    Batal
-                  </Button>
-                  <Button
-                    onClick={saveUser}
-                    disabled={saving || !newUser.client_name || !newUser.client_email}
-                    className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-                  >
-                    {saving ? (
-                      <>
-                        <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
-                        Menyimpan...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="h-4 w-4 mr-1" />
-                        {editingUser ? 'Update User' : 'Simpan User'}
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+              );
+            })}
+            
+            {filteredUsers.length === 0 && (
+              <div className="text-center py-12">
+                <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500 text-lg font-medium">No users found</p>
+                <p className="text-gray-400">Try adjusting your search or filters</p>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
