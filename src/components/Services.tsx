@@ -1,19 +1,20 @@
 
 import { useState, useEffect } from 'react';
-import { Brain, Code, Database, MessageSquare, BarChart3, Shield, Smartphone, Globe, ArrowRight } from 'lucide-react';
+import { ArrowRight, Code, Brain, Smartphone, Globe, Database, Shield } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Service {
   id: string;
   service_name: string;
-  service_description: string | null;
+  service_description: string;
+  service_category: string;
+  price_starting_from: number;
+  price_currency: string;
+  estimated_duration: string;
+  service_image_url: string;
   service_features: string[];
-  service_category: string | null;
-  service_image_url: string | null;
-  price_starting_from: number | null;
-  price_currency: string | null;
   is_active: boolean;
-  display_order: number | null;
 }
 
 interface ServicesContent {
@@ -25,18 +26,6 @@ const Services = () => {
   const [services, setServices] = useState<Service[]>([]);
   const [content, setContent] = useState<ServicesContent | null>(null);
   const [loading, setLoading] = useState(true);
-
-  const iconMap: { [key: string]: any } = {
-    'Web Development': Globe,
-    'Mobile App Development': Smartphone,
-    'AI Chatbot Development': Brain,
-    'Custom AI Application': Code,
-    'Data Analytics & Insights': Database,
-    'AI Content Generation': MessageSquare,
-    'Cyber Security': Shield,
-    'Business Intelligence': BarChart3,
-    'default': Brain
-  };
 
   useEffect(() => {
     fetchContent();
@@ -56,8 +45,8 @@ const Services = () => {
 
       if (data) {
         setContent({
-          title: data.title || 'Layanan Web & Apps Development',
-          description: data.content || 'Kami menyediakan solusi digital komprehensif mulai dari website, aplikasi mobile, hingga teknologi AI untuk transformasi digital bisnis Anda.'
+          title: data.title || 'Layanan Terbaik Kami',
+          description: data.content || 'Kami menyediakan berbagai layanan AI dan teknologi untuk mengoptimalkan bisnis Anda'
         });
       }
     } catch (error) {
@@ -71,58 +60,85 @@ const Services = () => {
         .from('services')
         .select('*')
         .eq('is_active', true)
-        .order('display_order', { ascending: true })
-        .order('created_at', { ascending: false });
+        .order('display_order', { ascending: true });
 
       if (error) throw error;
-
-      const transformedData = (data || []).map(service => ({
-        ...service,
-        service_features: Array.isArray(service.service_features) 
-          ? (service.service_features as any[]).map(feature => String(feature))
-          : []
-      }));
-
-      setServices(transformedData);
+      setServices(data || []);
     } catch (error) {
       console.error('Error fetching services:', error);
       // Fallback to static data if fetch fails
       setServices([
         {
-          id: 'fallback-1',
-          service_name: 'Web Development',
-          service_description: 'Pembuatan website profesional dengan teknologi terdepan untuk meningkatkan presence online bisnis Anda.',
-          service_features: ['Responsive Design', 'SEO Optimized', 'Fast Loading Speed'],
-          service_category: 'Development',
-          service_image_url: null,
+          id: 'ai-chatbot',
+          service_name: 'AI Chatbot Development',
+          service_description: 'Kembangkan chatbot AI yang cerdas untuk meningkatkan customer service dan engagement pelanggan dengan teknologi NLP terdepan.',
+          service_category: 'AI Solutions',
           price_starting_from: 15000000,
           price_currency: 'IDR',
-          is_active: true,
-          display_order: 1
+          estimated_duration: '4-6 minggu',
+          service_image_url: 'https://images.unsplash.com/photo-1531746790731-6c087fecd65a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+          service_features: ['Natural Language Processing', '24/7 Customer Support', 'Multi-platform Integration', 'Analytics Dashboard'],
+          is_active: true
         },
         {
-          id: 'fallback-2',
-          service_name: 'Mobile App Development',
-          service_description: 'Pengembangan aplikasi mobile iOS dan Android dengan user experience yang optimal dan performa tinggi.',
-          service_features: ['Cross-platform', 'Native Performance', 'App Store Ready'],
-          service_category: 'Development',
-          service_image_url: null,
+          id: 'web-development',
+          service_name: 'Custom Web Development',
+          service_description: 'Solusi pengembangan website custom yang responsif, cepat, dan user-friendly menggunakan teknologi terkini.',
+          service_category: 'Web Development',
           price_starting_from: 25000000,
           price_currency: 'IDR',
-          is_active: true,
-          display_order: 2
+          estimated_duration: '6-8 minggu',
+          service_image_url: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+          service_features: ['Responsive Design', 'SEO Optimized', 'Fast Loading', 'Admin Panel'],
+          is_active: true
         },
         {
-          id: 'fallback-3',
-          service_name: 'AI Chatbot Development',
-          service_description: 'Pembuatan chatbot cerdas dengan NLP untuk customer service otomatis dan engagement yang lebih baik.',
-          service_features: ['Natural Language Processing', '24/7 Customer Support', 'Multi-platform Integration'],
-          service_category: 'AI',
-          service_image_url: null,
+          id: 'mobile-app',
+          service_name: 'Mobile App Development',
+          service_description: 'Pengembangan aplikasi mobile native dan cross-platform untuk iOS dan Android dengan performa optimal.',
+          service_category: 'Mobile Development',
+          price_starting_from: 35000000,
+          price_currency: 'IDR',
+          estimated_duration: '8-12 minggu',
+          service_image_url: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+          service_features: ['Cross-platform', 'Push Notifications', 'Offline Support', 'App Store Ready'],
+          is_active: true
+        },
+        {
+          id: 'data-analytics',
+          service_name: 'Data Analytics & BI',
+          service_description: 'Transformasi data menjadi insights bisnis yang actionable dengan dashboard interaktif dan machine learning.',
+          service_category: 'Data Science',
           price_starting_from: 20000000,
           price_currency: 'IDR',
-          is_active: true,
-          display_order: 3
+          estimated_duration: '6-10 minggu',
+          service_image_url: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+          service_features: ['Interactive Dashboards', 'Predictive Analytics', 'Real-time Monitoring', 'Custom Reports'],
+          is_active: true
+        },
+        {
+          id: 'ai-automation',
+          service_name: 'Process Automation',
+          service_description: 'Otomatisasi proses bisnis menggunakan AI dan RPA untuk meningkatkan efisiensi operasional.',
+          service_category: 'AI Automation',
+          price_starting_from: 30000000,
+          price_currency: 'IDR',
+          estimated_duration: '8-14 minggu',
+          service_image_url: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+          service_features: ['RPA Implementation', 'Workflow Optimization', 'AI Integration', 'Performance Monitoring'],
+          is_active: true
+        },
+        {
+          id: 'cybersecurity',
+          service_name: 'Cybersecurity Solutions',
+          service_description: 'Solusi keamanan siber komprehensif untuk melindungi aset digital dan data bisnis Anda.',
+          service_category: 'Security',
+          price_starting_from: 18000000,
+          price_currency: 'IDR',
+          estimated_duration: '4-8 minggu',
+          service_image_url: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+          service_features: ['Penetration Testing', 'Security Audit', 'Incident Response', '24/7 Monitoring'],
+          is_active: true
         }
       ]);
     } finally {
@@ -131,36 +147,43 @@ const Services = () => {
   };
 
   const defaultContent: ServicesContent = {
-    title: 'Layanan Web & Apps Development',
-    description: 'Kami menyediakan solusi digital komprehensif mulai dari website, aplikasi mobile, hingga teknologi AI untuk transformasi digital bisnis Anda.'
+    title: 'Layanan Terbaik Kami',
+    description: 'Kami menyediakan berbagai layanan AI dan teknologi untuk mengoptimalkan bisnis Anda'
   };
 
   const displayContent = content || defaultContent;
 
+  const getServiceIcon = (category: string) => {
+    switch (category.toLowerCase()) {
+      case 'ai solutions': return Brain;
+      case 'web development': return Globe;
+      case 'mobile development': return Smartphone;
+      case 'data science': return Database;
+      case 'ai automation': return Code;
+      case 'security': return Shield;
+      default: return Code;
+    }
+  };
+
   if (loading) {
     return (
-      <section id="layanan" className="py-20 bg-gradient-to-br from-white to-blue-50">
+      <section id="layanan" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16 animate-pulse">
             <div className="h-10 bg-gray-300 rounded w-1/2 mx-auto mb-4"></div>
             <div className="h-6 bg-gray-300 rounded w-3/4 mx-auto"></div>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[1, 2, 3].map((_, index) => (
-              <div key={index} className="bg-white p-8 rounded-3xl shadow-lg animate-pulse">
-                <div className="w-16 h-16 bg-gray-300 rounded-2xl mb-6"></div>
+            {[1, 2, 3, 4, 5, 6].map((_, index) => (
+              <div key={index} className="bg-gray-100 p-8 rounded-3xl animate-pulse">
+                <div className="h-12 w-12 bg-gray-300 rounded-xl mb-6"></div>
                 <div className="h-6 bg-gray-300 rounded mb-4"></div>
                 <div className="space-y-2 mb-6">
                   <div className="h-4 bg-gray-300 rounded"></div>
                   <div className="h-4 bg-gray-300 rounded"></div>
                   <div className="h-4 bg-gray-300 rounded w-3/4"></div>
                 </div>
-                <div className="space-y-2 mb-6">
-                  <div className="h-3 bg-gray-300 rounded w-2/3"></div>
-                  <div className="h-3 bg-gray-300 rounded w-1/2"></div>
-                  <div className="h-3 bg-gray-300 rounded w-3/4"></div>
-                </div>
-                <div className="h-12 bg-gray-300 rounded"></div>
+                <div className="h-10 bg-gray-300 rounded"></div>
               </div>
             ))}
           </div>
@@ -170,7 +193,7 @@ const Services = () => {
   }
 
   return (
-    <section id="layanan" className="py-20 bg-gradient-to-br from-white to-blue-50">
+    <section id="layanan" className="py-20 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16 animate-fade-in">
           <h2 className="text-5xl font-bold bg-gradient-to-r from-gray-900 to-blue-900 bg-clip-text text-transparent mb-6">
@@ -185,73 +208,61 @@ const Services = () => {
           <div className="text-center py-12">
             <Code className="h-12 w-12 mx-auto text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Belum Ada Layanan</h3>
-            <p className="text-gray-500">Layanan akan ditampilkan di sini setelah ditambahkan di CMS</p>
+            <p className="text-gray-500">Layanan akan ditampilkan di sini</p>
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {services.map((service, index) => {
-              const IconComponent = iconMap[service.service_name] || iconMap['default'];
+              const IconComponent = getServiceIcon(service.service_category);
               return (
                 <div 
                   key={service.id} 
-                  className="group bg-white p-8 rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 border border-gray-100 hover:border-blue-200 transform hover:-translate-y-2 animate-fade-in"
+                  className="group bg-gradient-to-br from-white to-blue-50 p-8 rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 border border-blue-100 animate-fade-in"
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
-                  <div className="flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-2xl mb-6 group-hover:from-blue-600 group-hover:to-indigo-600 transition-all duration-300">
-                    <IconComponent className="h-8 w-8 text-blue-600 group-hover:text-white transition-colors duration-300" />
+                  <div className="bg-gradient-to-r from-blue-600 to-indigo-600 w-16 h-16 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                    <IconComponent className="h-8 w-8 text-white" />
                   </div>
                   
-                  <h3 className="text-xl font-bold text-gray-900 mb-4 group-hover:text-blue-900 transition-colors">
+                  <span className="inline-block bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full mb-4 font-medium">
+                    {service.service_category}
+                  </span>
+                  
+                  <h3 className="text-2xl font-bold text-gray-900 mb-4 group-hover:text-blue-600 transition-colors">
                     {service.service_name}
                   </h3>
                   
-                  <p className="text-gray-600 mb-6 leading-relaxed">
-                    {service.service_description || 'Deskripsi layanan akan segera tersedia.'}
+                  <p className="text-gray-600 mb-6 leading-relaxed line-clamp-3">
+                    {service.service_description}
                   </p>
-                  
-                  {service.service_features.length > 0 && (
-                    <ul className="space-y-2 mb-6">
-                      {service.service_features.map((feature, idx) => (
-                        <li key={idx} className="flex items-center text-sm text-gray-600">
-                          <div className="w-2 h-2 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full mr-3"></div>
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  
-                  {service.price_starting_from && (
-                    <div className="mb-6 p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl">
-                      <span className="text-sm text-gray-500 block">Mulai dari</span>
-                      <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                        {service.price_currency === 'IDR' ? 'Rp ' : service.price_currency + ' '}
-                        {service.price_starting_from.toLocaleString()}
+
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <span className="text-sm text-gray-500">Mulai dari</span>
+                      <div className="text-xl font-bold text-green-600">
+                        {service.price_currency} {service.price_starting_from?.toLocaleString('id-ID')}
                       </div>
                     </div>
-                  )}
+                    <div className="text-right">
+                      <span className="text-sm text-gray-500">Durasi</span>
+                      <div className="text-sm font-semibold text-gray-700">
+                        {service.estimated_duration}
+                      </div>
+                    </div>
+                  </div>
                   
-                  <button className="w-full bg-gradient-to-r from-gray-50 to-blue-50 text-gray-900 py-3 rounded-xl hover:from-blue-600 hover:to-indigo-600 hover:text-white transition-all duration-300 font-medium group flex items-center justify-center">
-                    <span>Pelajari Lebih Lanjut</span>
-                    <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                  </button>
+                  <Link
+                    to={`/service/${service.id}`}
+                    className="group/btn bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 flex items-center justify-center font-semibold shadow-lg hover:shadow-xl w-full"
+                  >
+                    Pelajari Lebih Lanjut
+                    <ArrowRight className="ml-2 h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
+                  </Link>
                 </div>
               );
             })}
           </div>
         )}
-
-        {/* Call to action */}
-        <div className="text-center mt-16">
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl p-8 text-white">
-            <h3 className="text-2xl font-bold mb-4">Siap untuk Memulai Proyek Anda?</h3>
-            <p className="text-blue-100 mb-6 max-w-2xl mx-auto">
-              Konsultasikan kebutuhan digital Anda dengan tim ahli kami dan dapatkan solusi terbaik untuk bisnis Anda.
-            </p>
-            <button className="bg-white text-blue-600 px-8 py-3 rounded-xl hover:bg-gray-100 transition-colors duration-300 font-semibold">
-              Konsultasi Gratis Sekarang
-            </button>
-          </div>
-        </div>
       </div>
     </section>
   );

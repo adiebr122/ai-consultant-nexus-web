@@ -10,6 +10,7 @@ interface HeroContent {
   cta_primary: string;
   cta_secondary: string;
   hero_image_url: string | null;
+  dynamic_headlines?: string[];
   stats?: Array<{
     icon: string;
     label: string;
@@ -20,10 +21,24 @@ interface HeroContent {
 const Hero = () => {
   const [heroContent, setHeroContent] = useState<HeroContent | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentHeadlineIndex, setCurrentHeadlineIndex] = useState(0);
 
   useEffect(() => {
     fetchHeroContent();
   }, []);
+
+  // Auto-rotate dynamic headlines
+  useEffect(() => {
+    if (heroContent?.dynamic_headlines && heroContent.dynamic_headlines.length > 1) {
+      const timer = setInterval(() => {
+        setCurrentHeadlineIndex((prev) => 
+          (prev + 1) % heroContent.dynamic_headlines!.length
+        );
+      }, 3000); // Change every 3 seconds
+
+      return () => clearInterval(timer);
+    }
+  }, [heroContent?.dynamic_headlines]);
 
   const fetchHeroContent = async () => {
     try {
@@ -45,6 +60,7 @@ const Hero = () => {
           cta_primary: metadata.cta_primary || 'Konsultasi Gratis',
           cta_secondary: metadata.cta_secondary || 'Lihat Portfolio',
           hero_image_url: data.image_url,
+          dynamic_headlines: metadata.dynamic_headlines || [],
           stats: metadata.stats || []
         });
       }
@@ -63,6 +79,12 @@ const Hero = () => {
     cta_primary: 'Konsultasi Gratis',
     cta_secondary: 'Lihat Portfolio',
     hero_image_url: null,
+    dynamic_headlines: [
+      'Solusi AI Terdepan untuk Bisnis Modern',
+      'Transformasi Digital yang Menguntungkan',
+      'Otomatisasi Cerdas untuk Efisiensi Maksimal',
+      'Inovasi AI yang Mengubah Industri'
+    ],
     stats: [
       { icon: 'Users', label: 'Klien Terpercaya', value: '150+' },
       { icon: 'Award', label: 'Proyek Sukses', value: '300+' },
@@ -72,6 +94,9 @@ const Hero = () => {
   };
 
   const content = heroContent || defaultContent;
+  const currentHeadlines = content.dynamic_headlines && content.dynamic_headlines.length > 0 
+    ? content.dynamic_headlines 
+    : defaultContent.dynamic_headlines!;
 
   const iconMap: { [key: string]: any } = {
     'Users': Users,
@@ -122,9 +147,18 @@ const Hero = () => {
               {content.subtitle}
             </div>
             
-            <h1 className="text-5xl lg:text-7xl font-bold bg-gradient-to-r from-gray-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent leading-tight">
-              {content.title}
-            </h1>
+            <div className="space-y-4">
+              <h1 className="text-5xl lg:text-7xl font-bold bg-gradient-to-r from-gray-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent leading-tight">
+                {content.title}
+              </h1>
+              
+              {/* Dynamic Headlines */}
+              <div className="h-16 flex items-center">
+                <h2 className="text-2xl lg:text-3xl font-semibold text-blue-600 animate-fade-in">
+                  {currentHeadlines[currentHeadlineIndex]}
+                </h2>
+              </div>
+            </div>
             
             <p className="text-xl text-gray-600 leading-relaxed max-w-2xl">
               {content.description}
