@@ -26,6 +26,7 @@ const HeroEditor = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [existingId, setExistingId] = useState<string | null>(null);
   const [content, setContent] = useState<HeroContent>({
     title: 'AI Consultant Pro',
     subtitle: 'Transformasi Digital dengan Teknologi AI',
@@ -56,6 +57,7 @@ const HeroEditor = () => {
       if (error && error.code !== 'PGRST116') throw error;
 
       if (data && data.metadata) {
+        setExistingId(data.id);
         const metadata = data.metadata as any;
         setContent({
           title: data.title || 'AI Consultant Pro',
@@ -81,26 +83,45 @@ const HeroEditor = () => {
     setSaving(true);
 
     try {
-      const { error } = await supabase
-        .from('website_content')
-        .upsert({
-          section: 'hero',
-          title: content.title,
-          content: content.description,
-          image_url: content.hero_image_url,
-          metadata: {
-            subtitle: content.subtitle,
-            cta_primary: content.cta_primary,
-            cta_secondary: content.cta_secondary,
-            cta_primary_url: content.cta_primary_url,
-            dynamic_headlines: content.dynamic_headlines,
-            stats: content.stats
-          } as any,
-          user_id: user.id,
-          is_active: true
-        }, {
-          onConflict: 'section,user_id'
-        });
+      const contentData = {
+        section: 'hero',
+        title: content.title,
+        content: content.description,
+        image_url: content.hero_image_url,
+        metadata: {
+          subtitle: content.subtitle,
+          cta_primary: content.cta_primary,
+          cta_secondary: content.cta_secondary,
+          cta_primary_url: content.cta_primary_url,
+          dynamic_headlines: content.dynamic_headlines,
+          stats: content.stats
+        } as any,
+        user_id: user.id,
+        is_active: true
+      };
+
+      let error;
+
+      if (existingId) {
+        // Update existing record
+        const result = await supabase
+          .from('website_content')
+          .update(contentData)
+          .eq('id', existingId);
+        error = result.error;
+      } else {
+        // Insert new record
+        const result = await supabase
+          .from('website_content')
+          .insert(contentData)
+          .select()
+          .single();
+        
+        if (result.data) {
+          setExistingId(result.data.id);
+        }
+        error = result.error;
+      }
 
       if (error) throw error;
 
@@ -109,6 +130,7 @@ const HeroEditor = () => {
         description: "Konten Hero berhasil disimpan",
       });
     } catch (error: any) {
+      console.error('Save error:', error);
       toast({
         title: "Error",
         description: `Gagal menyimpan: ${error.message}`,
