@@ -1,12 +1,13 @@
 
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, Search, Palette, BarChart3, Globe, Phone, Share2 } from 'lucide-react';
+import { Settings, Search, Palette, BarChart3, Globe, Phone, Share2, Copyright } from 'lucide-react';
 import SEOSettings from '@/components/SEOSettings';
 import BrandSettings from '@/components/BrandSettings';
 import AnalyticsSettings from '@/components/AnalyticsSettings';
 import ContactInfoManager from '@/components/ContactInfoManager';
 import SocialMediaSettings from '@/components/SocialMediaSettings';
+import CopyrightSettings from '@/components/CopyrightSettings';
 import { setupStorage } from '@/integrations/supabase/setup';
 
 const SettingsManager = () => {
@@ -25,7 +26,7 @@ const SettingsManager = () => {
       </div>
 
       <Tabs defaultValue="contact" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="contact" className="flex items-center space-x-2">
             <Phone className="h-4 w-4" />
             <span>Kontak</span>
@@ -33,6 +34,10 @@ const SettingsManager = () => {
           <TabsTrigger value="social" className="flex items-center space-x-2">
             <Share2 className="h-4 w-4" />
             <span>Social Media</span>
+          </TabsTrigger>
+          <TabsTrigger value="copyright" className="flex items-center space-x-2">
+            <Copyright className="h-4 w-4" />
+            <span>Copyright</span>
           </TabsTrigger>
           <TabsTrigger value="seo" className="flex items-center space-x-2">
             <Search className="h-4 w-4" />
@@ -58,6 +63,12 @@ const SettingsManager = () => {
           <TabsContent value="social" className="space-y-6">
             <div className="bg-white p-6 rounded-xl shadow-lg border">
               <SocialMediaSettings />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="copyright" className="space-y-6">
+            <div className="bg-white p-6 rounded-xl shadow-lg border">
+              <CopyrightSettings />
             </div>
           </TabsContent>
 

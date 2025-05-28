@@ -3,10 +3,12 @@ import { Mail, Phone, MapPin, Facebook, Instagram, Linkedin, Youtube, Twitter, G
 import { Link } from 'react-router-dom';
 import { useContactInfo } from '@/hooks/useContactInfo';
 import { useSocialMediaSettings } from '@/hooks/useSocialMediaSettings';
+import { useCopyrightSettings } from '@/hooks/useCopyrightSettings';
 
 const Footer = () => {
   const { contactInfo, loading } = useContactInfo();
   const { socialMediaSettings, loading: socialLoading } = useSocialMediaSettings();
+  const { copyrightSettings, loading: copyrightLoading } = useCopyrightSettings();
 
   const formatAddress = (address: string) => {
     return address.split('\n').map((line, index) => (
@@ -40,6 +42,16 @@ const Footer = () => {
       case 'telegram_url': return 'Telegram';
       default: return platform;
     }
+  };
+
+  const getCopyrightText = () => {
+    if (copyrightSettings.copyright_text) {
+      return copyrightSettings.copyright_text;
+    }
+    
+    const year = copyrightSettings.copyright_year || '2024';
+    const company = copyrightSettings.copyright_company || 'Visual Media X';
+    return `© ${year} ${company}. All rights reserved.`;
   };
 
   return (
@@ -134,11 +146,37 @@ const Footer = () => {
         </div>
 
         <div className="border-t border-gray-800 mt-12 pt-8 text-center">
-          <p className="text-gray-400">
-            © 2024 Visual Media X. All rights reserved. | 
-            <a href="#" className="hover:text-blue-400 transition-colors ml-1">Privacy Policy</a> | 
-            <a href="#" className="hover:text-blue-400 transition-colors ml-1">Terms of Service</a>
-          </p>
+          {!copyrightLoading && (
+            <p className="text-gray-400">
+              {getCopyrightText()}
+              {(copyrightSettings.privacy_policy_url || copyrightSettings.terms_of_service_url) && (
+                <>
+                  {' | '}
+                  {copyrightSettings.privacy_policy_url && (
+                    <a 
+                      href={copyrightSettings.privacy_policy_url} 
+                      className="hover:text-blue-400 transition-colors ml-1"
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                    >
+                      Privacy Policy
+                    </a>
+                  )}
+                  {copyrightSettings.privacy_policy_url && copyrightSettings.terms_of_service_url && ' | '}
+                  {copyrightSettings.terms_of_service_url && (
+                    <a 
+                      href={copyrightSettings.terms_of_service_url} 
+                      className="hover:text-blue-400 transition-colors ml-1"
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                    >
+                      Terms of Service
+                    </a>
+                  )}
+                </>
+              )}
+            </p>
+          )}
         </div>
       </div>
     </footer>
