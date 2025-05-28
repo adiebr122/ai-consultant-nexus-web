@@ -29,8 +29,45 @@ export const setupStorage = async () => {
     } else {
       console.log('Portfolio-images bucket already exists');
     }
+
+    // Create brand-assets bucket if it doesn't exist
+    const brandBucket = buckets?.find(bucket => bucket.name === 'brand-assets');
+    
+    if (!brandBucket) {
+      console.log('Creating brand-assets bucket...');
+      const { error: createError } = await supabase.storage.createBucket('brand-assets', {
+        public: true,
+        allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'],
+        fileSizeLimit: 10485760 // 10MB
+      });
+
+      if (createError) {
+        console.error('Error creating brand-assets bucket:', createError);
+      } else {
+        console.log('Brand-assets bucket created successfully');
+      }
+    } else {
+      console.log('Brand-assets bucket already exists');
+    }
   } catch (error) {
     console.error('Error setting up storage:', error);
+  }
+};
+
+export const checkStorageAvailability = async (): Promise<boolean> => {
+  try {
+    const { data: buckets, error } = await supabase.storage.listBuckets();
+    
+    if (error) {
+      console.error('Error checking storage availability:', error);
+      return false;
+    }
+
+    // Check if we can list buckets successfully
+    return Array.isArray(buckets);
+  } catch (error) {
+    console.error('Storage not available:', error);
+    return false;
   }
 };
 

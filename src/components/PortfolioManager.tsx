@@ -1,11 +1,33 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Upload, Save, X, ExternalLink, Github, Image, FileText, Eye, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { 
+  Plus, 
+  Edit, 
+  Trash2, 
+  Eye, 
+  Upload, 
+  RefreshCw, 
+  Save, 
+  X, 
+  Globe, 
+  Github, 
+  Calendar,
+  Users,
+  Clock,
+  Target,
+  Lightbulb,
+  CheckCircle,
+  TrendingUp,
+  ExternalLink
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Project {
   id?: string;
@@ -49,6 +71,25 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [showProjectForm, setShowProjectForm] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [newProject, setNewProject] = useState<Project>({
+    title: '',
+    description: '',
+    detailed_description: '',
+    image_url: '',
+    gallery_images: [],
+    client: '',
+    category: '',
+    technologies: [],
+    demo_url: '',
+    github_url: '',
+    project_duration: '',
+    team_size: '',
+    challenges: '',
+    solutions: '',
+    results: ''
+  });
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -169,7 +210,7 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
       project_duration: '9 bulan',
       team_size: '18 developer, 4 financial analyst, 3 ML engineer',
       challenges: 'Memproses data market real-time dengan latency rendah dan memastikan keamanan transaksi finansial tingkat bank.',
-      solutions: 'Implementasi low-latency architecture dengan WebSocket connections dan multi-layer security with 2FA and biometric authentication.',
+      solutions: 'Implementasi low-latency architecture dengan WebSocket connections and multi-layer security with 2FA and biometric authentication.',
       results: 'Platform mampu memproses 50,000+ transaksi per detik dengan latency rata-rata 10ms and 99.99% security.'
     }
   ];
@@ -460,6 +501,489 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
     setEditingProject({ ...editingProject, gallery_images: newGallery });
   };
 
+  const handleEditProject = (index: number) => {
+    setEditingIndex(index);
+    setNewProject(content.projects[index]);
+  };
+
+  const handleDeleteProject = (index: number) => {
+    if (confirm('Apakah Anda yakin ingin menghapus proyek ini?')) {
+      const newProjects = content.projects.filter((_, i) => i !== index);
+      setContent({ ...content, projects: newProjects });
+      toast({
+        title: "Berhasil",
+        description: "Proyek berhasil dihapus",
+      });
+    }
+  };
+
+  const handleSaveProject = () => {
+    if (!newProject.title || !newProject.description) {
+      toast({
+        title: "Error",
+        description: "Judul dan deskripsi proyek harus diisi",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newProjects = [...content.projects];
+    newProjects.push(newProject);
+    setContent({ ...content, projects: newProjects });
+    setShowProjectForm(false);
+    setNewProject({
+      title: '',
+      description: '',
+      detailed_description: '',
+      image_url: '',
+      gallery_images: [],
+      client: '',
+      category: '',
+      technologies: [],
+      demo_url: '',
+      github_url: '',
+      project_duration: '',
+      team_size: '',
+      challenges: '',
+      solutions: '',
+      results: ''
+    });
+    setEditingIndex(null);
+    resetForm();
+    toast({
+      title: "Berhasil",
+      description: "Proyek berhasil disimpan",
+    });
+  };
+
+  const resetForm = () => {
+    setNewProject({
+      title: '',
+      description: '',
+      detailed_description: '',
+      image_url: '',
+      gallery_images: [],
+      client: '',
+      category: '',
+      technologies: [],
+      demo_url: '',
+      github_url: '',
+      project_duration: '',
+      team_size: '',
+      challenges: '',
+      solutions: '',
+      results: ''
+    });
+  };
+
+  const renderProjectCard = (project: Project, index: number) => (
+    <Card key={index} className="group hover:shadow-xl transition-all duration-300 border-2 hover:border-blue-200 bg-white">
+      <CardHeader className="pb-3">
+        <div className="flex justify-between items-start mb-3">
+          <div className="flex-1">
+            <CardTitle className="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+              {project.title}
+            </CardTitle>
+            <CardDescription className="text-sm text-gray-600 line-clamp-2">
+              {project.description}
+            </CardDescription>
+          </div>
+          <div className="flex space-x-1 ml-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onProjectSelect?.(project)}
+              className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600"
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleEditProject(index)}
+              className="h-8 w-8 p-0 hover:bg-yellow-50 hover:text-yellow-600"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleDeleteProject(index)}
+              className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      
+      <CardContent className="pt-0">
+        {project.image_url && (
+          <div className="mb-4 rounded-lg overflow-hidden bg-gray-100">
+            <img 
+              src={project.image_url} 
+              alt={project.title}
+              className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
+            />
+          </div>
+        )}
+        
+        <div className="space-y-3">
+          <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center text-gray-600">
+              <Calendar className="h-4 w-4 mr-1" />
+              <span>{project.project_duration || 'N/A'}</span>
+            </div>
+            <Badge variant="outline" className="text-xs">
+              {project.category || 'Uncategorized'}
+            </Badge>
+          </div>
+          
+          {project.client && (
+            <div className="flex items-center text-sm text-gray-600">
+              <Users className="h-4 w-4 mr-1" />
+              <span>Client: {project.client}</span>
+            </div>
+          )}
+          
+          {project.technologies && project.technologies.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {project.technologies.slice(0, 3).map((tech, techIndex) => (
+                <Badge key={techIndex} variant="secondary" className="text-xs px-2 py-1">
+                  {tech}
+                </Badge>
+              ))}
+              {project.technologies.length > 3 && (
+                <Badge variant="secondary" className="text-xs px-2 py-1">
+                  +{project.technologies.length - 3} more
+                </Badge>
+              )}
+            </div>
+          )}
+          
+          <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+            <div className="flex space-x-2">
+              {project.demo_url && (
+                <Button variant="ghost" size="sm" className="h-8 px-2 text-blue-600 hover:bg-blue-50">
+                  <Globe className="h-3 w-3 mr-1" />
+                  <span className="text-xs">Demo</span>
+                </Button>
+              )}
+              {project.github_url && (
+                <Button variant="ghost" size="sm" className="h-8 px-2 text-gray-600 hover:bg-gray-50">
+                  <Github className="h-3 w-3 mr-1" />
+                  <span className="text-xs">Code</span>
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const renderProjectForm = () => (
+    <Card className="border-2 border-blue-200 bg-blue-50/30">
+      <CardHeader>
+        <CardTitle className="flex items-center text-blue-900">
+          {editingIndex !== null ? <Edit className="h-5 w-5 mr-2" /> : <Plus className="h-5 w-5 mr-2" />}
+          {editingIndex !== null ? 'Edit Project' : 'Add New Project'}
+        </CardTitle>
+        <CardDescription>
+          {editingIndex !== null ? 'Update project details' : 'Create a new portfolio project'}
+        </CardDescription>
+      </CardHeader>
+      
+      <CardContent className="space-y-6">
+        {/* Basic Information */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="title" className="text-sm font-medium text-gray-700">
+              Project Title *
+            </Label>
+            <Input
+              id="title"
+              type="text"
+              value={newProject.title}
+              onChange={(e) => setNewProject({...newProject, title: e.target.value})}
+              placeholder="Enter project title"
+              className="border-gray-300 focus:border-blue-500"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="category" className="text-sm font-medium text-gray-700">
+              Category
+            </Label>
+            <Input
+              id="category"
+              type="text"
+              value={newProject.category}
+              onChange={(e) => setNewProject({...newProject, category: e.target.value})}
+              placeholder="e.g., Web Development, Mobile App"
+              className="border-gray-300 focus:border-blue-500"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="description" className="text-sm font-medium text-gray-700">
+            Short Description *
+          </Label>
+          <Textarea
+            id="description"
+            value={newProject.description}
+            onChange={(e) => setNewProject({...newProject, description: e.target.value})}
+            placeholder="Brief description of the project"
+            rows={2}
+            className="border-gray-300 focus:border-blue-500"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="detailed_description" className="text-sm font-medium text-gray-700">
+            Detailed Description
+          </Label>
+          <Textarea
+            id="detailed_description"
+            value={newProject.detailed_description}
+            onChange={(e) => setNewProject({...newProject, detailed_description: e.target.value})}
+            placeholder="Comprehensive project description"
+            rows={4}
+            className="border-gray-300 focus:border-blue-500"
+          />
+        </div>
+
+        {/* Project Details */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="client" className="text-sm font-medium text-gray-700">
+              Client
+            </Label>
+            <Input
+              id="client"
+              type="text"
+              value={newProject.client}
+              onChange={(e) => setNewProject({...newProject, client: e.target.value})}
+              placeholder="Client name"
+              className="border-gray-300 focus:border-blue-500"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="project_duration" className="text-sm font-medium text-gray-700">
+              Duration
+            </Label>
+            <Input
+              id="project_duration"
+              type="text"
+              value={newProject.project_duration}
+              onChange={(e) => setNewProject({...newProject, project_duration: e.target.value})}
+              placeholder="e.g., 3 months"
+              className="border-gray-300 focus:border-blue-500"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="team_size" className="text-sm font-medium text-gray-700">
+            Team Size
+          </Label>
+          <Input
+            id="team_size"
+            type="text"
+            value={newProject.team_size}
+            onChange={(e) => setNewProject({...newProject, team_size: e.target.value})}
+            placeholder="e.g., 5 developers, 2 designers"
+            className="border-gray-300 focus:border-blue-500"
+          />
+        </div>
+
+        {/* Technologies */}
+        <div className="space-y-2">
+          <Label htmlFor="technologies" className="text-sm font-medium text-gray-700">
+            Technologies Used
+          </Label>
+          <Input
+            id="technologies"
+            type="text"
+            value={newProject.technologies.join(', ')}
+            onChange={(e) => setNewProject({
+              ...newProject, 
+              technologies: e.target.value.split(',').map(tech => tech.trim()).filter(tech => tech)
+            })}
+            placeholder="React, Node.js, MongoDB (separate with commas)"
+            className="border-gray-300 focus:border-blue-500"
+          />
+        </div>
+
+        {/* URLs */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="demo_url" className="text-sm font-medium text-gray-700 flex items-center">
+              <Globe className="h-4 w-4 mr-1" />
+              Demo URL
+            </Label>
+            <Input
+              id="demo_url"
+              type="url"
+              value={newProject.demo_url || ''}
+              onChange={(e) => setNewProject({...newProject, demo_url: e.target.value})}
+              placeholder="https://demo.example.com"
+              className="border-gray-300 focus:border-blue-500"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="github_url" className="text-sm font-medium text-gray-700 flex items-center">
+              <Github className="h-4 w-4 mr-1" />
+              GitHub URL
+            </Label>
+            <Input
+              id="github_url"
+              type="url"
+              value={newProject.github_url || ''}
+              onChange={(e) => setNewProject({...newProject, github_url: e.target.value})}
+              placeholder="https://github.com/user/repo"
+              className="border-gray-300 focus:border-blue-500"
+            />
+          </div>
+        </div>
+
+        {/* Image Upload */}
+        <div className="space-y-2">
+          <Label className="text-sm font-medium text-gray-700">Project Image</Label>
+          <div className="flex items-center space-x-2">
+            <Input
+              type="text"
+              value={newProject.image_url}
+              onChange={(e) => setNewProject({...newProject, image_url: e.target.value})}
+              placeholder="Image URL or upload file"
+              className="flex-1 border-gray-300 focus:border-blue-500"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={uploading}
+              onClick={() => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.onchange = (e) => {
+                  const file = (e.target as HTMLInputElement).files?.[0];
+                  if (file) handleImageUpload(file);
+                };
+                input.click();
+              }}
+            >
+              {uploading ? (
+                <RefreshCw className="h-4 w-4 animate-spin" />
+              ) : (
+                <Upload className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+          {newProject.image_url && (
+            <div className="mt-2 border rounded-lg p-2 bg-gray-50">
+              <img 
+                src={newProject.image_url} 
+                alt="Project preview"
+                className="max-h-32 max-w-full object-contain"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Project Challenges & Solutions */}
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="challenges" className="text-sm font-medium text-gray-700 flex items-center">
+              <Target className="h-4 w-4 mr-1" />
+              Challenges
+            </Label>
+            <Textarea
+              id="challenges"
+              value={newProject.challenges}
+              onChange={(e) => setNewProject({...newProject, challenges: e.target.value})}
+              placeholder="What challenges did you face during this project?"
+              rows={3}
+              className="border-gray-300 focus:border-blue-500"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="solutions" className="text-sm font-medium text-gray-700 flex items-center">
+              <Lightbulb className="h-4 w-4 mr-1" />
+              Solutions
+            </Label>
+            <Textarea
+              id="solutions"
+              value={newProject.solutions}
+              onChange={(e) => setNewProject({...newProject, solutions: e.target.value})}
+              placeholder="How did you solve the challenges?"
+              rows={3}
+              className="border-gray-300 focus:border-blue-500"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="results" className="text-sm font-medium text-gray-700 flex items-center">
+              <TrendingUp className="h-4 w-4 mr-1" />
+              Results & Impact
+            </Label>
+            <Textarea
+              id="results"
+              value={newProject.results}
+              onChange={(e) => setNewProject({...newProject, results: e.target.value})}
+              placeholder="What were the outcomes and impact of the project?"
+              rows={3}
+              className="border-gray-300 focus:border-blue-500"
+            />
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setEditingIndex(null);
+              resetForm();
+            }}
+            className="flex items-center"
+          >
+            <X className="h-4 w-4 mr-1" />
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSaveProject}
+            disabled={saving || !newProject.title || !newProject.description}
+            className="bg-blue-600 hover:bg-blue-700 flex items-center"
+          >
+            {saving ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-1" />
+                {editingIndex !== null ? 'Update Project' : 'Save Project'}
+              </>
+            )}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   if (!user) {
     return (
       <div className="text-center py-12">
@@ -552,91 +1076,7 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {content.projects.map((project, index) => (
                 <div key={index} className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
-                  <div className="relative">
-                    <img 
-                      src={project.image_url} 
-                      alt={project.title}
-                      className="w-full h-48 object-cover"
-                      onError={(e) => {
-                        e.currentTarget.src = 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80';
-                      }}
-                    />
-                  </div>
-                  <div className="p-4">
-                    <h4 className="font-semibold mb-1 text-gray-900">{project.title}</h4>
-                    <p className="text-sm text-gray-600 mb-2">{project.client}</p>
-                    <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full mb-2">
-                      {project.category}
-                    </span>
-                    <p className="text-sm text-gray-700 mb-3 line-clamp-2">{project.description}</p>
-                    
-                    {/* Technology tags */}
-                    {project.technologies && project.technologies.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mb-3">
-                        {project.technologies.slice(0, 3).map((tech, techIndex) => (
-                          <span key={techIndex} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
-                            {tech}
-                          </span>
-                        ))}
-                        {project.technologies.length > 3 && (
-                          <span className="text-xs text-gray-500">+{project.technologies.length - 3}</span>
-                        )}
-                      </div>
-                    )}
-                    
-                    {/* Status indicators */}
-                    <div className="flex justify-between items-center mb-3">
-                      <div className="flex space-x-2">
-                        {project.demo_url && (
-                          <ExternalLink className="h-4 w-4 text-blue-600" title="Demo tersedia" />
-                        )}
-                        {project.github_url && (
-                          <Github className="h-4 w-4 text-gray-600" title="GitHub tersedia" />
-                        )}
-                        {(project.gallery_images?.length > 0) && (
-                          <Image className="h-4 w-4 text-purple-600" title="Galeri tersedia" />
-                        )}
-                        {project.detailed_description && (
-                          <FileText className="h-4 w-4 text-green-600" title="Detail lengkap tersedia" />
-                        )}
-                      </div>
-                    </div>
-                    
-                    {/* Action buttons */}
-                    <div className="flex justify-between items-center">
-                      <div className="flex space-x-2">
-                        {onProjectSelect && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => onProjectSelect(project)}
-                            className="text-green-600 border-green-600 hover:bg-green-50"
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            Preview
-                          </Button>
-                        )}
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => editProject(project, index)}
-                          className="text-blue-600 border-blue-600 hover:bg-blue-50"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => deleteProject(index)}
-                          className="text-red-600 border-red-600 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
+                  {renderProjectCard(project, index)}
                 </div>
               ))}
             </div>
@@ -645,296 +1085,10 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
       </Card>
 
       {/* Project Form Modal */}
-      {showProjectForm && editingProject && (
+      {showProjectForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white z-10 p-6 border-b border-gray-200 flex justify-between items-center">
-              <h3 className="text-lg font-semibold">
-                {editingProject.id && editingProject.id !== 'new' ? 'Edit Proyek' : 'Tambah Proyek Baru'}
-              </h3>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowProjectForm(false)}
-              >
-                <X className="h-5 w-5" />
-              </Button>
-            </div>
-
-            <div className="p-6">
-              <div className="space-y-6">
-                {/* Basic Information */}
-                <div>
-                  <h4 className="font-semibold text-blue-600 mb-4 flex items-center gap-2">
-                    <FileText className="h-4 w-4" /> Informasi Dasar
-                  </h4>
-                  
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Judul Proyek <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={editingProject.title}
-                        onChange={(e) => setEditingProject({ ...editingProject, title: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Masukkan judul proyek"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Klien <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={editingProject.client}
-                        onChange={(e) => setEditingProject({ ...editingProject, client: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Nama klien"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="mt-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Deskripsi Singkat <span className="text-red-500">*</span>
-                    </label>
-                    <Textarea
-                      value={editingProject.description}
-                      onChange={(e) => setEditingProject({ ...editingProject, description: e.target.value })}
-                      placeholder="Deskripsi singkat proyek (1-2 kalimat)"
-                      className="w-full"
-                      rows={3}
-                    />
-                  </div>
-
-                  <div className="grid md:grid-cols-2 gap-4 mt-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Kategori <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={editingProject.category}
-                        onChange={(e) => setEditingProject({ ...editingProject, category: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Contoh: AI Chatbot, Mobile App"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Durasi Proyek</label>
-                      <input
-                        type="text"
-                        value={editingProject.project_duration}
-                        onChange={(e) => setEditingProject({ ...editingProject, project_duration: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Contoh: 3 bulan, Jan-Mar 2023"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="mt-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Teknologi (pisahkan dengan koma)</label>
-                    <input
-                      type="text"
-                      value={editingProject.technologies.join(', ')}
-                      onChange={(e) => handleTechnologiesChange(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="React, Python, TensorFlow, Node.js"
-                    />
-                  </div>
-
-                  <div className="grid md:grid-cols-2 gap-4 mt-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">URL Demo (opsional)</label>
-                      <input
-                        type="url"
-                        value={editingProject.demo_url || ''}
-                        onChange={(e) => setEditingProject({ ...editingProject, demo_url: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="https://demo.example.com"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">URL GitHub (opsional)</label>
-                      <input
-                        type="url"
-                        value={editingProject.github_url || ''}
-                        onChange={(e) => setEditingProject({ ...editingProject, github_url: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="https://github.com/username/repo"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="mt-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Ukuran Tim</label>
-                    <input
-                      type="text"
-                      value={editingProject.team_size || ''}
-                      onChange={(e) => setEditingProject({ ...editingProject, team_size: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Contoh: 5 developer, 1 designer, 1 project manager"
-                    />
-                  </div>
-                </div>
-
-                {/* Images Section */}
-                <div className="border-t border-gray-200 pt-6">
-                  <h4 className="font-semibold text-blue-600 mb-4 flex items-center gap-2">
-                    <Image className="h-4 w-4" /> Gambar
-                  </h4>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Gambar Utama Proyek
-                      </label>
-                      {editingProject.image_url && (
-                        <div className="mb-4 relative w-40 h-40">
-                          <img 
-                            src={editingProject.image_url} 
-                            alt="Project thumbnail" 
-                            className="w-full h-full object-cover rounded-md border border-gray-200"
-                          />
-                        </div>
-                      )}
-                      <div className="flex items-center space-x-2">
-                        <label className="cursor-pointer bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-2 rounded-lg border border-blue-200">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => handleImageUpload(e, 'image_url')}
-                            disabled={uploadingImage}
-                          />
-                          <span className="flex items-center">
-                            <Upload className="h-4 w-4 mr-2" />
-                            {uploadingImage ? 'Mengupload...' : 'Upload Gambar'}
-                          </span>
-                        </label>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Galeri Gambar
-                      </label>
-                      {editingProject.gallery_images && editingProject.gallery_images.length > 0 && (
-                        <div className="grid grid-cols-3 gap-4 mb-4">
-                          {editingProject.gallery_images.map((img, idx) => (
-                            <div key={idx} className="relative">
-                              <img
-                                src={img}
-                                alt={`Gallery ${idx + 1}`}
-                                className="w-full h-32 object-cover rounded-md border border-gray-200"
-                              />
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => removeGalleryImage(idx)}
-                                className="absolute top-2 right-2 h-6 w-6 p-0"
-                              >
-                                <X className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      <div className="flex items-center space-x-2">
-                        <label className="cursor-pointer bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-2 rounded-lg border border-blue-200">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => handleImageUpload(e, 'gallery')}
-                            disabled={uploadingImage}
-                          />
-                          <span className="flex items-center">
-                            <Upload className="h-4 w-4 mr-2" />
-                            {uploadingImage ? 'Mengupload...' : 'Tambah Gambar Galeri'}
-                          </span>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Detailed Information */}
-                <div className="border-t border-gray-200 pt-6">
-                  <h4 className="font-semibold text-blue-600 mb-4 flex items-center gap-2">
-                    <FileText className="h-4 w-4" /> Informasi Detail (untuk halaman detail proyek)
-                  </h4>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Deskripsi Detail
-                      </label>
-                      <Textarea
-                        value={editingProject.detailed_description || ''}
-                        onChange={(e) => setEditingProject({ ...editingProject, detailed_description: e.target.value })}
-                        placeholder="Deskripsi komprehensif tentang proyek"
-                        className="w-full min-h-[150px]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Tantangan
-                      </label>
-                      <Textarea
-                        value={editingProject.challenges || ''}
-                        onChange={(e) => setEditingProject({ ...editingProject, challenges: e.target.value })}
-                        placeholder="Tantangan teknis atau proyek yang dihadapi"
-                        className="w-full"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Solusi
-                      </label>
-                      <Textarea
-                        value={editingProject.solutions || ''}
-                        onChange={(e) => setEditingProject({ ...editingProject, solutions: e.target.value })}
-                        placeholder="Bagaimana tantangan diatasi"
-                        className="w-full"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Hasil
-                      </label>
-                      <Textarea
-                        value={editingProject.results || ''}
-                        onChange={(e) => setEditingProject({ ...editingProject, results: e.target.value })}
-                        placeholder="Hasil dan dampak dari proyek"
-                        className="w-full"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Form Actions */}
-                <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowProjectForm(false)}
-                  >
-                    Batal
-                  </Button>
-                  <Button
-                    onClick={saveProject}
-                    className="bg-blue-600 text-white hover:bg-blue-700"
-                  >
-                    Simpan Proyek
-                  </Button>
-                </div>
-              </div>
-            </div>
+            {renderProjectForm()}
           </div>
         </div>
       )}
