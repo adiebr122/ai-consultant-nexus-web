@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -76,11 +75,12 @@ const CRMManager = () => {
 
       if (error) throw error;
       
-      // Transform data to ensure tags is always an array
+      // Transform data to ensure tags is always a string array
       const transformedData = (data || []).map(contact => ({
         ...contact,
-        tags: Array.isArray(contact.tags) ? contact.tags : 
-              (typeof contact.tags === 'string' ? [contact.tags] : [])
+        tags: Array.isArray(contact.tags) 
+          ? (contact.tags as any[]).map(tag => String(tag)) 
+          : []
       }));
       
       setContacts(transformedData);
@@ -214,9 +214,9 @@ const CRMManager = () => {
 
   const filteredContacts = contacts.filter(contact => {
     const matchesSearch = 
-      contact.client_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      contact.client_email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (contact.client_company && contact.client_company.toLowerCase().includes(searchTerm.toLowerCase()));
+      contact.client_name.toLowerCase().includes(searchTerm.toLowerCase())
+      || contact.client_email.toLowerCase().includes(searchTerm.toLowerCase()) 
+      || (contact.client_company && contact.client_company.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesStatus = filterStatus === 'all' || contact.lead_status === filterStatus;
     

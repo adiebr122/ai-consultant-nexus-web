@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -53,11 +52,12 @@ const ServiceManager = () => {
 
       if (error) throw error;
       
-      // Transform data to ensure service_features is always an array
+      // Transform data to ensure service_features is always an array of strings
       const transformedData = (data || []).map(service => ({
         ...service,
-        service_features: Array.isArray(service.service_features) ? service.service_features : 
-                          (typeof service.service_features === 'string' ? [service.service_features] : [])
+        service_features: Array.isArray(service.service_features) 
+          ? (service.service_features as any[]).map(feature => String(feature))
+          : []
       }));
       
       setServices(transformedData);
