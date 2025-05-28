@@ -1,9 +1,12 @@
-import { Mail, Phone, MapPin, Facebook, Instagram, Linkedin, Youtube } from 'lucide-react';
+
+import { Mail, Phone, MapPin, Facebook, Instagram, Linkedin, Youtube, Twitter, Globe } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useContactInfo } from '@/hooks/useContactInfo';
+import { useSocialMediaSettings } from '@/hooks/useSocialMediaSettings';
 
 const Footer = () => {
   const { contactInfo, loading } = useContactInfo();
+  const { socialMediaSettings, loading: socialLoading } = useSocialMediaSettings();
 
   const formatAddress = (address: string) => {
     return address.split('\n').map((line, index) => (
@@ -12,6 +15,31 @@ const Footer = () => {
         {index < address.split('\n').length - 1 && <br />}
       </span>
     ));
+  };
+
+  const getSocialIcon = (platform: string) => {
+    switch (platform) {
+      case 'facebook_url': return Facebook;
+      case 'instagram_url': return Instagram;
+      case 'linkedin_url': return Linkedin;
+      case 'youtube_url': return Youtube;
+      case 'twitter_url': return Twitter;
+      default: return Globe;
+    }
+  };
+
+  const getSocialLabel = (platform: string) => {
+    switch (platform) {
+      case 'facebook_url': return 'Facebook';
+      case 'instagram_url': return 'Instagram';
+      case 'linkedin_url': return 'LinkedIn';
+      case 'youtube_url': return 'YouTube';
+      case 'twitter_url': return 'Twitter/X';
+      case 'tiktok_url': return 'TikTok';
+      case 'whatsapp_url': return 'WhatsApp';
+      case 'telegram_url': return 'Telegram';
+      default: return platform;
+    }
   };
 
   return (
@@ -31,20 +59,28 @@ const Footer = () => {
               Leading digital agency di Indonesia yang menghadirkan solusi web development, 
               mobile apps, dan teknologi AI untuk transformasi digital perusahaan.
             </p>
-            <div className="flex space-x-4">
-              <a href="#" className="text-gray-400 hover:text-blue-400 transition-colors">
-                <Facebook className="h-5 w-5" />
-              </a>
-              <a href="#" className="text-gray-400 hover:text-blue-400 transition-colors">
-                <Instagram className="h-5 w-5" />
-              </a>
-              <a href="#" className="text-gray-400 hover:text-blue-400 transition-colors">
-                <Linkedin className="h-5 w-5" />
-              </a>
-              <a href="#" className="text-gray-400 hover:text-blue-400 transition-colors">
-                <Youtube className="h-5 w-5" />
-              </a>
-            </div>
+            {!socialLoading && (
+              <div className="flex flex-wrap gap-4">
+                {Object.entries(socialMediaSettings).map(([platform, url]) => {
+                  if (!url) return null;
+                  const IconComponent = getSocialIcon(platform);
+                  const label = getSocialLabel(platform);
+                  
+                  return (
+                    <a 
+                      key={platform}
+                      href={url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-gray-400 hover:text-blue-400 transition-colors"
+                      title={label}
+                    >
+                      <IconComponent className="h-5 w-5" />
+                    </a>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Services */}
