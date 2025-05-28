@@ -30,8 +30,37 @@ const BrandSettings = () => {
   const { toast } = useToast();
 
   useEffect(() => {
+    initializeStorage();
     fetchBrandSettings();
   }, []);
+
+  const initializeStorage = async () => {
+    try {
+      // Check if bucket exists
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const brandBucketExists = buckets?.some(bucket => bucket.name === 'brand-assets');
+
+      if (!brandBucketExists) {
+        // Create bucket if it doesn't exist
+        const { error } = await supabase.storage.createBucket('brand-assets', {
+          public: true,
+          fileSizeLimit: 10485760, // 10MB
+          allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+        });
+
+        if (error) {
+          console.error('Error creating bucket:', error);
+          toast({
+            title: "Info",
+            description: "Menggunakan URL langsung untuk gambar. Bucket storage tidak tersedia.",
+            variant: "default",
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error initializing storage:', error);
+    }
+  };
 
   const fetchBrandSettings = async () => {
     try {
@@ -76,29 +105,51 @@ const BrandSettings = () => {
     try {
       setUploading(settings[index].setting_key);
       
+      // Validate file
+      if (!file.type.startsWith('image/')) {
+        throw new Error('File harus berupa gambar');
+      }
+
+      if (file.size > 10485760) {
+        throw new Error('Ukuran file maksimal 10MB');
+      }
+
       // Create a unique file name
       const fileExt = file.name.split('.').pop();
       const fileName = `${settings[index].setting_key}_${Date.now()}.${fileExt}`;
       
-      // Upload to a hypothetical public storage (you'd need to create the bucket)
+      // Try to upload to storage first
       const { data, error } = await supabase.storage
         .from('brand-assets')
-        .upload(fileName, file);
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
-      if (error) throw error;
+      if (error) {
+        // If upload fails, create a local URL as fallback
+        const localUrl = URL.createObjectURL(file);
+        handleInputChange(index, localUrl);
+        
+        toast({
+          title: "Info",
+          description: "Gambar disimpan sementara. Untuk penyimpanan permanen, pastikan storage bucket tersedia.",
+          variant: "default",
+        });
+      } else {
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('brand-assets')
+          .getPublicUrl(fileName);
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('brand-assets')
-        .getPublicUrl(fileName);
+        // Update the setting value with the URL
+        handleInputChange(index, publicUrl);
 
-      // Update the setting value with the URL
-      handleInputChange(index, publicUrl);
-
-      toast({
-        title: "Berhasil!",
-        description: "File berhasil diupload",
-      });
+        toast({
+          title: "Berhasil!",
+          description: "Gambar berhasil diupload",
+        });
+      }
     } catch (error: any) {
       console.error('Error uploading file:', error);
       toast({
@@ -147,8 +198,13 @@ const BrandSettings = () => {
 
       toast({
         title: "Berhasil!",
-        description: "Pengaturan brand berhasil disimpan",
+        description: "Pengaturan brand berhasil disimpan dan akan segera terupdate di website",
       });
+
+      // Trigger a page refresh to apply new settings
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
 
       await fetchBrandSettings();
     } catch (error: any) {
@@ -230,6 +286,11 @@ const BrandSettings = () => {
                       className="max-h-20 max-w-full object-contain"
                       onError={(e) => {
                         (e.target as HTMLImageElement).style.display = 'none';
+                        toast({
+                          title: "Error",
+                          description: "Gambar tidak dapat dimuat. Pastikan URL valid.",
+                          variant: "destructive",
+                        });
                       }}
                     />
                   </div>

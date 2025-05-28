@@ -1,13 +1,19 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Settings, Search, Palette, BarChart3, Globe, Phone } from 'lucide-react';
 import SEOSettings from '@/components/SEOSettings';
 import BrandSettings from '@/components/BrandSettings';
 import AnalyticsSettings from '@/components/AnalyticsSettings';
 import ContactInfoManager from '@/components/ContactInfoManager';
+import { setupStorage } from '@/integrations/supabase/setup';
 
 const SettingsManager = () => {
+  useEffect(() => {
+    // Initialize storage buckets on component mount
+    setupStorage();
+  }, []);
+  
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">

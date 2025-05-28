@@ -3,23 +3,56 @@ import { supabase } from './client';
 
 export const setupStorage = async () => {
   try {
-    // Check if bucket exists first to avoid errors
-    const { data: buckets } = await supabase.storage.listBuckets();
-    const portfolioBucketExists = buckets?.some(bucket => bucket.name === 'portfolio-images');
-
-    if (!portfolioBucketExists) {
-      // Create portfolio images bucket
-      const { error } = await supabase.storage.createBucket('portfolio-images', {
-        public: true,
-        fileSizeLimit: 10485760, // 10MB
-      });
-
-      if (error) {
-        console.error('Error creating storage bucket:', error);
+    console.log('Initializing Supabase storage...');
+    
+    // Check if buckets exist first to avoid errors
+    const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
+    
+    if (bucketError) {
+      console.error('Error listing buckets:', bucketError);
+      return;
+    }
+    
+    const bucketsToCreate = [
+      {
+        id: 'brand-assets',
+        options: {
+          public: true,
+          fileSizeLimit: 10485760, // 10MB
+          allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml']
+        }
+      },
+      {
+        id: 'portfolio-images',
+        options: {
+          public: true,
+          fileSizeLimit: 10485760, // 10MB
+          allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+        }
+      }
+    ];
+    
+    for (const bucket of bucketsToCreate) {
+      const bucketExists = buckets?.some(b => b.name === bucket.id);
+      
+      if (!bucketExists) {
+        try {
+          const { error } = await supabase.storage.createBucket(bucket.id, bucket.options);
+          
+          if (error) {
+            console.error(`Error creating storage bucket ${bucket.id}:`, error);
+          } else {
+            console.log(`Storage bucket ${bucket.id} created successfully`);
+          }
+        } catch (err) {
+          console.error(`Error creating storage bucket ${bucket.id}:`, err);
+        }
       } else {
-        console.log('Storage bucket created successfully');
+        console.log(`Storage bucket ${bucket.id} already exists`);
       }
     }
+    
+    console.log('Supabase storage initialization complete');
   } catch (error) {
     console.error('Error setting up storage:', error);
   }

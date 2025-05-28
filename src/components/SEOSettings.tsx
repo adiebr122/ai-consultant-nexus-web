@@ -110,8 +110,13 @@ const SEOSettings = () => {
 
       toast({
         title: "Berhasil!",
-        description: "Pengaturan SEO berhasil disimpan",
+        description: "Pengaturan SEO berhasil disimpan dan akan segera terupdate di website",
       });
+
+      // Trigger a page refresh to apply new settings
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
 
       await fetchSEOSettings();
     } catch (error: any) {

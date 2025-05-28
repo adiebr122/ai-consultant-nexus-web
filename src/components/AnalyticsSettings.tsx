@@ -143,8 +143,13 @@ const AnalyticsSettings = () => {
 
       toast({
         title: "Berhasil!",
-        description: "Pengaturan analytics berhasil disimpan",
+        description: "Pengaturan analytics berhasil disimpan dan akan segera terupdate di website",
       });
+
+      // Trigger a page refresh to apply new settings
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
 
       await fetchAnalyticsSettings();
     } catch (error: any) {
