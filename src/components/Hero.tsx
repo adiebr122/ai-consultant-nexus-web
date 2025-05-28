@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { ArrowRight, Play, Star, Users, Award, TrendingUp } from 'lucide-react';
+import { ArrowRight, Play, Star, Users, Award, TrendingUp, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface HeroContent {
@@ -10,6 +10,11 @@ interface HeroContent {
   cta_primary: string;
   cta_secondary: string;
   hero_image_url: string | null;
+  stats?: Array<{
+    icon: string;
+    label: string;
+    value: string;
+  }>;
 }
 
 const Hero = () => {
@@ -39,7 +44,8 @@ const Hero = () => {
           description: data.content || 'Solusi AI terdepan untuk bisnis modern. Kami membantu perusahaan mengoptimalkan operasional, meningkatkan efisiensi, dan mencapai pertumbuhan berkelanjutan melalui implementasi teknologi Artificial Intelligence yang tepat sasaran.',
           cta_primary: metadata.cta_primary || 'Konsultasi Gratis',
           cta_secondary: metadata.cta_secondary || 'Lihat Portfolio',
-          hero_image_url: data.image_url
+          hero_image_url: data.image_url,
+          stats: metadata.stats || []
         });
       }
     } catch (error) {
@@ -56,21 +62,28 @@ const Hero = () => {
     description: 'Solusi AI terdepan untuk bisnis modern. Kami membantu perusahaan mengoptimalkan operasional, meningkatkan efisiensi, dan mencapai pertumbuhan berkelanjutan melalui implementasi teknologi Artificial Intelligence yang tepat sasaran.',
     cta_primary: 'Konsultasi Gratis',
     cta_secondary: 'Lihat Portfolio',
-    hero_image_url: null
+    hero_image_url: null,
+    stats: [
+      { icon: 'Users', label: 'Klien Terpercaya', value: '150+' },
+      { icon: 'Award', label: 'Proyek Sukses', value: '300+' },
+      { icon: 'Star', label: 'Rating Kepuasan', value: '4.9/5' },
+      { icon: 'TrendingUp', label: 'ROI Rata-rata', value: '300%' }
+    ]
   };
 
   const content = heroContent || defaultContent;
 
-  const stats = [
-    { icon: Users, label: 'Klien Terpercaya', value: '150+' },
-    { icon: Award, label: 'Proyek Sukses', value: '300+' },
-    { icon: Star, label: 'Rating Kepuasan', value: '4.9/5' },
-    { icon: TrendingUp, label: 'ROI Rata-rata', value: '300%' }
-  ];
+  const iconMap: { [key: string]: any } = {
+    'Users': Users,
+    'Award': Award,
+    'Star': Star,
+    'TrendingUp': TrendingUp,
+    'default': Sparkles
+  };
 
   if (loading) {
     return (
-      <section className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 pt-16">
+      <section className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50 pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="grid lg:grid-cols-2 gap-12 items-center animate-pulse">
             <div className="space-y-8">
@@ -94,56 +107,65 @@ const Hero = () => {
   }
 
   return (
-    <section className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 pt-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+    <section className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50 pt-16 relative overflow-hidden">
+      {/* Background decoration */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-32 w-80 h-80 bg-gradient-to-r from-blue-400 to-indigo-600 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-32 w-80 h-80 bg-gradient-to-r from-cyan-400 to-blue-600 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse delay-700"></div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 relative">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <div className="space-y-8">
-            <div className="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-              <Star className="h-4 w-4 mr-2" />
+          <div className="space-y-8 animate-fade-in">
+            <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 rounded-full text-sm font-medium shadow-lg">
+              <Star className="h-4 w-4 mr-2 text-yellow-500" />
               {content.subtitle}
             </div>
             
-            <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
+            <h1 className="text-5xl lg:text-7xl font-bold bg-gradient-to-r from-gray-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent leading-tight">
               {content.title}
             </h1>
             
-            <p className="text-xl text-gray-600 leading-relaxed">
+            <p className="text-xl text-gray-600 leading-relaxed max-w-2xl">
               {content.description}
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4">
-              <button className="bg-blue-600 text-white px-8 py-4 rounded-xl hover:bg-blue-700 transition-colors duration-300 flex items-center justify-center font-semibold">
+              <button className="group bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-2xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 flex items-center justify-center font-semibold shadow-xl hover:shadow-2xl transform hover:-translate-y-1">
                 {content.cta_primary}
-                <ArrowRight className="ml-2 h-5 w-5" />
+                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </button>
-              <button className="border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-xl hover:border-blue-600 hover:text-blue-600 transition-colors duration-300 flex items-center justify-center font-semibold">
-                <Play className="mr-2 h-5 w-5" />
+              <button className="group border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-2xl hover:border-indigo-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all duration-300 flex items-center justify-center font-semibold">
+                <Play className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
                 {content.cta_secondary}
               </button>
             </div>
             
+            {/* Stats section */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 pt-8">
-              {stats.map((stat, index) => {
-                const IconComponent = stat.icon;
+              {(content.stats || defaultContent.stats!).map((stat, index) => {
+                const IconComponent = iconMap[stat.icon] || iconMap['default'];
                 return (
-                  <div key={index} className="text-center">
-                    <IconComponent className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                    <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
-                    <div className="text-sm text-gray-600">{stat.label}</div>
+                  <div key={index} className="text-center group hover:scale-105 transition-transform duration-300">
+                    <div className="bg-white rounded-2xl p-4 shadow-lg group-hover:shadow-xl transition-shadow duration-300">
+                      <IconComponent className="h-8 w-8 text-indigo-600 mx-auto mb-2" />
+                      <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
+                      <div className="text-sm text-gray-600">{stat.label}</div>
+                    </div>
                   </div>
                 );
               })}
             </div>
           </div>
           
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-500 rounded-2xl transform rotate-6"></div>
-            <div className="relative bg-white p-8 rounded-2xl shadow-2xl">
+          <div className="relative animate-fade-in delay-300">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-indigo-500 rounded-3xl transform rotate-6 scale-105"></div>
+            <div className="relative bg-white p-8 rounded-3xl shadow-2xl transform hover:scale-105 transition-transform duration-500">
               {content.hero_image_url ? (
                 <img 
                   src={content.hero_image_url} 
                   alt="AI Technology"
-                  className="w-full h-96 object-cover rounded-xl"
+                  className="w-full h-96 object-cover rounded-2xl"
                   onError={(e) => {
                     e.currentTarget.src = "https://images.unsplash.com/photo-1551434678-e076c223a692?ixlib=rb-4.0.3&auto=format&fit=crop&w=2850&q=80";
                   }}
@@ -152,10 +174,10 @@ const Hero = () => {
                 <img 
                   src="https://images.unsplash.com/photo-1551434678-e076c223a692?ixlib=rb-4.0.3&auto=format&fit=crop&w=2850&q=80" 
                   alt="AI Technology"
-                  className="w-full h-96 object-cover rounded-xl"
+                  className="w-full h-96 object-cover rounded-2xl"
                 />
               )}
-              <div className="absolute -bottom-6 -right-6 bg-yellow-400 text-yellow-900 px-6 py-3 rounded-xl font-bold shadow-lg">
+              <div className="absolute -bottom-6 -right-6 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-6 py-3 rounded-2xl font-bold shadow-xl transform hover:scale-110 transition-transform duration-300">
                 Teknologi AI Terdepan
               </div>
             </div>
