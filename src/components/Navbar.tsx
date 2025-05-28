@@ -1,11 +1,13 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Menu, X, Code } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const { user } = useAuth();
 
   const navigation = [
     { name: 'Beranda', href: '/' },
@@ -37,12 +39,21 @@ const Navbar = () => {
                 {item.name}
               </a>
             ))}
-            <Link
-              to="/admin"
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Admin
-            </Link>
+            {user ? (
+              <Link
+                to="/admin"
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Dashboard
+              </Link>
+            ) : (
+              <Link
+                to="/auth"
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Login
+              </Link>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -70,13 +81,23 @@ const Navbar = () => {
                   {item.name}
                 </a>
               ))}
-              <Link
-                to="/admin"
-                className="bg-blue-600 text-white block px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors text-center"
-                onClick={() => setIsOpen(false)}
-              >
-                Admin
-              </Link>
+              {user ? (
+                <Link
+                  to="/admin"
+                  className="bg-blue-600 text-white block px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors text-center"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Dashboard
+                </Link>
+              ) : (
+                <Link
+                  to="/auth"
+                  className="bg-blue-600 text-white block px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors text-center"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Login
+                </Link>
+              )}
             </div>
           </div>
         )}

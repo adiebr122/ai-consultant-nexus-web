@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { Send, Phone, Mail, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const ContactForm = () => {
   const { toast } = useToast();
@@ -13,22 +14,50 @@ const ContactForm = () => {
     service: '',
     message: ''
   });
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
-    toast({
-      title: "Pesan Terkirim!",
-      description: "Tim kami akan menghubungi Anda dalam 24 jam.",
-    });
-    setFormData({
-      name: '',
-      email: '',
-      company: '',
-      phone: '',
-      service: '',
-      message: ''
-    });
+    setLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from('form_submissions')
+        .insert({
+          form_type: 'contact',
+          name: formData.name,
+          email: formData.email,
+          company: formData.company || null,
+          phone: formData.phone || null,
+          service: formData.service || null,
+          message: formData.message,
+          status: 'new'
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Pesan Terkirim!",
+        description: "Tim kami akan menghubungi Anda dalam 24 jam.",
+      });
+      
+      setFormData({
+        name: '',
+        email: '',
+        company: '',
+        phone: '',
+        service: '',
+        message: ''
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -46,7 +75,7 @@ const ContactForm = () => {
             Mulai Transformasi Digital Anda
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Konsultasi gratis dengan tim expert kami untuk menentukan solusi AI 
+            Konsultasi gratis dengan tim expert kami untuk menentukan solusi digital 
             yang tepat untuk kebutuhan bisnis Anda.
           </p>
         </div>
@@ -57,7 +86,7 @@ const ContactForm = () => {
             <div>
               <h3 className="text-2xl font-bold text-gray-900 mb-6">Hubungi Kami</h3>
               <p className="text-gray-600 text-lg leading-relaxed mb-8">
-                Tim expert kami siap membantu Anda menemukan solusi AI yang tepat. 
+                Tim expert kami siap membantu Anda menemukan solusi digital yang tepat. 
                 Dapatkan konsultasi gratis dan proposal customized untuk bisnis Anda.
               </p>
             </div>
@@ -79,7 +108,7 @@ const ContactForm = () => {
                 </div>
                 <div>
                   <h4 className="text-lg font-semibold text-gray-900">Email</h4>
-                  <p className="text-gray-600">hello@aiconsultantpro.com</p>
+                  <p className="text-gray-600">hello@visualmediax.com</p>
                 </div>
               </div>
 
@@ -198,12 +227,12 @@ const ContactForm = () => {
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 >
                   <option value="">Pilih layanan</option>
-                  <option value="chatbot">AI Chatbot Development</option>
-                  <option value="custom-app">Custom AI Application</option>
-                  <option value="analytics">Data Analytics & Insights</option>
-                  <option value="content">AI Content Generation</option>
-                  <option value="automation">Business Process Automation</option>
-                  <option value="security">AI Security Solutions</option>
+                  <option value="website">Website Development</option>
+                  <option value="mobile-app">Mobile App Development</option>
+                  <option value="e-commerce">E-commerce Platform</option>
+                  <option value="ui-ux">UI/UX Design</option>
+                  <option value="maintenance">Website Maintenance</option>
+                  <option value="consultation">Digital Consultation</option>
                 </select>
               </div>
 
@@ -219,16 +248,17 @@ const ContactForm = () => {
                   value={formData.message}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
-                  placeholder="Ceritakan tentang kebutuhan AI untuk bisnis Anda..."
+                  placeholder="Ceritakan tentang kebutuhan digital untuk bisnis Anda..."
                 ></textarea>
               </div>
 
               <button
                 type="submit"
-                className="w-full bg-blue-600 text-white py-4 px-6 rounded-lg hover:bg-blue-700 transition-all duration-300 flex items-center justify-center space-x-2 font-semibold text-lg shadow-lg hover:shadow-xl"
+                disabled={loading}
+                className="w-full bg-blue-600 text-white py-4 px-6 rounded-lg hover:bg-blue-700 transition-all duration-300 flex items-center justify-center space-x-2 font-semibold text-lg shadow-lg hover:shadow-xl disabled:opacity-50"
               >
                 <Send className="h-5 w-5" />
-                <span>Kirim Pesan</span>
+                <span>{loading ? 'Mengirim...' : 'Kirim Pesan'}</span>
               </button>
             </form>
           </div>

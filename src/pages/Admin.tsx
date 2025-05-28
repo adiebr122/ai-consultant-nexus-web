@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { 
   Users, 
@@ -11,12 +10,20 @@ import {
   Eye,
   Edit,
   Trash2,
-  Plus
+  Plus,
+  LogOut,
+  Globe
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
+import CMSEditor from '@/components/CMSEditor';
+import FormSubmissions from '@/components/FormSubmissions';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import { useAuth } from '@/hooks/useAuth';
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const { user, signOut } = useAuth();
+  
   const [testimonials, setTestimonials] = useState([
     {
       id: 1,
@@ -24,7 +31,7 @@ const Admin = () => {
       company: 'PT Telkom Indonesia',
       position: 'CEO',
       rating: 5,
-      text: 'AI Consultant Pro telah mentransformasi operasional kami dengan chatbot AI yang luar biasa.',
+      text: 'Visual Media X telah mentransformasi operasional kami dengan website dan aplikasi yang luar biasa.',
       status: 'published'
     },
     {
@@ -33,7 +40,7 @@ const Admin = () => {
       company: 'Bank Central Asia',
       position: 'Director of Digital Innovation',
       rating: 5,
-      text: 'Implementasi AI untuk fraud detection yang mereka kembangkan berhasil mengurangi kerugian hingga 60%.',
+      text: 'Implementasi sistem digital yang mereka kembangkan berhasil meningkatkan efisiensi hingga 60%.',
       status: 'published'
     }
   ]);
@@ -41,16 +48,16 @@ const Admin = () => {
   const [services, setServices] = useState([
     {
       id: 1,
-      title: 'AI Chatbot Development',
-      description: 'Pembuatan chatbot cerdas dengan NLP untuk customer service otomatis',
-      price: 'Mulai dari Rp 50.000.000',
+      title: 'Website Development',
+      description: 'Pembuatan website profesional dengan teknologi terdepan',
+      price: 'Mulai dari Rp 15.000.000',
       status: 'active'
     },
     {
       id: 2,
-      title: 'Custom AI Application',
-      description: 'Pengembangan aplikasi AI custom sesuai kebutuhan bisnis',
-      price: 'Mulai dari Rp 100.000.000',
+      title: 'Mobile App Development',
+      description: 'Pengembangan aplikasi mobile Android dan iOS',
+      price: 'Mulai dari Rp 25.000.000',
       status: 'active'
     }
   ]);
@@ -87,9 +94,9 @@ const Admin = () => {
           <h3 className="text-lg font-semibold mb-4">Proyek Terbaru</h3>
           <div className="space-y-4">
             {[
-              { client: 'Bank Mandiri', project: 'AI Fraud Detection', status: 'In Progress', progress: 75 },
-              { client: 'Telkomsel', project: 'Customer Service Bot', status: 'Review', progress: 90 },
-              { client: 'Indofood', project: 'Supply Chain AI', status: 'Planning', progress: 25 }
+              { client: 'Bank Mandiri', project: 'Corporate Website', status: 'In Progress', progress: 75 },
+              { client: 'Telkomsel', project: 'Mobile App Development', status: 'Review', progress: 90 },
+              { client: 'Indofood', project: 'E-commerce Platform', status: 'Planning', progress: 25 }
             ].map((project, index) => (
               <div key={index} className="border border-gray-200 p-4 rounded-lg">
                 <div className="flex justify-between items-start mb-2">
@@ -120,9 +127,9 @@ const Admin = () => {
           <h3 className="text-lg font-semibold mb-4">Pesan Terbaru</h3>
           <div className="space-y-4">
             {[
-              { name: 'Ahmad Rizki', company: 'PT Astra', message: 'Tertarik dengan AI chatbot untuk customer service', time: '2 jam lalu' },
-              { name: 'Linda Sari', company: 'Shopee', message: 'Ingin konsultasi tentang machine learning untuk rekomendasi produk', time: '4 jam lalu' },
-              { name: 'Budi Santoso', company: 'OVO', message: 'Perlu solusi AI untuk fraud detection', time: '1 hari lalu' }
+              { name: 'Ahmad Rizki', company: 'PT Astra', message: 'Tertarik dengan development website corporate', time: '2 jam lalu' },
+              { name: 'Linda Sari', company: 'Shopee', message: 'Ingin konsultasi tentang mobile app development', time: '4 jam lalu' },
+              { name: 'Budi Santoso', company: 'OVO', message: 'Perlu solusi e-commerce platform', time: '1 hari lalu' }
             ].map((message, index) => (
               <div key={index} className="border border-gray-200 p-4 rounded-lg">
                 <div className="flex justify-between items-start mb-2">
@@ -252,73 +259,92 @@ const Admin = () => {
 
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
+    { id: 'cms', label: 'CMS', icon: Globe },
+    { id: 'submissions', label: 'Form Submissions', icon: MessageSquare },
     { id: 'testimonials', label: 'Testimoni', icon: Star },
     { id: 'services', label: 'Layanan', icon: FileText },
-    { id: 'messages', label: 'Pesan', icon: MessageSquare },
     { id: 'users', label: 'Pengguna', icon: Users },
     { id: 'settings', label: 'Pengaturan', icon: Settings }
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
-      
-      <div className="pt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-            <p className="text-gray-600">Kelola konten dan data website AI Consultant Pro</p>
-          </div>
+    <ProtectedRoute>
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        
+        <div className="pt-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="mb-8 flex justify-between items-center">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+                <p className="text-gray-600">Selamat datang, {user?.email}</p>
+              </div>
+              <button
+                onClick={signOut}
+                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center space-x-2"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Logout</span>
+              </button>
+            </div>
 
-          <div className="flex flex-wrap gap-2 mb-8 border-b border-gray-200">
-            {tabs.map((tab) => {
-              const IconComponent = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-t-lg transition-colors ${
-                    activeTab === tab.id
-                      ? 'bg-blue-600 text-white'
-                      : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
-                  }`}
-                >
-                  <IconComponent className="h-4 w-4" />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </div>
+            <div className="flex flex-wrap gap-2 mb-8 border-b border-gray-200">
+              {tabs.map((tab) => {
+                const IconComponent = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-t-lg transition-colors ${
+                      activeTab === tab.id
+                        ? 'bg-blue-600 text-white'
+                        : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
+                    }`}
+                  >
+                    <IconComponent className="h-4 w-4" />
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
 
-          <div className="bg-gray-50 rounded-xl p-6">
-            {activeTab === 'dashboard' && renderDashboard()}
-            {activeTab === 'testimonials' && renderTestimonials()}
-            {activeTab === 'services' && renderServices()}
-            {activeTab === 'messages' && (
-              <div className="text-center py-12">
-                <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Kelola Pesan</h3>
-                <p className="text-gray-500">Fitur kelola pesan akan segera tersedia</p>
-              </div>
-            )}
-            {activeTab === 'users' && (
-              <div className="text-center py-12">
-                <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Kelola Pengguna</h3>
-                <p className="text-gray-500">Fitur kelola pengguna akan segera tersedia</p>
-              </div>
-            )}
-            {activeTab === 'settings' && (
-              <div className="text-center py-12">
-                <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Pengaturan</h3>
-                <p className="text-gray-500">Fitur pengaturan akan segera tersedia</p>
-              </div>
-            )}
+            <div className="bg-gray-50 rounded-xl p-6">
+              {activeTab === 'dashboard' && renderDashboard()}
+              {activeTab === 'cms' && <CMSEditor />}
+              {activeTab === 'submissions' && <FormSubmissions />}
+              {activeTab === 'testimonials' && (
+                <div className="text-center py-12">
+                  <Star className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Kelola Testimoni</h3>
+                  <p className="text-gray-500">Fitur kelola testimoni akan segera tersedia</p>
+                </div>
+              )}
+              {activeTab === 'services' && (
+                <div className="text-center py-12">
+                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Kelola Layanan</h3>
+                  <p className="text-gray-500">Fitur kelola layanan akan segera tersedia</p>
+                </div>
+              )}
+              {activeTab === 'users' && (
+                <div className="text-center py-12">
+                  <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Kelola Pengguna</h3>
+                  <p className="text-gray-500">Fitur kelola pengguna akan segera tersedia</p>
+                </div>
+              )}
+              {activeTab === 'settings' && (
+                <div className="text-center py-12">
+                  <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Pengaturan</h3>
+                  <p className="text-gray-500">Fitur pengaturan akan segera tersedia</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </ProtectedRoute>
   );
 };
 
