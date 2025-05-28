@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { ExternalLink, Github, ArrowRight, Clock, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -28,7 +29,11 @@ interface PortfolioContent {
 }
 
 const Portfolio = () => {
-  const [content, setContent] = useState<PortfolioContent | null>(null);
+  const [content, setContent] = useState<PortfolioContent>({
+    title: 'Portfolio Proyek Terbaik',
+    description: 'Lihat hasil karya terbaik kami dalam mengembangkan solusi AI dan aplikasi untuk berbagai industri.',
+    projects: []
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -37,7 +42,7 @@ const Portfolio = () => {
 
   const fetchContent = async () => {
     try {
-      // First try to get portfolio content from website_content table
+      // Try to get portfolio content from website_content table
       const { data: websiteContent, error: websiteError } = await supabase
         .from('website_content')
         .select('*')
@@ -49,7 +54,7 @@ const Portfolio = () => {
         console.error('Error fetching website content:', websiteError);
       }
 
-      if (websiteContent && websiteContent.metadata) {
+      if (websiteContent && websiteContent.metadata && websiteContent.metadata.projects) {
         const metadata = websiteContent.metadata as any;
         setContent({
           title: websiteContent.title || 'Portfolio Proyek Terbaik',
@@ -57,7 +62,7 @@ const Portfolio = () => {
           projects: metadata.projects || []
         });
       } else {
-        // If no content found, set default content with sample projects
+        // If no content found, set default content
         setContent({
           title: 'Portfolio Proyek Terbaik',
           description: 'Lihat hasil karya terbaik kami dalam mengembangkan solusi AI dan aplikasi untuk berbagai industri.',
@@ -214,132 +219,6 @@ const Portfolio = () => {
                     <div className="h-4 bg-gray-300 rounded w-3/4"></div>
                   </div>
                   <div className="h-8 bg-gray-300 rounded"></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  // If no content is available, show default content
-  if (!content || content.projects.length === 0) {
-    const displayContent = {
-      title: 'Portfolio Proyek Terbaik',
-      description: 'Lihat hasil karya terbaik kami dalam mengembangkan solusi AI dan aplikasi untuk berbagai industri.',
-      projects: getDefaultProjects()
-    };
-
-    return (
-      <section id="portfolio" className="py-20 bg-gradient-to-br from-gray-50 to-blue-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16 animate-fade-in">
-            <h2 className="text-5xl font-bold bg-gradient-to-r from-gray-900 to-blue-900 bg-clip-text text-transparent mb-6">
-              {displayContent.title}
-            </h2>
-            <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
-              {displayContent.description}
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {displayContent.projects.map((project, index) => (
-              <div 
-                key={index} 
-                className="group bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 animate-fade-in"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <div className="relative overflow-hidden">
-                  <img 
-                    src={project.image_url} 
-                    alt={project.title}
-                    className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500"
-                    onError={(e) => {
-                      e.currentTarget.src = 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80';
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  <div className="absolute top-4 left-4 bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-medium">
-                    {project.category}
-                  </div>
-                </div>
-                
-                <div className="p-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
-                    {project.title}
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-3">{project.client}</p>
-                  <p className="text-gray-700 mb-4 line-clamp-2 leading-relaxed">
-                    {project.description}
-                  </p>
-                  
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {project.technologies.slice(0, 3).map((tech, techIndex) => (
-                      <span 
-                        key={techIndex}
-                        className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full"
-                      >
-                        {tech}
-                      </span>
-                    ))}
-                    {project.technologies.length > 3 && (
-                      <span className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full">
-                        +{project.technologies.length - 3} lainnya
-                      </span>
-                    )}
-                  </div>
-                  
-                  {(project.project_duration || project.team_size) && (
-                    <div className="flex flex-wrap gap-4 mb-4 text-sm text-gray-600">
-                      {project.project_duration && (
-                        <div className="flex items-center">
-                          <Clock className="h-3 w-3 mr-1" />
-                          <span>{project.project_duration}</span>
-                        </div>
-                      )}
-                      {project.team_size && (
-                        <div className="flex items-center">
-                          <Users className="h-3 w-3 mr-1" />
-                          <span>{project.team_size}</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex space-x-2">
-                      {project.demo_url && (
-                        <a
-                          href={project.demo_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-800 transition-colors"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                        </a>
-                      )}
-                      {project.github_url && (
-                        <a
-                          href={project.github_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-gray-600 hover:text-gray-800 transition-colors"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Github className="h-4 w-4" />
-                        </a>
-                      )}
-                    </div>
-                    <Link
-                      to={`/portfolio/${index}`}
-                      className="group/btn text-blue-600 hover:text-blue-800 transition-colors flex items-center text-sm font-medium"
-                    >
-                      Lihat Detail
-                      <ArrowRight className="h-3 w-3 ml-1 group-hover/btn:translate-x-1 transition-transform" />
-                    </Link>
-                  </div>
                 </div>
               </div>
             ))}
