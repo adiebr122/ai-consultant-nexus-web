@@ -1,8 +1,20 @@
 
-import { Brain, Code, Database, MessageSquare, BarChart3, Shield } from 'lucide-react';
+import { Brain, Code, Database, MessageSquare, BarChart3, Shield, Smartphone, Globe } from 'lucide-react';
 
 const Services = () => {
   const services = [
+    {
+      icon: Globe,
+      title: 'Web Development',
+      description: 'Pembuatan website profesional dengan teknologi terdepan untuk meningkatkan presence online bisnis Anda.',
+      features: ['Responsive Design', 'SEO Optimized', 'Fast Loading Speed']
+    },
+    {
+      icon: Smartphone,
+      title: 'Mobile App Development',
+      description: 'Pengembangan aplikasi mobile iOS dan Android dengan user experience yang optimal dan performa tinggi.',
+      features: ['Cross-platform', 'Native Performance', 'App Store Ready']
+    },
     {
       icon: Brain,
       title: 'AI Chatbot Development',
@@ -26,18 +38,6 @@ const Services = () => {
       title: 'AI Content Generation',
       description: 'Automasi pembuatan konten marketing dengan AI untuk meningkatkan produktivitas dan engagement.',
       features: ['Content Writing', 'Social Media Posts', 'SEO Optimization']
-    },
-    {
-      icon: BarChart3,
-      title: 'Business Process Automation',
-      description: 'Otomatisasi proses bisnis dengan AI untuk efisiensi operasional dan pengurangan biaya overhead.',
-      features: ['Workflow Automation', 'Document Processing', 'Task Management']
-    },
-    {
-      icon: Shield,
-      title: 'AI Security Solutions',
-      description: 'Implementasi keamanan cyber dengan AI untuk deteksi anomali dan perlindungan data real-time.',
-      features: ['Threat Detection', 'Fraud Prevention', 'Security Monitoring']
     }
   ];
 
@@ -46,11 +46,11 @@ const Services = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-gray-900 mb-4">
-            Layanan AI Consultant Profesional
+            Layanan Web & Apps Development
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Kami menyediakan solusi AI komprehensif untuk transformasi digital bisnis Anda 
-            dengan teknologi terdepan dan tim expert berpengalaman.
+            Kami menyediakan solusi digital komprehensif mulai dari website, aplikasi mobile, 
+            hingga teknologi AI untuk transformasi digital bisnis Anda.
           </p>
         </div>
 

@@ -1,5 +1,5 @@
 
-import { Bot, Mail, Phone, MapPin, Facebook, Instagram, Linkedin, Youtube } from 'lucide-react';
+import { Code, Mail, Phone, MapPin, Facebook, Instagram, Linkedin, Youtube } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Footer = () => {
@@ -10,12 +10,12 @@ const Footer = () => {
           {/* Company Info */}
           <div className="space-y-6">
             <div className="flex items-center space-x-2">
-              <Bot className="h-8 w-8 text-blue-400" />
-              <span className="text-xl font-bold">AI Consultant Pro</span>
+              <Code className="h-8 w-8 text-blue-400" />
+              <span className="text-xl font-bold">Visual Media X</span>
             </div>
             <p className="text-gray-300 leading-relaxed">
-              Leading AI agency di Indonesia yang menghadirkan solusi transformasi digital 
-              untuk perusahaan dengan teknologi AI terdepan.
+              Leading digital agency di Indonesia yang menghadirkan solusi web development, 
+              mobile apps, dan teknologi AI untuk transformasi digital perusahaan.
             </p>
             <div className="flex space-x-4">
               <a href="#" className="text-gray-400 hover:text-blue-400 transition-colors">
@@ -37,12 +37,12 @@ const Footer = () => {
           <div>
             <h3 className="text-lg font-semibold mb-6">Layanan Kami</h3>
             <ul className="space-y-3">
+              <li><a href="#" className="text-gray-300 hover:text-blue-400 transition-colors">Web Development</a></li>
+              <li><a href="#" className="text-gray-300 hover:text-blue-400 transition-colors">Mobile App Development</a></li>
               <li><a href="#" className="text-gray-300 hover:text-blue-400 transition-colors">AI Chatbot Development</a></li>
               <li><a href="#" className="text-gray-300 hover:text-blue-400 transition-colors">Custom AI Application</a></li>
               <li><a href="#" className="text-gray-300 hover:text-blue-400 transition-colors">Data Analytics & Insights</a></li>
               <li><a href="#" className="text-gray-300 hover:text-blue-400 transition-colors">AI Content Generation</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-blue-400 transition-colors">Process Automation</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-blue-400 transition-colors">AI Security Solutions</a></li>
             </ul>
           </div>
 
@@ -69,7 +69,7 @@ const Footer = () => {
               </div>
               <div className="flex items-center space-x-3">
                 <Mail className="h-5 w-5 text-blue-400" />
-                <span className="text-gray-300">hello@aiconsultantpro.com</span>
+                <span className="text-gray-300">hello@visualmediax.com</span>
               </div>
               <div className="flex items-start space-x-3">
                 <MapPin className="h-5 w-5 text-blue-400 mt-1" />
@@ -85,7 +85,7 @@ const Footer = () => {
 
         <div className="border-t border-gray-800 mt-12 pt-8 text-center">
           <p className="text-gray-400">
-            © 2024 AI Consultant Pro. All rights reserved. | 
+            © 2024 Visual Media X. All rights reserved. | 
             <a href="#" className="hover:text-blue-400 transition-colors ml-1">Privacy Policy</a> | 
             <a href="#" className="hover:text-blue-400 transition-colors ml-1">Terms of Service</a>
           </p>

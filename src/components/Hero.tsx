@@ -1,5 +1,5 @@
 
-import { ArrowRight, Sparkles, Zap, Target } from 'lucide-react';
+import { ArrowRight, Sparkles, Zap, Target, Code, Smartphone, Brain } from 'lucide-react';
 
 const Hero = () => {
   return (
@@ -9,18 +9,18 @@ const Hero = () => {
           <div className="text-left">
             <div className="flex items-center space-x-2 mb-6">
               <Sparkles className="h-6 w-6 text-blue-600" />
-              <span className="text-blue-600 font-semibold">AI Agency Terdepan di Indonesia</span>
+              <span className="text-blue-600 font-semibold">Digital Agency Terdepan di Indonesia</span>
             </div>
             
             <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-              Transformasi Digital dengan
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600"> AI Consultant</span>
+              Web & Apps Development dengan
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600"> Teknologi AI</span>
             </h1>
             
             <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-              Kami menghadirkan solusi AI terdepan untuk mengoptimalkan bisnis Anda. 
-              Dari aplikasi custom hingga automasi cerdas, wujudkan transformasi digital 
-              yang menguntungkan bersama tim expert kami.
+              Kami menghadirkan solusi digital terdepan untuk transformasi bisnis Anda. 
+              Dari website profesional, aplikasi mobile, hingga sistem AI yang inovatif - 
+              wujudkan visi digital Anda bersama tim expert kami.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 mb-12">
@@ -36,24 +36,24 @@ const Hero = () => {
             <div className="grid grid-cols-3 gap-8">
               <div className="text-center">
                 <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-lg mb-4 mx-auto">
-                  <Target className="h-6 w-6 text-blue-600" />
+                  <Code className="h-6 w-6 text-blue-600" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900">150+</h3>
-                <p className="text-gray-600">Proyek Selesai</p>
+                <h3 className="text-2xl font-bold text-gray-900">200+</h3>
+                <p className="text-gray-600">Website Delivered</p>
               </div>
               <div className="text-center">
                 <div className="flex items-center justify-center w-12 h-12 bg-purple-100 rounded-lg mb-4 mx-auto">
-                  <Zap className="h-6 w-6 text-purple-600" />
+                  <Smartphone className="h-6 w-6 text-purple-600" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900">99%</h3>
-                <p className="text-gray-600">Kepuasan Klien</p>
+                <h3 className="text-2xl font-bold text-gray-900">150+</h3>
+                <p className="text-gray-600">Mobile Apps</p>
               </div>
               <div className="text-center">
                 <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-lg mb-4 mx-auto">
-                  <Sparkles className="h-6 w-6 text-green-600" />
+                  <Brain className="h-6 w-6 text-green-600" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900">5+</h3>
-                <p className="text-gray-600">Tahun Pengalaman</p>
+                <h3 className="text-2xl font-bold text-gray-900">50+</h3>
+                <p className="text-gray-600">AI Solutions</p>
               </div>
             </div>
           </div>
@@ -62,7 +62,7 @@ const Hero = () => {
             <div className="relative z-10">
               <img 
                 src="https://images.unsplash.com/photo-1551434678-e076c223a692?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80" 
-                alt="AI Technology" 
+                alt="Web Development Technology" 
                 className="rounded-2xl shadow-2xl"
               />
               <div className="absolute -top-4 -left-4 w-24 h-24 bg-blue-600 rounded-full opacity-20 animate-pulse"></div>

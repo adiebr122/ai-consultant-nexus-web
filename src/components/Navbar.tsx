@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Menu, X, Bot } from 'lucide-react';
+import { Menu, X, Code } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 const Navbar = () => {
@@ -21,8 +21,8 @@ const Navbar = () => {
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link to="/" className="flex items-center space-x-2">
-              <Bot className="h-8 w-8 text-blue-600" />
-              <span className="text-xl font-bold text-gray-900">AI Consultant Pro</span>
+              <Code className="h-8 w-8 text-blue-600" />
+              <span className="text-xl font-bold text-gray-900">Visual Media X</span>
             </Link>
           </div>
 
