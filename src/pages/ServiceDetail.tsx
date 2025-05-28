@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Clock, DollarSign, Star, CheckCircle } from 'lucide-react';
@@ -39,7 +38,16 @@ const ServiceDetail = () => {
         .single();
 
       if (error) throw error;
-      setService(data);
+      
+      // Transform the data to match our interface
+      const transformedService: Service = {
+        ...data,
+        service_features: Array.isArray(data.service_features) 
+          ? data.service_features as string[]
+          : []
+      };
+      
+      setService(transformedService);
     } catch (error) {
       console.error('Error fetching service:', error);
     } finally {

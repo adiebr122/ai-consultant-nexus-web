@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { ArrowRight, Code, Brain, Smartphone, Globe, Database, Shield } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -63,7 +62,16 @@ const Services = () => {
         .order('display_order', { ascending: true });
 
       if (error) throw error;
-      setServices(data || []);
+      
+      // Transform the data to match our interface
+      const transformedServices: Service[] = (data || []).map(service => ({
+        ...service,
+        service_features: Array.isArray(service.service_features) 
+          ? service.service_features as string[]
+          : []
+      }));
+      
+      setServices(transformedServices);
     } catch (error) {
       console.error('Error fetching services:', error);
       // Fallback to static data if fetch fails
