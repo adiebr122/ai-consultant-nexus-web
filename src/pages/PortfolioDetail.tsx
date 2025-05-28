@@ -35,6 +35,8 @@ const PortfolioDetailPage = () => {
 
   const fetchProject = async () => {
     try {
+      console.log('Fetching project with id:', id);
+      
       // Get portfolio content from website_content table
       const { data: websiteContent, error: websiteError } = await supabase
         .from('website_content')
@@ -54,15 +56,20 @@ const PortfolioDetailPage = () => {
         const metadata = websiteContent.metadata as { projects?: Project[] };
         if (metadata && Array.isArray(metadata.projects)) {
           projects = metadata.projects;
+          console.log('Loaded projects from admin:', projects.length);
         } else {
           projects = getDefaultProjects();
+          console.log('Using default projects');
         }
       } else {
         // Use default projects if no admin data
         projects = getDefaultProjects();
+        console.log('No admin data found, using default projects');
       }
 
       const projectIndex = parseInt(id || '0');
+      console.log('Project index:', projectIndex, 'Total projects:', projects.length);
+      
       if (projectIndex >= 0 && projectIndex < projects.length) {
         const selectedProject = projects[projectIndex];
         // Ensure all required fields are present
@@ -83,8 +90,10 @@ const PortfolioDetailPage = () => {
           solutions: selectedProject.solutions || '',
           results: selectedProject.results || ''
         };
+        console.log('Selected project:', projectWithDefaults);
         setProject(projectWithDefaults);
       } else {
+        console.log('Project not found, redirecting to 404');
         navigate('/404');
       }
     } catch (error) {

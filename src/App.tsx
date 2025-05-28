@@ -12,6 +12,9 @@ import ServiceDetail from "./pages/ServiceDetail";
 import PortfolioDetail from "./pages/PortfolioDetail";
 import NotFound from "./pages/NotFound";
 
+// Import storage setup to initialize buckets
+import "@/integrations/supabase/setup";
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
