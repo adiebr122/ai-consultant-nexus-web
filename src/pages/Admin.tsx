@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { 
   Users, 
@@ -18,7 +17,6 @@ import ServiceManager from '@/components/ServiceManager';
 import PortfolioManager from '@/components/PortfolioManager';
 import CRMManager from '@/components/CRMManager';
 import SettingsManager from '@/components/SettingsManager';
-import ContactInfoManager from '@/components/ContactInfoManager';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -112,13 +110,6 @@ const Admin = () => {
     </div>
   );
 
-  const renderSettings = () => (
-    <div className="space-y-8">
-      <ContactInfoManager />
-      <SettingsManager />
-    </div>
-  );
-
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
@@ -146,7 +137,7 @@ const Admin = () => {
           </div>
         );
       case 'settings':
-        return renderSettings();
+        return <SettingsManager />;
       default:
         return renderDashboard();
     }

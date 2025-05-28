@@ -48,6 +48,7 @@ export const useWhatsAppSettings = () => {
 
     // Listen for updates from admin panel
     const handleWhatsAppUpdate = () => {
+      console.log('WhatsApp settings update event received');
       fetchWhatsAppSettings();
     };
 

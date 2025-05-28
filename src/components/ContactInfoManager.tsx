@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { Phone, Mail, MapPin, MessageCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 const ContactInfoManager = () => {
   const [contactInfo, setContactInfo] = useState({
@@ -21,12 +22,17 @@ const ContactInfoManager = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
-    fetchContactInfo();
-  }, []);
+    if (user) {
+      fetchContactInfo();
+    }
+  }, [user]);
 
   const fetchContactInfo = async () => {
+    if (!user) return;
+    
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -61,13 +67,22 @@ const ContactInfoManager = () => {
   };
 
   const handleSave = async () => {
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "User tidak ditemukan. Silakan login ulang.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSaving(true);
     try {
-      // Use upsert approach instead of delete-insert
       const updates = Object.entries(contactInfo).map(([key, value]) => ({
         key,
         value,
-        description: getFieldDescription(key)
+        description: getFieldDescription(key),
+        user_id: user.id
       }));
 
       for (const update of updates) {
@@ -78,7 +93,7 @@ const ContactInfoManager = () => {
               key: update.key,
               value: update.value,
               description: update.description,
-              user_id: '00000000-0000-0000-0000-000000000000'
+              user_id: update.user_id
             },
             {
               onConflict: 'key'

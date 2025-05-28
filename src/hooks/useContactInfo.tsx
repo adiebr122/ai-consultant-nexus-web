@@ -34,7 +34,7 @@ export const useContactInfo = () => {
     try {
       setLoading(true);
       
-      // Fetch from site_settings table instead of app_settings
+      // Fetch from site_settings table
       const { data: contactData } = await supabase
         .from('site_settings')
         .select('key, value')
@@ -83,6 +83,7 @@ export const useContactInfo = () => {
 
     // Listen for updates from admin panel
     const handleContactUpdate = () => {
+      console.log('Contact info update event received');
       fetchContactInfo();
     };
 
