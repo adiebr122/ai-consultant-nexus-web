@@ -6,9 +6,15 @@ import {
   FileText, 
   Star,
   TrendingUp,
-  RefreshCw
+  RefreshCw,
+  Calendar,
+  Clock,
+  Activity,
+  Zap
 } from 'lucide-react';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import Navbar from '@/components/Navbar';
 import AdminSidebar from '@/components/AdminSidebar';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -44,22 +50,21 @@ const Admin = () => {
   }, []);
 
   const handleTabChange = useCallback((tab: string) => {
-    if (tab === activeTab) return; // Prevent unnecessary changes
+    if (tab === activeTab) return;
     
     setIsTabLoading(true);
     setActiveTab(tab);
     
-    // Very quick loading state for better UX
     setTimeout(() => setIsTabLoading(false), 50);
   }, [activeTab]);
 
   // Show loading if auth is still loading
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Memuat halaman admin...</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-6"></div>
+          <p className="text-gray-600 text-lg">Memuat halaman admin...</p>
         </div>
       </div>
     );
@@ -68,102 +73,203 @@ const Admin = () => {
   // Show error if auth failed
   if (authError) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">Error: {authError}</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Reload Page
-          </button>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 via-white to-orange-50">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-red-600">Error Autentikasi</CardTitle>
+            <CardDescription>Terjadi kesalahan saat memuat halaman</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-red-600 mb-4">{authError}</p>
+            <Button 
+              onClick={() => window.location.reload()} 
+              className="w-full"
+            >
+              Muat Ulang Halaman
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   const stats = [
-    { title: 'Total Proyek', value: '156', change: '+12%', icon: FileText },
-    { title: 'Klien Aktif', value: '89', change: '+8%', icon: Users },
-    { title: 'Revenue Bulan Ini', value: 'Rp 2.1M', change: '+15%', icon: TrendingUp },
-    { title: 'Rating Rata-rata', value: '4.9', change: '+0.1', icon: Star }
+    { 
+      title: 'Total Proyek', 
+      value: '156', 
+      change: '+12%', 
+      icon: FileText,
+      color: 'bg-gradient-to-r from-blue-500 to-blue-600',
+      lightColor: 'bg-blue-50 border-blue-200'
+    },
+    { 
+      title: 'Klien Aktif', 
+      value: '89', 
+      change: '+8%', 
+      icon: Users,
+      color: 'bg-gradient-to-r from-green-500 to-green-600',
+      lightColor: 'bg-green-50 border-green-200'
+    },
+    { 
+      title: 'Revenue Bulan Ini', 
+      value: 'Rp 2.1M', 
+      change: '+15%', 
+      icon: TrendingUp,
+      color: 'bg-gradient-to-r from-purple-500 to-purple-600',
+      lightColor: 'bg-purple-50 border-purple-200'
+    },
+    { 
+      title: 'Rating Rata-rata', 
+      value: '4.9', 
+      change: '+0.1', 
+      icon: Star,
+      color: 'bg-gradient-to-r from-yellow-500 to-orange-500',
+      lightColor: 'bg-yellow-50 border-yellow-200'
+    }
   ];
 
   const renderDashboard = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="space-y-8">
+      {/* Welcome Section */}
+      <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 rounded-2xl p-8 text-white">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Selamat Datang, {user?.email}</h1>
+            <p className="text-blue-100 text-lg">Kelola bisnis Anda dengan mudah dari dashboard ini</p>
+          </div>
+          <div className="hidden md:block">
+            <Activity className="h-16 w-16 text-blue-200" />
+          </div>
+        </div>
+        <div className="flex items-center mt-6 text-blue-100">
+          <Calendar className="h-5 w-5 mr-2" />
+          <span>{new Date().toLocaleDateString('id-ID', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+          })}</span>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, index) => {
           const IconComponent = stat.icon;
           return (
-            <div key={index} className="bg-white p-4 rounded-lg shadow-sm border hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-gray-600 mb-1">{stat.title}</p>
-                  <p className="text-xl font-bold text-gray-900">{stat.value}</p>
-                  <p className="text-xs text-green-600">{stat.change}</p>
+            <Card key={index} className={`${stat.lightColor} border-2 hover:shadow-lg transition-all duration-300 hover:scale-105`}>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-600 mb-2">{stat.title}</p>
+                    <p className="text-3xl font-bold text-gray-900 mb-1">{stat.value}</p>
+                    <div className="flex items-center">
+                      <span className="text-sm font-medium text-green-600 bg-green-100 px-2 py-1 rounded-full">
+                        {stat.change}
+                      </span>
+                    </div>
+                  </div>
+                  <div className={`${stat.color} p-3 rounded-xl`}>
+                    <IconComponent className="h-6 w-6 text-white" />
+                  </div>
                 </div>
-                <IconComponent className="h-6 w-6 text-blue-600" />
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           );
         })}
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
-          <h3 className="text-lg font-semibold mb-4">Proyek Terbaru</h3>
-          <div className="space-y-3">
-            {[
-              { client: 'Bank Mandiri', project: 'Corporate Website', status: 'In Progress', progress: 75 },
-              { client: 'Telkomsel', project: 'Mobile App Development', status: 'Review', progress: 90 },
-              { client: 'Indofood', project: 'E-commerce Platform', status: 'Planning', progress: 25 }
-            ].map((project, index) => (
-              <div key={index} className="border border-gray-200 p-3 rounded-lg">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <h4 className="font-medium text-sm">{project.project}</h4>
-                    <p className="text-xs text-gray-600">{project.client}</p>
-                  </div>
-                  <span className={`px-2 py-1 text-xs rounded-full ${
-                    project.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
-                    project.status === 'Review' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
-                    {project.status}
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-1.5">
-                  <div 
-                    className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
-                    style={{ width: `${project.progress}%` }}
-                  ></div>
-                </div>
+      {/* Main Content Grid */}
+      <div className="grid lg:grid-cols-2 gap-8">
+        {/* Recent Projects */}
+        <Card className="border-2 hover:shadow-lg transition-shadow duration-300">
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-xl font-bold text-gray-900">Proyek Terbaru</CardTitle>
+                <CardDescription>Pantau progress proyek yang sedang berjalan</CardDescription>
               </div>
-            ))}
-          </div>
-        </div>
+              <Zap className="h-6 w-6 text-blue-600" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {[
+                { client: 'Bank Mandiri', project: 'Corporate Website', status: 'In Progress', progress: 75, color: 'bg-blue-500' },
+                { client: 'Telkomsel', project: 'Mobile App Development', status: 'Review', progress: 90, color: 'bg-yellow-500' },
+                { client: 'Indofood', project: 'E-commerce Platform', status: 'Planning', progress: 25, color: 'bg-gray-500' }
+              ].map((project, index) => (
+                <div key={index} className="bg-gray-50 border border-gray-200 p-4 rounded-xl hover:bg-gray-100 transition-colors">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h4 className="font-semibold text-gray-900">{project.project}</h4>
+                      <p className="text-sm text-gray-600">{project.client}</p>
+                    </div>
+                    <span className={`px-3 py-1 text-xs font-medium rounded-full ${
+                      project.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
+                      project.status === 'Review' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {project.status}
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Progress</span>
+                      <span className="font-medium">{project.progress}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className={`${project.color} h-2 rounded-full transition-all duration-500`}
+                        style={{ width: `${project.progress}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
-          <h3 className="text-lg font-semibold mb-4">Pesan Terbaru</h3>
-          <div className="space-y-3">
-            {[
-              { name: 'Ahmad Rizki', company: 'PT Astra', message: 'Tertarik dengan development website corporate', time: '2 jam lalu' },
-              { name: 'Linda Sari', company: 'Shopee', message: 'Ingin konsultasi tentang mobile app development', time: '4 jam lalu' },
-              { name: 'Budi Santoso', company: 'OVO', message: 'Perlu solusi e-commerce platform', time: '1 hari lalu' }
-            ].map((message, index) => (
-              <div key={index} className="border border-gray-200 p-3 rounded-lg">
-                <div className="flex justify-between items-start mb-1">
-                  <div>
-                    <h4 className="font-medium text-sm">{message.name}</h4>
-                    <p className="text-xs text-gray-600">{message.company}</p>
-                  </div>
-                  <span className="text-xs text-gray-500">{message.time}</span>
-                </div>
-                <p className="text-xs text-gray-700">{message.message}</p>
+        {/* Recent Messages */}
+        <Card className="border-2 hover:shadow-lg transition-shadow duration-300">
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-xl font-bold text-gray-900">Pesan Terbaru</CardTitle>
+                <CardDescription>Komunikasi terbaru dengan klien</CardDescription>
               </div>
-            ))}
-          </div>
-        </div>
+              <Clock className="h-6 w-6 text-green-600" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {[
+                { name: 'Ahmad Rizki', company: 'PT Astra', message: 'Tertarik dengan development website corporate', time: '2 jam lalu', avatar: 'AR' },
+                { name: 'Linda Sari', company: 'Shopee', message: 'Ingin konsultasi tentang mobile app development', time: '4 jam lalu', avatar: 'LS' },
+                { name: 'Budi Santoso', company: 'OVO', message: 'Perlu solusi e-commerce platform', time: '1 hari lalu', avatar: 'BS' }
+              ].map((message, index) => (
+                <div key={index} className="bg-gray-50 border border-gray-200 p-4 rounded-xl hover:bg-gray-100 transition-colors">
+                  <div className="flex items-start space-x-3">
+                    <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                      {message.avatar}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start mb-1">
+                        <div>
+                          <h4 className="font-semibold text-gray-900">{message.name}</h4>
+                          <p className="text-xs text-gray-600">{message.company}</p>
+                        </div>
+                        <span className="text-xs text-gray-500">{message.time}</span>
+                      </div>
+                      <p className="text-sm text-gray-700">{message.message}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
@@ -246,7 +352,7 @@ const Admin = () => {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
         <Navbar />
         
         <div className="pt-16">
@@ -255,25 +361,27 @@ const Admin = () => {
               <AdminSidebar activeTab={activeTab} onTabChange={handleTabChange} />
               
               <SidebarInset>
-                <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4 bg-white">
+                <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-white/80 backdrop-blur-sm px-6 sticky top-0 z-10">
                   <SidebarTrigger className="-ml-1" />
                   <div className="flex-1 flex items-center justify-between">
-                    <h1 className="text-xl font-bold text-gray-900">Admin Dashboard</h1>
-                    <button
+                    <div>
+                      <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+                      <p className="text-sm text-gray-600">Kelola semua aspek bisnis Anda</p>
+                    </div>
+                    <Button
                       onClick={handleRefresh}
-                      className="flex items-center gap-2 px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      variant="outline"
+                      className="flex items-center gap-2 hover:bg-blue-50 hover:border-blue-300 transition-colors"
                       title="Refresh halaman"
                     >
                       <RefreshCw className="h-4 w-4" />
                       <span className="hidden sm:inline">Refresh</span>
-                    </button>
+                    </Button>
                   </div>
                 </header>
                 
-                <div className="flex-1 p-4">
-                  <div className="bg-white rounded-lg shadow-sm border p-4">
-                    {renderContent()}
-                  </div>
+                <div className="flex-1 p-6">
+                  {renderContent()}
                 </div>
               </SidebarInset>
             </div>
