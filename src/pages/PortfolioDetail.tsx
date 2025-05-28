@@ -8,19 +8,19 @@ import PortfolioDetail from '@/components/PortfolioDetail';
 interface Project {
   title: string;
   description: string;
-  detailed_description?: string;
+  detailed_description: string;
   image_url: string;
-  gallery_images?: string[];
+  gallery_images: string[];
   client: string;
   category: string;
   technologies: string[];
   demo_url?: string;
   github_url?: string;
-  project_duration?: string;
-  team_size?: string;
-  challenges?: string;
-  solutions?: string;
-  results?: string;
+  project_duration: string;
+  team_size: string;
+  challenges: string;
+  solutions: string;
+  results: string;
 }
 
 const PortfolioDetailPage = () => {
@@ -49,9 +49,14 @@ const PortfolioDetailPage = () => {
 
       let projects: Project[] = [];
 
-      if (websiteContent && websiteContent.metadata && websiteContent.metadata.projects) {
-        const metadata = websiteContent.metadata as any;
-        projects = metadata.projects || [];
+      if (websiteContent && websiteContent.metadata) {
+        // Type-safe metadata access
+        const metadata = websiteContent.metadata as { projects?: Project[] };
+        if (metadata && Array.isArray(metadata.projects)) {
+          projects = metadata.projects;
+        } else {
+          projects = getDefaultProjects();
+        }
       } else {
         // Use default projects if no admin data
         projects = getDefaultProjects();
@@ -59,7 +64,26 @@ const PortfolioDetailPage = () => {
 
       const projectIndex = parseInt(id || '0');
       if (projectIndex >= 0 && projectIndex < projects.length) {
-        setProject(projects[projectIndex]);
+        const selectedProject = projects[projectIndex];
+        // Ensure all required fields are present
+        const projectWithDefaults: Project = {
+          title: selectedProject.title || '',
+          description: selectedProject.description || '',
+          detailed_description: selectedProject.detailed_description || selectedProject.description || '',
+          image_url: selectedProject.image_url || '',
+          gallery_images: selectedProject.gallery_images || [],
+          client: selectedProject.client || '',
+          category: selectedProject.category || '',
+          technologies: selectedProject.technologies || [],
+          demo_url: selectedProject.demo_url,
+          github_url: selectedProject.github_url,
+          project_duration: selectedProject.project_duration || '',
+          team_size: selectedProject.team_size || '',
+          challenges: selectedProject.challenges || '',
+          solutions: selectedProject.solutions || '',
+          results: selectedProject.results || ''
+        };
+        setProject(projectWithDefaults);
       } else {
         navigate('/404');
       }
@@ -184,8 +208,8 @@ const PortfolioDetailPage = () => {
       project_duration: '9 bulan',
       team_size: '18 developer, 4 financial analyst, 3 ML engineer',
       challenges: 'Memproses data market real-time dengan latency rendah dan memastikan keamanan transaksi finansial tingkat bank.',
-      solutions: 'Implementasi low-latency architecture dengan WebSocket connections dan multi-layer security dengan 2FA dan biometric authentication.',
-      results: 'Platform mampu memproses 50,000+ transaksi per detik dengan latency rata-rata 10ms dan tingkat keamanan 99.99%.'
+      solutions: 'Implementasi low-latency architecture dengan WebSocket connections dan multi-layer security with 2FA and biometric authentication.',
+      results: 'Platform mampu memproses 50,000+ transaksi per detik dengan latency rata-rata 10ms and 99.99% security.'
     }
   ];
 

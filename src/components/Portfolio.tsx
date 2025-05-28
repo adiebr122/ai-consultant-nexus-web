@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { ExternalLink, Github, ArrowRight, Clock, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -54,13 +53,22 @@ const Portfolio = () => {
         console.error('Error fetching website content:', websiteError);
       }
 
-      if (websiteContent && websiteContent.metadata && websiteContent.metadata.projects) {
-        const metadata = websiteContent.metadata as any;
-        setContent({
-          title: websiteContent.title || 'Portfolio Proyek Terbaik',
-          description: websiteContent.content || 'Lihat hasil karya terbaik kami dalam mengembangkan solusi AI dan aplikasi untuk berbagai industri.',
-          projects: metadata.projects || []
-        });
+      if (websiteContent && websiteContent.metadata) {
+        // Type-safe metadata access
+        const metadata = websiteContent.metadata as { projects?: Project[] };
+        if (metadata && Array.isArray(metadata.projects)) {
+          setContent({
+            title: websiteContent.title || 'Portfolio Proyek Terbaik',
+            description: websiteContent.content || 'Lihat hasil karya terbaik kami dalam mengembangkan solusi AI dan aplikasi untuk berbagai industri.',
+            projects: metadata.projects
+          });
+        } else {
+          setContent({
+            title: 'Portfolio Proyek Terbaik',
+            description: 'Lihat hasil karya terbaik kami dalam mengembangkan solusi AI dan aplikasi untuk berbagai industri.',
+            projects: getDefaultProjects()
+          });
+        }
       } else {
         // If no content found, set default content
         setContent({
@@ -195,8 +203,8 @@ const Portfolio = () => {
       project_duration: '9 bulan',
       team_size: '18 developer, 4 financial analyst, 3 ML engineer',
       challenges: 'Memproses data market real-time dengan latency rendah dan memastikan keamanan transaksi finansial tingkat bank.',
-      solutions: 'Implementasi low-latency architecture dengan WebSocket connections dan multi-layer security dengan 2FA dan biometric authentication.',
-      results: 'Platform mampu memproses 50,000+ transaksi per detik dengan latency rata-rata 10ms dan tingkat keamanan 99.99%.'
+      solutions: 'Implementasi low-latency architecture dengan WebSocket connections dan multi-layer security with 2FA and biometric authentication.',
+      results: 'Platform mampu memproses 50,000+ transaksi per detik dengan latency rata-rata 10ms and 99.99% security.'
     }
   ];
 
