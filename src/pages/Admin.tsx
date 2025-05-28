@@ -1,11 +1,11 @@
-
 import { useState } from 'react';
 import { 
   Users, 
   BarChart3, 
   FileText, 
   Star,
-  TrendingUp
+  TrendingUp,
+  RefreshCw
 } from 'lucide-react';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import Navbar from '@/components/Navbar';
@@ -26,7 +26,16 @@ import { useAuth } from '@/hooks/useAuth';
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedProject, setSelectedProject] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
   const { user } = useAuth();
+
+  const handleRefresh = () => {
+    setRefreshKey(prev => prev + 1);
+    // Reset any selected state
+    setSelectedProject(null);
+    // Force re-render of current component
+    window.location.reload();
+  };
 
   const stats = [
     { title: 'Total Proyek', value: '156', change: '+12%', icon: FileText },
@@ -128,21 +137,21 @@ const Admin = () => {
       case 'dashboard':
         return renderDashboard();
       case 'hero':
-        return <HeroEditor />;
+        return <HeroEditor key={refreshKey} />;
       case 'portfolio':
-        return <PortfolioManager onProjectSelect={setSelectedProject} />;
+        return <PortfolioManager key={refreshKey} onProjectSelect={setSelectedProject} />;
       case 'clientlogos':
-        return <ClientLogosManager />;
+        return <ClientLogosManager key={refreshKey} />;
       case 'submissions':
-        return <FormSubmissions />;
+        return <FormSubmissions key={refreshKey} />;
       case 'livechat':
-        return <LiveChatManager />;
+        return <LiveChatManager key={refreshKey} />;
       case 'testimonials':
-        return <TestimonialManager />;
+        return <TestimonialManager key={refreshKey} />;
       case 'services':
-        return <ServiceManager />;
+        return <ServiceManager key={refreshKey} />;
       case 'crm':
-        return <CRMManager />;
+        return <CRMManager key={refreshKey} />;
       case 'users':
         return (
           <div className="text-center py-12">
@@ -152,7 +161,7 @@ const Admin = () => {
           </div>
         );
       case 'settings':
-        return <SettingsManager />;
+        return <SettingsManager key={refreshKey} />;
       default:
         return renderDashboard();
     }
@@ -171,8 +180,16 @@ const Admin = () => {
               <SidebarInset>
                 <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
                   <SidebarTrigger className="-ml-1" />
-                  <div className="flex-1">
+                  <div className="flex-1 flex items-center justify-between">
                     <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+                    <button
+                      onClick={handleRefresh}
+                      className="flex items-center gap-2 px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      title="Refresh halaman"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      Refresh
+                    </button>
                   </div>
                 </header>
                 
