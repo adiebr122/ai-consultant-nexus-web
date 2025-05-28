@@ -17,18 +17,18 @@ const LoadingWrapper: React.FC<LoadingWrapperProps> = ({
   children, 
   skeleton,
   loadingText = "Memuat...",
-  minHeight = "py-12"
+  minHeight = "py-8"
 }) => {
   if (error) {
     return (
       <div className={`flex items-center justify-center ${minHeight}`}>
         <div className="text-center max-w-md">
-          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <div className="text-red-600 text-lg font-medium mb-2">Terjadi Kesalahan</div>
-          <p className="text-gray-600 mb-4 text-sm">{error}</p>
+          <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-3" />
+          <div className="text-red-600 font-medium mb-2">Terjadi Kesalahan</div>
+          <p className="text-gray-600 mb-3 text-sm">{error}</p>
           <button 
             onClick={() => window.location.reload()} 
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+            className="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
           >
             <RefreshCw className="h-4 w-4 mr-2" />
             Coba Lagi
@@ -42,7 +42,7 @@ const LoadingWrapper: React.FC<LoadingWrapperProps> = ({
     return skeleton || (
       <div className={`flex items-center justify-center ${minHeight}`}>
         <div className="text-center">
-          <RefreshCw className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-3" />
+          <RefreshCw className="h-6 w-6 animate-spin text-blue-600 mx-auto mb-2" />
           <span className="text-gray-600 text-sm">{loadingText}</span>
         </div>
       </div>

@@ -1,3 +1,4 @@
+
 import { useState, Suspense, lazy, useEffect } from 'react';
 import { 
   Users, 
@@ -12,13 +13,10 @@ import Navbar from '@/components/Navbar';
 import AdminSidebar from '@/components/AdminSidebar';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AdminSkeleton from '@/components/AdminSkeleton';
-import LoadingWrapper from '@/components/LoadingWrapper';
 import { useAuth } from '@/hooks/useAuth';
 
-// Lazy load components with preloading
-const HeroEditor = lazy(() => 
-  import('@/components/HeroEditor').then(module => ({ default: module.default }))
-);
+// Lazy load components
+const HeroEditor = lazy(() => import('@/components/HeroEditor'));
 const FormSubmissions = lazy(() => import('@/components/FormSubmissions'));
 const LiveChatManager = lazy(() => import('@/components/LiveChatManager'));
 const TestimonialManager = lazy(() => import('@/components/TestimonialManager'));
@@ -34,35 +32,11 @@ const Admin = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedProject, setSelectedProject] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const { user } = useAuth();
-
-  // Preload commonly used components
-  useEffect(() => {
-    const preloadComponents = async () => {
-      try {
-        // Preload hero editor and portfolio manager as they're commonly accessed
-        const heroPromise = import('@/components/HeroEditor');
-        const portfolioPromise = import('@/components/PortfolioManager');
-        await Promise.all([heroPromise, portfolioPromise]);
-      } catch (error) {
-        console.log('Preload failed:', error);
-      }
-    };
-
-    const timer = setTimeout(() => {
-      preloadComponents();
-      setIsInitialLoad(false);
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, []);
 
   const handleRefresh = () => {
     setRefreshKey(prev => prev + 1);
     setSelectedProject(null);
-    // Use a more targeted refresh instead of full page reload
-    window.location.reload();
   };
 
   const stats = [
@@ -163,13 +137,10 @@ const Admin = () => {
       );
     }
 
-    const ComponentSkeleton = () => (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="h-6 w-48 bg-gray-200 rounded animate-pulse"></div>
-          <div className="h-8 w-24 bg-gray-200 rounded animate-pulse"></div>
-        </div>
-        <div className="h-32 bg-gray-100 rounded animate-pulse"></div>
+    const QuickSkeleton = () => (
+      <div className="space-y-4 animate-pulse">
+        <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+        <div className="h-32 bg-gray-100 rounded"></div>
       </div>
     );
 
@@ -178,61 +149,61 @@ const Admin = () => {
         return renderDashboard();
       case 'hero':
         return (
-          <Suspense fallback={<ComponentSkeleton />}>
+          <Suspense fallback={<QuickSkeleton />}>
             <HeroEditor key={refreshKey} />
           </Suspense>
         );
       case 'portfolio':
         return (
-          <Suspense fallback={<ComponentSkeleton />}>
+          <Suspense fallback={<QuickSkeleton />}>
             <PortfolioManager key={refreshKey} onProjectSelect={setSelectedProject} />
           </Suspense>
         );
       case 'clientlogos':
         return (
-          <Suspense fallback={<ComponentSkeleton />}>
+          <Suspense fallback={<QuickSkeleton />}>
             <ClientLogosManager key={refreshKey} />
           </Suspense>
         );
       case 'submissions':
         return (
-          <Suspense fallback={<ComponentSkeleton />}>
+          <Suspense fallback={<QuickSkeleton />}>
             <FormSubmissions key={refreshKey} />
           </Suspense>
         );
       case 'livechat':
         return (
-          <Suspense fallback={<ComponentSkeleton />}>
+          <Suspense fallback={<QuickSkeleton />}>
             <LiveChatManager key={refreshKey} />
           </Suspense>
         );
       case 'testimonials':
         return (
-          <Suspense fallback={<ComponentSkeleton />}>
+          <Suspense fallback={<QuickSkeleton />}>
             <TestimonialManager key={refreshKey} />
           </Suspense>
         );
       case 'services':
         return (
-          <Suspense fallback={<ComponentSkeleton />}>
+          <Suspense fallback={<QuickSkeleton />}>
             <ServiceManager key={refreshKey} />
           </Suspense>
         );
       case 'crm':
         return (
-          <Suspense fallback={<ComponentSkeleton />}>
+          <Suspense fallback={<QuickSkeleton />}>
             <CRMManager key={refreshKey} />
           </Suspense>
         );
       case 'users':
         return (
-          <Suspense fallback={<ComponentSkeleton />}>
+          <Suspense fallback={<QuickSkeleton />}>
             <UserManagement key={refreshKey} />
           </Suspense>
         );
       case 'settings':
         return (
-          <Suspense fallback={<ComponentSkeleton />}>
+          <Suspense fallback={<QuickSkeleton />}>
             <SettingsManager key={refreshKey} />
           </Suspense>
         );
@@ -240,21 +211,6 @@ const Admin = () => {
         return renderDashboard();
     }
   };
-
-  if (isInitialLoad) {
-    return (
-      <ProtectedRoute>
-        <div className="min-h-screen bg-gray-50">
-          <Navbar />
-          <div className="pt-16">
-            <div className="p-6">
-              <AdminSkeleton />
-            </div>
-          </div>
-        </div>
-      </ProtectedRoute>
-    );
-  }
 
   return (
     <ProtectedRoute>
