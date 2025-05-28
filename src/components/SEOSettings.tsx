@@ -6,6 +6,7 @@ import { Save, RefreshCw, Globe, Search, Image, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAuth } from '@/hooks/useAuth';
 
 interface SEOSetting {
   id?: string;
@@ -30,18 +31,24 @@ const SEOSettings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
-    fetchSEOSettings();
-  }, []);
+    if (user) {
+      fetchSEOSettings();
+    }
+  }, [user]);
 
   const fetchSEOSettings = async () => {
+    if (!user) return;
+    
     try {
       setLoading(true);
       const { data, error } = await supabase
         .from('app_settings')
         .select('*')
-        .eq('setting_category', 'seo_config');
+        .eq('setting_category', 'seo_config')
+        .eq('user_id', user.id);
 
       if (error) throw error;
 
@@ -75,10 +82,17 @@ const SEOSettings = () => {
   };
 
   const saveSEOSettings = async () => {
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "User tidak ditemukan. Silakan login ulang.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setSaving(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User tidak terautentikasi');
 
       for (const setting of settings) {
         const settingData = {
@@ -88,7 +102,8 @@ const SEOSettings = () => {
           setting_type: 'text',
           description: setting.description,
           is_public: true,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
+          user_id: user.id
         };
 
         if (setting.id) {
@@ -100,10 +115,7 @@ const SEOSettings = () => {
         } else {
           const { error } = await supabase
             .from('app_settings')
-            .insert({
-              user_id: user.id,
-              ...settingData
-            });
+            .insert(settingData);
           if (error) throw error;
         }
       }
@@ -112,11 +124,6 @@ const SEOSettings = () => {
         title: "Berhasil!",
         description: "Pengaturan SEO berhasil disimpan dan akan segera terupdate di website",
       });
-
-      // Trigger a page refresh to apply new settings
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
 
       await fetchSEOSettings();
     } catch (error: any) {

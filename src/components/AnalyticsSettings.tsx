@@ -6,6 +6,7 @@ import { Save, RefreshCw, BarChart3, Eye, Code } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAuth } from '@/hooks/useAuth';
 
 interface AnalyticsSetting {
   id?: string;
@@ -63,18 +64,24 @@ const AnalyticsSettings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
-    fetchAnalyticsSettings();
-  }, []);
+    if (user) {
+      fetchAnalyticsSettings();
+    }
+  }, [user]);
 
   const fetchAnalyticsSettings = async () => {
+    if (!user) return;
+    
     try {
       setLoading(true);
       const { data, error } = await supabase
         .from('app_settings')
         .select('*')
-        .eq('setting_category', 'analytics_config');
+        .eq('setting_category', 'analytics_config')
+        .eq('user_id', user.id);
 
       if (error) throw error;
 
@@ -108,10 +115,17 @@ const AnalyticsSettings = () => {
   };
 
   const saveAnalyticsSettings = async () => {
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "User tidak ditemukan. Silakan login ulang.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setSaving(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User tidak terautentikasi');
 
       for (const setting of settings) {
         const settingData = {
@@ -121,7 +135,8 @@ const AnalyticsSettings = () => {
           setting_type: setting.setting_key.includes('code') ? 'html' : 'text',
           description: setting.description,
           is_public: true,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
+          user_id: user.id
         };
 
         if (setting.id) {
@@ -133,10 +148,7 @@ const AnalyticsSettings = () => {
         } else {
           const { error } = await supabase
             .from('app_settings')
-            .insert({
-              user_id: user.id,
-              ...settingData
-            });
+            .insert(settingData);
           if (error) throw error;
         }
       }
@@ -145,11 +157,6 @@ const AnalyticsSettings = () => {
         title: "Berhasil!",
         description: "Pengaturan analytics berhasil disimpan dan akan segera terupdate di website",
       });
-
-      // Trigger a page refresh to apply new settings
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
 
       await fetchAnalyticsSettings();
     } catch (error: any) {
