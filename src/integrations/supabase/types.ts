@@ -9,6 +9,45 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_public: boolean | null
+          setting_category: string
+          setting_key: string
+          setting_type: string | null
+          setting_value: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          setting_category: string
+          setting_key: string
+          setting_type?: string | null
+          setting_value?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          setting_category?: string
+          setting_key?: string
+          setting_type?: string | null
+          setting_value?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       chat_conversations: {
         Row: {
           assigned_to: string | null
@@ -214,6 +253,57 @@ export type Database = {
         }
         Relationships: []
       }
+      services: {
+        Row: {
+          created_at: string
+          display_order: number | null
+          estimated_duration: string | null
+          id: string
+          is_active: boolean | null
+          price_currency: string | null
+          price_starting_from: number | null
+          service_category: string | null
+          service_description: string | null
+          service_features: Json | null
+          service_image_url: string | null
+          service_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number | null
+          estimated_duration?: string | null
+          id?: string
+          is_active?: boolean | null
+          price_currency?: string | null
+          price_starting_from?: number | null
+          service_category?: string | null
+          service_description?: string | null
+          service_features?: Json | null
+          service_image_url?: string | null
+          service_name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number | null
+          estimated_duration?: string | null
+          id?: string
+          is_active?: boolean | null
+          price_currency?: string | null
+          price_starting_from?: number | null
+          service_category?: string | null
+          service_description?: string | null
+          service_features?: Json | null
+          service_image_url?: string | null
+          service_name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       site_settings: {
         Row: {
           created_at: string
@@ -241,6 +331,111 @@ export type Database = {
           updated_at?: string
           user_id?: string
           value?: string | null
+        }
+        Relationships: []
+      }
+      testimonials: {
+        Row: {
+          client_company: string | null
+          client_name: string
+          client_photo_url: string | null
+          client_position: string | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          is_featured: boolean | null
+          rating: number
+          testimonial_text: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_company?: string | null
+          client_name: string
+          client_photo_url?: string | null
+          client_position?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          rating?: number
+          testimonial_text: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_company?: string | null
+          client_name?: string
+          client_photo_url?: string | null
+          client_position?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          rating?: number
+          testimonial_text?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_management: {
+        Row: {
+          admin_user_id: string
+          assigned_to: string | null
+          client_company: string | null
+          client_email: string
+          client_name: string
+          client_phone: string | null
+          client_position: string | null
+          created_at: string
+          estimated_value: number | null
+          id: string
+          last_contact_date: string | null
+          lead_source: string | null
+          lead_status: string | null
+          next_follow_up: string | null
+          notes: string | null
+          tags: Json | null
+          updated_at: string
+        }
+        Insert: {
+          admin_user_id: string
+          assigned_to?: string | null
+          client_company?: string | null
+          client_email: string
+          client_name: string
+          client_phone?: string | null
+          client_position?: string | null
+          created_at?: string
+          estimated_value?: number | null
+          id?: string
+          last_contact_date?: string | null
+          lead_source?: string | null
+          lead_status?: string | null
+          next_follow_up?: string | null
+          notes?: string | null
+          tags?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          admin_user_id?: string
+          assigned_to?: string | null
+          client_company?: string | null
+          client_email?: string
+          client_name?: string
+          client_phone?: string | null
+          client_position?: string | null
+          created_at?: string
+          estimated_value?: number | null
+          id?: string
+          last_contact_date?: string | null
+          lead_source?: string | null
+          lead_status?: string | null
+          next_follow_up?: string | null
+          notes?: string | null
+          tags?: Json | null
+          updated_at?: string
         }
         Relationships: []
       }

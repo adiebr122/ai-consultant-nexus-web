@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { 
   Users, 
@@ -13,56 +14,24 @@ import {
   Plus,
   LogOut,
   Globe,
-  MessageCircle
+  MessageCircle,
+  Package,
+  UserCheck
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import CMSEditor from '@/components/CMSEditor';
 import FormSubmissions from '@/components/FormSubmissions';
 import LiveChatManager from '@/components/LiveChatManager';
+import TestimonialManager from '@/components/TestimonialManager';
+import ServiceManager from '@/components/ServiceManager';
+import CRMManager from '@/components/CRMManager';
+import SettingsManager from '@/components/SettingsManager';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/hooks/useAuth';
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const { user, signOut } = useAuth();
-  
-  const [testimonials, setTestimonials] = useState([
-    {
-      id: 1,
-      name: 'Budi Santoso',
-      company: 'PT Telkom Indonesia',
-      position: 'CEO',
-      rating: 5,
-      text: 'Visual Media X telah mentransformasi operasional kami dengan website dan aplikasi yang luar biasa.',
-      status: 'published'
-    },
-    {
-      id: 2,
-      name: 'Sari Dewi',
-      company: 'Bank Central Asia',
-      position: 'Director of Digital Innovation',
-      rating: 5,
-      text: 'Implementasi sistem digital yang mereka kembangkan berhasil meningkatkan efisiensi hingga 60%.',
-      status: 'published'
-    }
-  ]);
-
-  const [services, setServices] = useState([
-    {
-      id: 1,
-      title: 'Website Development',
-      description: 'Pembuatan website profesional dengan teknologi terdepan',
-      price: 'Mulai dari Rp 15.000.000',
-      status: 'active'
-    },
-    {
-      id: 2,
-      title: 'Mobile App Development',
-      description: 'Pengembangan aplikasi mobile Android dan iOS',
-      price: 'Mulai dari Rp 25.000.000',
-      status: 'active'
-    }
-  ]);
 
   const stats = [
     { title: 'Total Proyek', value: '156', change: '+12%', icon: FileText },
@@ -156,7 +125,8 @@ const Admin = () => {
     { id: 'submissions', label: 'Form Submissions', icon: MessageSquare },
     { id: 'livechat', label: 'Live Chat', icon: MessageCircle },
     { id: 'testimonials', label: 'Testimoni', icon: Star },
-    { id: 'services', label: 'Layanan', icon: FileText },
+    { id: 'services', label: 'Layanan', icon: Package },
+    { id: 'crm', label: 'CRM', icon: UserCheck },
     { id: 'users', label: 'Pengguna', icon: Users },
     { id: 'settings', label: 'Pengaturan', icon: Settings }
   ];
@@ -207,20 +177,9 @@ const Admin = () => {
               {activeTab === 'cms' && <CMSEditor />}
               {activeTab === 'submissions' && <FormSubmissions />}
               {activeTab === 'livechat' && <LiveChatManager />}
-              {activeTab === 'testimonials' && (
-                <div className="text-center py-12">
-                  <Star className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Kelola Testimoni</h3>
-                  <p className="text-gray-500">Fitur kelola testimoni akan segera tersedia</p>
-                </div>
-              )}
-              {activeTab === 'services' && (
-                <div className="text-center py-12">
-                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Kelola Layanan</h3>
-                  <p className="text-gray-500">Fitur kelola layanan akan segera tersedia</p>
-                </div>
-              )}
+              {activeTab === 'testimonials' && <TestimonialManager />}
+              {activeTab === 'services' && <ServiceManager />}
+              {activeTab === 'crm' && <CRMManager />}
               {activeTab === 'users' && (
                 <div className="text-center py-12">
                   <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -228,13 +187,7 @@ const Admin = () => {
                   <p className="text-gray-500">Fitur kelola pengguna akan segera tersedia</p>
                 </div>
               )}
-              {activeTab === 'settings' && (
-                <div className="text-center py-12">
-                  <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Pengaturan</h3>
-                  <p className="text-gray-500">Fitur pengaturan akan segera tersedia</p>
-                </div>
-              )}
+              {activeTab === 'settings' && <SettingsManager />}
             </div>
           </div>
         </div>
