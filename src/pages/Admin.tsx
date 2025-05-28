@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { 
   Users, 
@@ -17,10 +16,12 @@ import {
   MessageCircle,
   Package,
   UserCheck,
-  Briefcase
+  Briefcase,
+  Home
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import CMSEditor from '@/components/CMSEditor';
+import HeroEditor from '@/components/HeroEditor';
 import FormSubmissions from '@/components/FormSubmissions';
 import LiveChatManager from '@/components/LiveChatManager';
 import TestimonialManager from '@/components/TestimonialManager';
@@ -123,6 +124,7 @@ const Admin = () => {
 
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
+    { id: 'hero', label: 'Hero Section', icon: Home },
     { id: 'cms', label: 'CMS', icon: Globe },
     { id: 'portfolio', label: 'Portfolio', icon: Briefcase },
     { id: 'submissions', label: 'Form Submissions', icon: MessageSquare },
@@ -177,6 +179,7 @@ const Admin = () => {
 
             <div className="bg-gray-50 rounded-xl p-6">
               {activeTab === 'dashboard' && renderDashboard()}
+              {activeTab === 'hero' && <HeroEditor />}
               {activeTab === 'cms' && <CMSEditor />}
               {activeTab === 'portfolio' && <PortfolioManager />}
               {activeTab === 'submissions' && <FormSubmissions />}

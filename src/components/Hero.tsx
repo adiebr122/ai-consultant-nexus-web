@@ -9,6 +9,7 @@ interface HeroContent {
   description: string;
   cta_primary: string;
   cta_secondary: string;
+  cta_primary_url: string;
   hero_image_url: string | null;
   dynamic_headlines?: string[];
   stats?: Array<{
@@ -59,6 +60,7 @@ const Hero = () => {
           description: data.content || 'Solusi AI terdepan untuk bisnis modern. Kami membantu perusahaan mengoptimalkan operasional, meningkatkan efisiensi, dan mencapai pertumbuhan berkelanjutan melalui implementasi teknologi Artificial Intelligence yang tepat sasaran.',
           cta_primary: metadata.cta_primary || 'Konsultasi Gratis',
           cta_secondary: metadata.cta_secondary || 'Lihat Portfolio',
+          cta_primary_url: metadata.cta_primary_url || 'https://wa.me/6281234567890',
           hero_image_url: data.image_url,
           dynamic_headlines: metadata.dynamic_headlines || [],
           stats: metadata.stats || []
@@ -78,6 +80,7 @@ const Hero = () => {
     description: 'Solusi AI terdepan untuk bisnis modern. Kami membantu perusahaan mengoptimalkan operasional, meningkatkan efisiensi, dan mencapai pertumbuhan berkelanjutan melalui implementasi teknologi Artificial Intelligence yang tepat sasaran.',
     cta_primary: 'Konsultasi Gratis',
     cta_secondary: 'Lihat Portfolio',
+    cta_primary_url: 'https://wa.me/6281234567890',
     hero_image_url: null,
     dynamic_headlines: [
       'Revolusi Bisnis dengan Kekuatan AI 🚀',
@@ -107,6 +110,14 @@ const Hero = () => {
     'Star': Star,
     'TrendingUp': TrendingUp,
     'default': Sparkles
+  };
+
+  const handlePrimaryClick = () => {
+    window.open(content.cta_primary_url, '_blank');
+  };
+
+  const handleSecondaryClick = () => {
+    window.location.href = '/portfolio';
   };
 
   if (loading) {
@@ -160,10 +171,7 @@ const Hero = () => {
                 <h2 className="text-2xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent transition-all duration-1000 ease-in-out transform">
                   <span 
                     key={currentHeadlineIndex}
-                    className="inline-block animate-fade-in"
-                    style={{
-                      animation: 'fadeInUp 1s ease-out',
-                    }}
+                    className="inline-block animate-bounce"
                   >
                     {currentHeadlines[currentHeadlineIndex]}
                   </span>
@@ -176,11 +184,17 @@ const Hero = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4">
-              <button className="group bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-2xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 flex items-center justify-center font-semibold shadow-xl hover:shadow-2xl transform hover:-translate-y-1">
+              <button 
+                onClick={handlePrimaryClick}
+                className="group bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-2xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 flex items-center justify-center font-semibold shadow-xl hover:shadow-2xl transform hover:-translate-y-1"
+              >
                 {content.cta_primary}
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </button>
-              <button className="group border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-2xl hover:border-indigo-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all duration-300 flex items-center justify-center font-semibold">
+              <button 
+                onClick={handleSecondaryClick}
+                className="group border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-2xl hover:border-indigo-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all duration-300 flex items-center justify-center font-semibold"
+              >
                 <Play className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
                 {content.cta_secondary}
               </button>
@@ -229,20 +243,6 @@ const Hero = () => {
           </div>
         </div>
       </div>
-
-      {/* Add custom CSS for fade animation */}
-      <style jsx>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
     </section>
   );
 };
