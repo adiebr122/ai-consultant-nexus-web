@@ -2,23 +2,24 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { 
-  Receipt, 
+  FileText, 
   Plus, 
   Edit3, 
   Trash2, 
   Download, 
   Mail, 
+  Eye,
   Search,
   RefreshCw,
+  CreditCard,
+  User,
   Building,
   Calendar,
   DollarSign,
-  User,
-  Clock,
   CheckCircle,
-  AlertCircle,
+  Clock,
   XCircle,
-  CreditCard
+  AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -38,6 +39,8 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { InvoicePreview } from './invoice/InvoicePreview';
+import { downloadAsPDF } from '@/lib/pdfUtils';
 
 interface Invoice {
   id: string;
@@ -56,8 +59,8 @@ interface Invoice {
   notes: string | null;
   terms_conditions: string | null;
   created_at: string;
-  quotation_id: string | null;
   lead_id: string | null;
+  quotation_id: string | null;
 }
 
 interface InvoiceItem {
@@ -69,6 +72,14 @@ interface InvoiceItem {
   total: number;
 }
 
+interface CRMContact {
+  id: string;
+  client_name: string;
+  client_email: string;
+  client_company: string | null;
+  client_phone: string | null;
+}
+
 interface Quotation {
   id: string;
   quotation_number: string;
@@ -78,23 +89,28 @@ interface Quotation {
   total_amount: number;
 }
 
-interface CRMContact {
-  id: string;
-  client_name: string;
-  client_email: string;
-  client_company: string | null;
-}
-
 const InvoiceManager = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [crmContacts, setCrmContacts] = useState<CRMContact[]>([]);
+  const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([]);
+  
+  const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null);
+  const [previewItems, setPreviewItems] = useState<InvoiceItem[]>([]);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [companyInfo, setCompanyInfo] = useState({
+    name: 'PT. Example Company',
+    address: 'Jl. Contoh No. 123\nJakarta 12345\nIndonesia',
+    phone: '+62 21 1234 5678',
+    email: 'info@example.com'
+  });
   
   const [formData, setFormData] = useState({
     quotation_id: '',
@@ -107,7 +123,7 @@ const InvoiceManager = () => {
     due_date: '',
     tax_percentage: 11,
     notes: '',
-    terms_conditions: 'Pembayaran dilakukan maksimal 30 hari setelah invoice diterima.',
+    terms_conditions: 'Pembayaran dalam 30 hari setelah tanggal invoice.',
     items: [{
       item_name: '',
       description: '',
@@ -119,17 +135,16 @@ const InvoiceManager = () => {
   const { toast } = useToast();
 
   const statusOptions = [
-    { value: 'unpaid', label: 'Belum Dibayar', color: 'bg-yellow-100 text-yellow-700', icon: Clock },
+    { value: 'unpaid', label: 'Belum Lunas', color: 'bg-red-100 text-red-700', icon: AlertTriangle },
     { value: 'paid', label: 'Lunas', color: 'bg-green-100 text-green-700', icon: CheckCircle },
-    { value: 'overdue', label: 'Jatuh Tempo', color: 'bg-red-100 text-red-700', icon: AlertCircle },
-    { value: 'cancelled', label: 'Dibatalkan', color: 'bg-gray-100 text-gray-700', icon: XCircle },
-    { value: 'partial', label: 'Sebagian', color: 'bg-blue-100 text-blue-700', icon: CreditCard }
+    { value: 'overdue', label: 'Terlambat', color: 'bg-orange-100 text-orange-700', icon: Clock },
+    { value: 'cancelled', label: 'Dibatalkan', color: 'bg-gray-100 text-gray-700', icon: XCircle }
   ];
 
   useEffect(() => {
     fetchInvoices();
-    fetchQuotations();
     fetchCRMContacts();
+    fetchQuotations();
   }, []);
 
   const fetchInvoices = async () => {
@@ -153,6 +168,20 @@ const InvoiceManager = () => {
     }
   };
 
+  const fetchCRMContacts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('user_management')
+        .select('id, client_name, client_email, client_company, client_phone')
+        .order('client_name', { ascending: true });
+
+      if (error) throw error;
+      setCrmContacts(data || []);
+    } catch (error: any) {
+      console.error('Error fetching CRM contacts:', error);
+    }
+  };
+
   const fetchQuotations = async () => {
     try {
       const { data, error } = await supabase
@@ -165,20 +194,6 @@ const InvoiceManager = () => {
       setQuotations(data || []);
     } catch (error: any) {
       console.error('Error fetching quotations:', error);
-    }
-  };
-
-  const fetchCRMContacts = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('user_management')
-        .select('id, client_name, client_email, client_company')
-        .order('client_name', { ascending: true });
-
-      if (error) throw error;
-      setCrmContacts(data || []);
-    } catch (error: any) {
-      console.error('Error fetching CRM contacts:', error);
     }
   };
 
@@ -199,6 +214,61 @@ const InvoiceManager = () => {
     const total = subtotal + taxAmount;
     
     return { subtotal, taxAmount, total };
+  };
+
+  const handlePreview = async (invoice: Invoice) => {
+    try {
+      // Fetch invoice items
+      const { data: items, error } = await supabase
+        .from('invoice_items')
+        .select('*')
+        .eq('invoice_id', invoice.id);
+
+      if (error) throw error;
+
+      setPreviewInvoice(invoice);
+      setPreviewItems(items || []);
+      setIsPreviewOpen(true);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: `Gagal memuat preview: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDownload = async (invoice: Invoice) => {
+    try {
+      // First show preview
+      await handlePreview(invoice);
+      
+      // Wait a bit for the preview to render
+      setTimeout(async () => {
+        try {
+          await downloadAsPDF(
+            'invoice-preview',
+            `Invoice-${invoice.invoice_number}.pdf`
+          );
+          toast({
+            title: "Berhasil!",
+            description: "PDF berhasil didownload",
+          });
+        } catch (error: any) {
+          toast({
+            title: "Error",
+            description: `Gagal download PDF: ${error.message}`,
+            variant: "destructive",
+          });
+        }
+      }, 1000);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: `Gagal memuat data untuk download: ${error.message}`,
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSave = async () => {
@@ -371,13 +441,6 @@ const InvoiceManager = () => {
     }
   };
 
-  const handleDownload = async (invoice: Invoice) => {
-    toast({
-      title: "Info",
-      description: "Fitur download PDF akan segera tersedia",
-    });
-  };
-
   const handleSendEmail = async (invoice: Invoice) => {
     toast({
       title: "Info",
@@ -422,7 +485,7 @@ const InvoiceManager = () => {
       due_date: '',
       tax_percentage: 11,
       notes: '',
-      terms_conditions: 'Pembayaran dilakukan maksimal 30 hari setelah invoice diterima.',
+      terms_conditions: 'Pembayaran dalam 30 hari setelah tanggal invoice.',
       items: [{
         item_name: '',
         description: '',
@@ -430,60 +493,6 @@ const InvoiceManager = () => {
         unit_price: 0
       }]
     });
-  };
-
-  const handleQuotationSelect = async (quotationId: string) => {
-    if (!quotationId) return;
-
-    try {
-      // Get quotation details
-      const { data: quotation, error: quotationError } = await supabase
-        .from('quotations')
-        .select('*')
-        .eq('id', quotationId)
-        .single();
-
-      if (quotationError) throw quotationError;
-
-      // Get quotation items
-      const { data: items, error: itemsError } = await supabase
-        .from('quotation_items')
-        .select('*')
-        .eq('quotation_id', quotationId);
-
-      if (itemsError) throw itemsError;
-
-      // Calculate due date (30 days from invoice date)
-      const invoiceDate = new Date(formData.invoice_date);
-      const dueDate = new Date(invoiceDate);
-      dueDate.setDate(dueDate.getDate() + 30);
-
-      setFormData(prev => ({
-        ...prev,
-        quotation_id: quotationId,
-        lead_id: quotation.lead_id || '',
-        client_name: quotation.client_name,
-        client_email: quotation.client_email,
-        client_company: quotation.client_company || '',
-        client_address: quotation.client_address || '',
-        due_date: dueDate.toISOString().split('T')[0],
-        tax_percentage: quotation.tax_percentage,
-        notes: quotation.notes || '',
-        terms_conditions: quotation.terms_conditions || 'Pembayaran dilakukan maksimal 30 hari setelah invoice diterima.',
-        items: items.map(item => ({
-          item_name: item.item_name,
-          description: item.description || '',
-          quantity: item.quantity,
-          unit_price: item.unit_price
-        }))
-      }));
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: `Gagal memuat data penawaran: ${error.message}`,
-        variant: "destructive",
-      });
-    }
   };
 
   const handleLeadSelect = (leadId: string) => {
@@ -496,6 +505,47 @@ const InvoiceManager = () => {
         client_email: selectedLead.client_email,
         client_company: selectedLead.client_company || ''
       }));
+    }
+  };
+
+  const handleQuotationSelect = (quotationId: string) => {
+    const selectedQuotation = quotations.find(q => q.id === quotationId);
+    if (selectedQuotation) {
+      setFormData(prev => ({
+        ...prev,
+        quotation_id: quotationId,
+        client_name: selectedQuotation.client_name,
+        client_email: selectedQuotation.client_email,
+        client_company: selectedQuotation.client_company || ''
+      }));
+      
+      // Fetch quotation items to populate invoice items
+      fetchQuotationItems(quotationId);
+    }
+  };
+
+  const fetchQuotationItems = async (quotationId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('quotation_items')
+        .select('*')
+        .eq('quotation_id', quotationId);
+
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        setFormData(prev => ({
+          ...prev,
+          items: data.map(item => ({
+            item_name: item.item_name,
+            description: item.description || '',
+            quantity: item.quantity,
+            unit_price: item.unit_price
+          }))
+        }));
+      }
+    } catch (error: any) {
+      console.error('Error fetching quotation items:', error);
     }
   };
 
@@ -541,8 +591,11 @@ const InvoiceManager = () => {
     }).format(amount);
   };
 
-  const isOverdue = (invoice: Invoice) => {
-    return invoice.due_date && new Date(invoice.due_date) < new Date() && invoice.status === 'unpaid';
+  const updateTaxPercentage = (value: string) => {
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue) && numValue >= 0 && numValue <= 100) {
+      setFormData(prev => ({ ...prev, tax_percentage: numValue }));
+    }
   };
 
   const filteredInvoices = invoices.filter(invoice => {
@@ -568,14 +621,14 @@ const InvoiceManager = () => {
   }
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-br from-green-50 via-teal-50 to-blue-50 p-6">
+    <div className="w-full min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-6">
       <div className="max-w-full space-y-8">
         {/* Header with Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card className="bg-white shadow-lg border-0 hover:shadow-xl transition-shadow duration-300">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
-                <Receipt className="h-4 w-4 mr-2 text-green-500" />
+                <FileText className="h-4 w-4 mr-2 text-green-500" />
                 Total Invoice
               </CardTitle>
             </CardHeader>
@@ -588,15 +641,15 @@ const InvoiceManager = () => {
           <Card className="bg-white shadow-lg border-0 hover:shadow-xl transition-shadow duration-300">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
-                <Clock className="h-4 w-4 mr-2 text-yellow-500" />
-                Belum Dibayar
+                <AlertTriangle className="h-4 w-4 mr-2 text-red-500" />
+                Belum Lunas
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-yellow-600">
-                {invoices.filter(i => i.status === 'unpaid').length}
+              <div className="text-3xl font-bold text-red-600">
+                {invoices.filter(q => q.status === 'unpaid').length}
               </div>
-              <p className="text-xs text-gray-500 mt-1">Invoice pending</p>
+              <p className="text-xs text-gray-500 mt-1">Menunggu pembayaran</p>
             </CardContent>
           </Card>
           
@@ -609,24 +662,24 @@ const InvoiceManager = () => {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-green-600">
-                {invoices.filter(i => i.status === 'paid').length}
+                {invoices.filter(q => q.status === 'paid').length}
               </div>
-              <p className="text-xs text-gray-500 mt-1">Invoice dibayar</p>
+              <p className="text-xs text-gray-500 mt-1">Invoice terbayar</p>
             </CardContent>
           </Card>
           
           <Card className="bg-white shadow-lg border-0 hover:shadow-xl transition-shadow duration-300">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
-                <DollarSign className="h-4 w-4 mr-2 text-teal-500" />
-                Total Nilai
+                <DollarSign className="h-4 w-4 mr-2 text-green-500" />
+                Total Pendapatan
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-teal-600">
-                {formatCurrency(invoices.reduce((sum, i) => sum + i.total_amount, 0))}
+              <div className="text-3xl font-bold text-green-600">
+                {formatCurrency(invoices.filter(i => i.status === 'paid').reduce((sum, i) => sum + i.total_amount, 0))}
               </div>
-              <p className="text-xs text-gray-500 mt-1">Nilai total invoice</p>
+              <p className="text-xs text-gray-500 mt-1">Dari invoice lunas</p>
             </CardContent>
           </Card>
         </div>
@@ -635,10 +688,10 @@ const InvoiceManager = () => {
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white rounded-xl p-6 shadow-lg border-0">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 flex items-center mb-2">
-              <Receipt className="h-8 w-8 mr-3 text-green-600" />
+              <CreditCard className="h-8 w-8 mr-3 text-green-600" />
               Manajemen Invoice
             </h1>
-            <p className="text-gray-600 text-lg">Kelola invoice dan tagihan untuk klien Anda dengan mudah</p>
+            <p className="text-gray-600 text-lg">Kelola invoice dan pantau pembayaran dari klien Anda</p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
@@ -654,64 +707,12 @@ const InvoiceManager = () => {
             <DialogContent className="max-w-[95vw] w-full max-h-[95vh] overflow-y-auto bg-white">
               <DialogHeader className="border-b pb-4">
                 <DialogTitle className="text-2xl font-bold flex items-center text-gray-900">
-                  <Receipt className="h-6 w-6 mr-3 text-green-600" />
+                  <FileText className="h-6 w-6 mr-3 text-green-600" />
                   {editingId ? 'Edit Invoice' : 'Buat Invoice Baru'}
                 </DialogTitle>
               </DialogHeader>
               
               <div className="space-y-8 mt-6">
-                {/* Source Selection Card */}
-                <Card className="shadow-lg border-0">
-                  <CardHeader className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-t-lg">
-                    <CardTitle className="text-xl font-semibold text-gray-900">Sumber Data</CardTitle>
-                    <CardDescription className="text-gray-600">
-                      Pilih dari penawaran yang telah diterima atau buat invoice baru
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6 p-6">
-                    {/* Quotation Selection */}
-                    <div className="space-y-2">
-                      <label className="block text-sm font-semibold text-gray-700">
-                        Pilih dari Penawaran yang Disetujui (Opsional)
-                      </label>
-                      <select
-                        value={formData.quotation_id}
-                        onChange={(e) => handleQuotationSelect(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white shadow-sm"
-                      >
-                        <option value="">Pilih penawaran atau buat manual</option>
-                        {quotations.map(quotation => (
-                          <option key={quotation.id} value={quotation.id}>
-                            {quotation.quotation_number} - {quotation.client_name} ({formatCurrency(quotation.total_amount)})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Lead Selection (only show if no quotation selected) */}
-                    {!formData.quotation_id && (
-                      <div className="space-y-2">
-                        <label className="block text-sm font-semibold text-gray-700">
-                          Pilih dari CRM (Opsional)
-                        </label>
-                        <select
-                          value={formData.lead_id}
-                          onChange={(e) => handleLeadSelect(e.target.value)}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white shadow-sm"
-                        >
-                          <option value="">Pilih kontak dari CRM atau isi manual</option>
-                          {crmContacts.map(contact => (
-                            <option key={contact.id} value={contact.id}>
-                              {contact.client_name} - {contact.client_email}
-                              {contact.client_company && ` (${contact.client_company})`}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
                 {/* Client Information Card */}
                 <Card className="shadow-lg border-0">
                   <CardHeader className="bg-gradient-to-r from-green-50 to-teal-50 rounded-t-lg">
@@ -723,7 +724,46 @@ const InvoiceManager = () => {
                       Masukkan data lengkap klien untuk invoice ini
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="p-6">
+                  <CardContent className="space-y-6 p-6">
+                    {/* Quotation Selection */}
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold text-gray-700">
+                        Buat dari Penawaran (Opsional)
+                      </label>
+                      <select
+                        value={formData.quotation_id}
+                        onChange={(e) => handleQuotationSelect(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white shadow-sm"
+                      >
+                        <option value="">Pilih penawaran atau buat invoice baru</option>
+                        {quotations.map(quotation => (
+                          <option key={quotation.id} value={quotation.id}>
+                            {quotation.quotation_number} - {quotation.client_name} ({formatCurrency(quotation.total_amount)})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Lead Selection */}
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold text-gray-700">
+                        Pilih dari CRM (Opsional)
+                      </label>
+                      <select
+                        value={formData.lead_id}
+                        onChange={(e) => handleLeadSelect(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white shadow-sm"
+                      >
+                        <option value="">Pilih kontak dari CRM atau isi manual</option>
+                        {crmContacts.map(contact => (
+                          <option key={contact.id} value={contact.id}>
+                            {contact.client_name} - {contact.client_email}
+                            {contact.client_company && ` (${contact.client_company})`}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <label className="block text-sm font-semibold text-gray-700">
@@ -780,7 +820,7 @@ const InvoiceManager = () => {
 
                       <div className="space-y-2">
                         <label className="block text-sm font-semibold text-gray-700">
-                          Tanggal Jatuh Tempo
+                          Jatuh Tempo
                         </label>
                         <input
                           type="date"
@@ -792,21 +832,25 @@ const InvoiceManager = () => {
 
                       <div className="space-y-2">
                         <label className="block text-sm font-semibold text-gray-700">
-                          PPN (%)
+                          PPN (%) - Dapat diubah sesuai kebutuhan
                         </label>
                         <input
                           type="number"
                           value={formData.tax_percentage}
-                          onChange={(e) => setFormData({ ...formData, tax_percentage: parseFloat(e.target.value) || 0 })}
+                          onChange={(e) => updateTaxPercentage(e.target.value)}
                           className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent shadow-sm"
                           min="0"
+                          max="100"
                           step="0.01"
-                          placeholder="11"
+                          placeholder="Masukkan persentase pajak (0-100)"
                         />
+                        <p className="text-xs text-gray-500">
+                          Masukkan 0 jika tidak ada pajak, atau sesuaikan dengan tarif pajak yang berlaku
+                        </p>
                       </div>
                     </div>
 
-                    <div className="mt-6 space-y-2">
+                    <div className="space-y-2">
                       <label className="block text-sm font-semibold text-gray-700">
                         Alamat Klien
                       </label>
@@ -823,11 +867,11 @@ const InvoiceManager = () => {
 
                 {/* Items Card */}
                 <Card className="shadow-lg border-0">
-                  <CardHeader className="bg-gradient-to-r from-teal-50 to-cyan-50 rounded-t-lg">
+                  <CardHeader className="bg-gradient-to-r from-teal-50 to-emerald-50 rounded-t-lg">
                     <div className="flex justify-between items-center">
                       <div>
                         <CardTitle className="text-xl font-semibold flex items-center text-gray-900">
-                          <Receipt className="h-6 w-6 mr-2 text-teal-600" />
+                          <FileText className="h-6 w-6 mr-2 text-teal-600" />
                           Item Invoice
                         </CardTitle>
                         <CardDescription className="text-gray-600">
@@ -895,7 +939,7 @@ const InvoiceManager = () => {
                               <label className="block text-sm font-semibold text-gray-700 mb-2">
                                 Total
                               </label>
-                              <div className="px-4 py-3 bg-gray-100 border border-gray-300 rounded-xl font-semibold text-teal-700 shadow-inner">
+                              <div className="px-4 py-3 bg-gray-100 border border-gray-300 rounded-xl font-semibold text-green-700 shadow-inner">
                                 {formatCurrency(item.quantity * item.unit_price)}
                               </div>
                             </div>
@@ -944,7 +988,7 @@ const InvoiceManager = () => {
                         </div>
                         <div className="flex justify-between items-center text-xl font-bold border-t pt-3 mt-3 border-gray-300">
                           <span className="text-gray-900">Total:</span>
-                          <span className="text-teal-600">{formatCurrency(total)}</span>
+                          <span className="text-green-600">{formatCurrency(total)}</span>
                         </div>
                       </div>
                     </div>
@@ -953,7 +997,7 @@ const InvoiceManager = () => {
 
                 {/* Notes and Terms Card */}
                 <Card className="shadow-lg border-0">
-                  <CardHeader className="bg-gradient-to-r from-cyan-50 to-blue-50 rounded-t-lg">
+                  <CardHeader className="bg-gradient-to-r from-emerald-50 to-green-50 rounded-t-lg">
                     <CardTitle className="text-xl font-semibold text-gray-900">Catatan & Syarat</CardTitle>
                     <CardDescription className="text-gray-600">
                       Tambahkan catatan dan syarat ketentuan untuk invoice ini
@@ -969,7 +1013,7 @@ const InvoiceManager = () => {
                           value={formData.notes}
                           onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                           rows={5}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent shadow-sm"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent shadow-sm"
                           placeholder="Catatan tambahan untuk invoice ini..."
                         />
                       </div>
@@ -982,8 +1026,8 @@ const InvoiceManager = () => {
                           value={formData.terms_conditions}
                           onChange={(e) => setFormData({ ...formData, terms_conditions: e.target.value })}
                           rows={5}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent shadow-sm"
-                          placeholder="Syarat dan ketentuan pembayaran..."
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent shadow-sm"
+                          placeholder="Syarat dan ketentuan invoice..."
                         />
                       </div>
                     </div>
@@ -1010,7 +1054,7 @@ const InvoiceManager = () => {
                   {saving ? (
                     <RefreshCw className="h-5 w-5 animate-spin mr-2" />
                   ) : (
-                    <Receipt className="h-5 w-5 mr-2" />
+                    <FileText className="h-5 w-5 mr-2" />
                   )}
                   {saving ? 'Menyimpan...' : (editingId ? 'Update Invoice' : 'Simpan Invoice')}
                 </Button>
@@ -1061,7 +1105,6 @@ const InvoiceManager = () => {
                   <TableHead className="font-semibold text-gray-700">No. Invoice</TableHead>
                   <TableHead className="font-semibold text-gray-700">Klien</TableHead>
                   <TableHead className="font-semibold text-gray-700">Tanggal</TableHead>
-                  <TableHead className="font-semibold text-gray-700">Jatuh Tempo</TableHead>
                   <TableHead className="font-semibold text-gray-700">Total</TableHead>
                   <TableHead className="font-semibold text-gray-700">Status</TableHead>
                   <TableHead className="font-semibold text-gray-700 text-center">Aksi</TableHead>
@@ -1070,14 +1113,14 @@ const InvoiceManager = () => {
               <TableBody>
                 {filteredInvoices.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-16">
+                    <TableCell colSpan={6} className="text-center py-16">
                       <div className="flex flex-col items-center">
-                        <Receipt className="h-16 w-16 text-gray-300 mb-4" />
+                        <FileText className="h-16 w-16 text-gray-300 mb-4" />
                         <h4 className="text-xl font-medium text-gray-900 mb-2">
                           {searchTerm ? 'Tidak ada hasil pencarian' : 'Belum Ada Invoice'}
                         </h4>
                         <p className="text-gray-500 mb-6 max-w-md text-center">
-                          {searchTerm ? 'Coba kata kunci yang berbeda' : 'Buat invoice pertama Anda untuk klien dan mulai mengelola transaksi keuangan Anda'}
+                          {searchTerm ? 'Coba kata kunci yang berbeda' : 'Buat invoice pertama Anda untuk klien dan mulai mengelola pembayaran Anda'}
                         </p>
                         {!searchTerm && (
                           <Button onClick={() => setIsDialogOpen(true)} className="bg-green-600 hover:bg-green-700 px-6 py-2 text-lg">
@@ -1092,13 +1135,12 @@ const InvoiceManager = () => {
                   filteredInvoices.map((invoice) => {
                     const statusInfo = getStatusInfo(invoice.status);
                     const StatusIcon = statusInfo.icon;
-                    const overdue = isOverdue(invoice);
                     
                     return (
                       <TableRow key={invoice.id} className="hover:bg-gray-50">
                         <TableCell className="font-medium">
                           <div className="flex items-center">
-                            <Receipt className="h-4 w-4 mr-2 text-green-600" />
+                            <FileText className="h-4 w-4 mr-2 text-green-600" />
                             {invoice.invoice_number}
                           </div>
                         </TableCell>
@@ -1118,21 +1160,17 @@ const InvoiceManager = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="text-sm flex items-center">
-                            <Calendar className="h-3 w-3 mr-1 text-gray-400" />
-                            {new Date(invoice.invoice_date).toLocaleDateString('id-ID')}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {invoice.due_date ? (
-                            <div className={`text-sm flex items-center ${overdue ? 'text-red-600 font-medium' : ''}`}>
-                              <Calendar className="h-3 w-3 mr-1" />
-                              {new Date(invoice.due_date).toLocaleDateString('id-ID')}
-                              {overdue && <span className="ml-1 text-xs">(Lewat)</span>}
+                          <div className="text-sm">
+                            <div className="flex items-center">
+                              <Calendar className="h-3 w-3 mr-1 text-gray-400" />
+                              {new Date(invoice.invoice_date).toLocaleDateString('id-ID')}
                             </div>
-                          ) : (
-                            <span className="text-gray-400">-</span>
-                          )}
+                            {invoice.due_date && (
+                              <div className="text-gray-500 text-xs">
+                                Jatuh tempo: {new Date(invoice.due_date).toLocaleDateString('id-ID')}
+                              </div>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="font-semibold">
                           <div className="flex items-center">
@@ -1141,13 +1179,22 @@ const InvoiceManager = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge className={`${overdue ? 'bg-red-100 text-red-700' : statusInfo.color} flex items-center w-fit px-3 py-1.5`}>
+                          <Badge className={`${statusInfo.color} flex items-center w-fit px-3 py-1.5`}>
                             <StatusIcon className="h-3 w-3 mr-1" />
-                            {overdue ? 'Jatuh Tempo' : statusInfo.label}
+                            {statusInfo.label}
                           </Badge>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center justify-center space-x-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handlePreview(invoice)}
+                              className="hover:bg-blue-50 h-9 w-9"
+                              title="Preview"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
                             <Button
                               size="sm"
                               variant="outline"
@@ -1175,7 +1222,7 @@ const InvoiceManager = () => {
                             >
                               <Mail className="h-4 w-4" />
                             </Button>
-                            {invoice.status === 'unpaid' && !overdue && (
+                            {invoice.status === 'unpaid' && (
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -1206,6 +1253,63 @@ const InvoiceManager = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Preview Dialog */}
+      <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+        <DialogContent className="max-w-[95vw] w-full max-h-[95vh] overflow-y-auto bg-white">
+          <DialogHeader className="border-b pb-4">
+            <DialogTitle className="text-2xl font-bold flex items-center text-gray-900">
+              <Eye className="h-6 w-6 mr-3 text-green-600" />
+              Preview Invoice
+            </DialogTitle>
+          </DialogHeader>
+          
+          {previewInvoice && (
+            <div className="mt-6">
+              <InvoicePreview
+                invoice={previewInvoice}
+                items={previewItems}
+                companyInfo={companyInfo}
+              />
+              
+              <div className="flex justify-end space-x-4 mt-8 pt-6 border-t">
+                <Button
+                  onClick={() => setIsPreviewOpen(false)}
+                  variant="outline"
+                  size="lg"
+                >
+                  Tutup
+                </Button>
+                <Button
+                  onClick={async () => {
+                    try {
+                      await downloadAsPDF(
+                        'invoice-preview',
+                        `Invoice-${previewInvoice.invoice_number}.pdf`
+                      );
+                      toast({
+                        title: "Berhasil!",
+                        description: "PDF berhasil didownload",
+                      });
+                    } catch (error: any) {
+                      toast({
+                        title: "Error",
+                        description: `Gagal download PDF: ${error.message}`,
+                        variant: "destructive",
+                      });
+                    }
+                  }}
+                  className="bg-green-600 hover:bg-green-700"
+                  size="lg"
+                >
+                  <Download className="h-5 w-5 mr-2" />
+                  Download PDF
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -38,6 +38,8 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { QuotationPreview } from './quotation/QuotationPreview';
+import { downloadAsPDF } from '@/lib/pdfUtils';
 
 interface Quotation {
   id: string;
@@ -116,6 +118,16 @@ const QuotationManager = () => {
     { value: 'rejected', label: 'Ditolak', color: 'bg-red-100 text-red-700', icon: XCircle },
     { value: 'expired', label: 'Kedaluwarsa', color: 'bg-orange-100 text-orange-700', icon: Calendar }
   ];
+
+  const [previewQuotation, setPreviewQuotation] = useState<Quotation | null>(null);
+  const [previewItems, setPreviewItems] = useState<QuotationItem[]>([]);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [companyInfo, setCompanyInfo] = useState({
+    name: 'PT. Example Company',
+    address: 'Jl. Contoh No. 123\nJakarta 12345\nIndonesia',
+    phone: '+62 21 1234 5678',
+    email: 'info@example.com'
+  });
 
   useEffect(() => {
     fetchQuotations();
@@ -345,10 +357,54 @@ const QuotationManager = () => {
   };
 
   const handleDownload = async (quotation: Quotation) => {
-    toast({
-      title: "Info",
-      description: "Fitur download PDF akan segera tersedia",
-    });
+    try {
+      await handlePreview(quotation);
+      setTimeout(async () => {
+        try {
+          await downloadAsPDF(
+            'quotation-preview',
+            `Penawaran-${quotation.quotation_number}.pdf`
+          );
+          toast({
+            title: "Berhasil!",
+            description: "PDF berhasil didownload",
+          });
+        } catch (error: any) {
+          toast({
+            title: "Error",
+            description: `Gagal download PDF: ${error.message}`,
+            variant: "destructive",
+          });
+        }
+      }, 1000);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: `Gagal memuat data untuk download: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handlePreview = async (quotation: Quotation) => {
+    try {
+      const { data: items, error } = await supabase
+        .from('quotation_items')
+        .select('*')
+        .eq('quotation_id', quotation.id);
+
+      if (error) throw error;
+
+      setPreviewQuotation(quotation);
+      setPreviewItems(items || []);
+      setIsPreviewOpen(true);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: `Gagal memuat preview: ${error.message}`,
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSendEmail = async (quotation: Quotation) => {
@@ -1027,6 +1083,15 @@ const QuotationManager = () => {
                             <Button
                               size="sm"
                               variant="outline"
+                              onClick={() => handlePreview(quotation)}
+                              className="hover:bg-blue-50 h-9 w-9"
+                              title="Preview"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
                               onClick={() => handleEdit(quotation)}
                               className="hover:bg-blue-50 h-9 w-9"
                               title="Edit"
@@ -1082,6 +1147,63 @@ const QuotationManager = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Preview Dialog */}
+      <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+        <DialogContent className="max-w-[95vw] w-full max-h-[95vh] overflow-y-auto bg-white">
+          <DialogHeader className="border-b pb-4">
+            <DialogTitle className="text-2xl font-bold flex items-center text-gray-900">
+              <Eye className="h-6 w-6 mr-3 text-blue-600" />
+              Preview Penawaran
+            </DialogTitle>
+          </DialogHeader>
+          
+          {previewQuotation && (
+            <div className="mt-6">
+              <QuotationPreview
+                quotation={previewQuotation}
+                items={previewItems}
+                companyInfo={companyInfo}
+              />
+              
+              <div className="flex justify-end space-x-4 mt-8 pt-6 border-t">
+                <Button
+                  onClick={() => setIsPreviewOpen(false)}
+                  variant="outline"
+                  size="lg"
+                >
+                  Tutup
+                </Button>
+                <Button
+                  onClick={async () => {
+                    try {
+                      await downloadAsPDF(
+                        'quotation-preview',
+                        `Penawaran-${previewQuotation.quotation_number}.pdf`
+                      );
+                      toast({
+                        title: "Berhasil!",
+                        description: "PDF berhasil didownload",
+                      });
+                    } catch (error: any) {
+                      toast({
+                        title: "Error",
+                        description: `Gagal download PDF: ${error.message}`,
+                        variant: "destructive",
+                      });
+                    }
+                  }}
+                  className="bg-green-600 hover:bg-green-700"
+                  size="lg"
+                >
+                  <Download className="h-5 w-5 mr-2" />
+                  Download PDF
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
