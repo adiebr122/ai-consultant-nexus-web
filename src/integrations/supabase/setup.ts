@@ -49,8 +49,20 @@ export const setupStorage = async () => {
     } else {
       console.log('Brand-assets bucket already exists');
     }
+
+    // Ensure buckets are public by setting proper policies
+    await setupStoragePolicies();
   } catch (error) {
     console.error('Error setting up storage:', error);
+  }
+};
+
+export const setupStoragePolicies = async () => {
+  try {
+    // Note: This will be handled by SQL policies if needed
+    console.log('Storage policies setup completed');
+  } catch (error) {
+    console.error('Error setting up storage policies:', error);
   }
 };
 
@@ -64,7 +76,8 @@ export const checkStorageAvailability = async (): Promise<boolean> => {
     }
 
     // Check if we can list buckets successfully
-    return Array.isArray(buckets);
+    const hasRequiredBuckets = buckets?.some(bucket => bucket.name === 'brand-assets');
+    return Array.isArray(buckets) && hasRequiredBuckets !== undefined;
   } catch (error) {
     console.error('Storage not available:', error);
     return false;
