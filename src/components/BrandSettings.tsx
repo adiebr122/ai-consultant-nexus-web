@@ -160,6 +160,7 @@ const BrandSettings = () => {
       console.log('Uploading to storage with filename:', fileName);
       
       // Try to upload to storage
+      let uploadData;
       const { data, error } = await supabase.storage
         .from('brand-assets')
         .upload(fileName, file, {
@@ -189,7 +190,7 @@ const BrandSettings = () => {
             if (retryError) {
               throw retryError;
             } else {
-              data = retryData;
+              uploadData = retryData;
             }
           } else {
             throw error;
@@ -197,9 +198,11 @@ const BrandSettings = () => {
         } else {
           throw error;
         }
+      } else {
+        uploadData = data;
       }
 
-      console.log('Upload successful:', data);
+      console.log('Upload successful:', uploadData);
       
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
