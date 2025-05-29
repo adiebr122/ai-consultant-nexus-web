@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@/lib/pdfUtils';
 import { Building, Calendar, Mail, Phone, User } from 'lucide-react';
 
 interface QuotationItem {
