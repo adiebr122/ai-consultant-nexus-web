@@ -1,7 +1,6 @@
-
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import AdminSidebar from '@/components/AdminSidebar';
 import HeroEditor from '@/components/HeroEditor';
@@ -17,6 +16,8 @@ import InvoiceManager from '@/components/InvoiceManager';
 import UserManagement from '@/components/UserManagement';
 import SettingsManager from '@/components/SettingsManager';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Users, 
   FileText, 
@@ -28,12 +29,17 @@ import {
   TrendingUp,
   Eye,
   Mail,
-  Phone
+  Phone,
+  LogOut,
+  User
 } from 'lucide-react';
 
 const Admin = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [loggingOut, setLoggingOut] = useState(false);
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
   if (loading) {
     return (
@@ -46,6 +52,27 @@ const Admin = () => {
   if (!user) {
     return <Navigate to="/auth" replace />;
   }
+
+  const handleLogout = async () => {
+    try {
+      setLoggingOut(true);
+      await signOut();
+      toast({
+        title: "Berhasil logout",
+        description: "Anda telah berhasil keluar dari sistem",
+      });
+      navigate('/auth');
+    } catch (error: any) {
+      console.error('Logout error:', error);
+      toast({
+        title: "Error",
+        description: "Gagal melakukan logout",
+        variant: "destructive",
+      });
+    } finally {
+      setLoggingOut(false);
+    }
+  };
 
   const renderContent = () => {
     switch (activeTab) {
@@ -86,6 +113,32 @@ const Admin = () => {
         <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} />
         
         <main className="flex-1 overflow-hidden">
+          {/* Header with logout */}
+          <div className="bg-white border-b border-gray-200 px-6 py-4">
+            <div className="flex justify-between items-center">
+              <div>
+                <h1 className="text-xl font-semibold text-gray-900">Admin Panel</h1>
+                <p className="text-sm text-gray-600">Kelola website Anda</p>
+              </div>
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2 text-gray-600">
+                  <User className="h-4 w-4" />
+                  <span className="text-sm">{user.email}</span>
+                </div>
+                <Button
+                  onClick={handleLogout}
+                  disabled={loggingOut}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center space-x-2 hover:bg-red-50 hover:border-red-200 hover:text-red-600"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>{loggingOut ? 'Logout...' : 'Logout'}</span>
+                </Button>
+              </div>
+            </div>
+          </div>
+
           <div className="h-full overflow-y-auto">
             <div className="p-6">
               {renderContent()}

@@ -1,7 +1,9 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { formatCurrency } from '@/lib/pdfUtils';
 import { Building, Calendar, Mail, Phone, User, CreditCard } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 interface InvoiceItem {
   item_name: string;
@@ -41,9 +43,50 @@ interface InvoicePreviewProps {
 export const InvoicePreview: React.FC<InvoicePreviewProps> = ({
   invoice,
   items,
-  companyLogo,
-  companyInfo
+  companyLogo: propCompanyLogo,
+  companyInfo: propCompanyInfo
 }) => {
+  const [brandSettings, setBrandSettings] = useState<any>({});
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      fetchBrandSettings();
+    }
+  }, [user]);
+
+  const fetchBrandSettings = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('app_settings')
+        .select('*')
+        .eq('setting_category', 'brand_config')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      if (data) {
+        const settings: any = {};
+        data.forEach(setting => {
+          settings[setting.setting_key] = setting.setting_value;
+        });
+        setBrandSettings(settings);
+      }
+    } catch (error) {
+      console.error('Error fetching brand settings:', error);
+    }
+  };
+
+  const companyLogo = brandSettings.company_logo || propCompanyLogo;
+  const companyInfo = {
+    name: brandSettings.company_name || propCompanyInfo?.name || 'Nama Perusahaan',
+    address: brandSettings.company_address || propCompanyInfo?.address || 'Alamat Perusahaan',
+    phone: brandSettings.company_phone || propCompanyInfo?.phone || 'No. Telepon',
+    email: brandSettings.company_email || propCompanyInfo?.email || 'email@perusahaan.com'
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'paid':
@@ -80,6 +123,9 @@ export const InvoicePreview: React.FC<InvoicePreviewProps> = ({
               src={companyLogo}
               alt="Company Logo"
               className="h-16 w-16 object-contain"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
             />
           )}
           <div>
@@ -92,18 +138,18 @@ export const InvoicePreview: React.FC<InvoicePreviewProps> = ({
         </div>
         <div className="text-right">
           <h2 className="text-xl font-semibold text-gray-900">
-            {companyInfo?.name || 'Nama Perusahaan'}
+            {companyInfo.name}
           </h2>
           <p className="text-gray-600 mt-2 whitespace-pre-line">
-            {companyInfo?.address || 'Alamat Perusahaan'}
+            {companyInfo.address}
           </p>
           <div className="flex items-center justify-end mt-2 text-gray-600">
             <Phone className="h-4 w-4 mr-1" />
-            <span>{companyInfo?.phone || 'No. Telepon'}</span>
+            <span>{companyInfo.phone}</span>
           </div>
           <div className="flex items-center justify-end mt-1 text-gray-600">
             <Mail className="h-4 w-4 mr-1" />
-            <span>{companyInfo?.email || 'email@perusahaan.com'}</span>
+            <span>{companyInfo.email}</span>
           </div>
         </div>
       </div>

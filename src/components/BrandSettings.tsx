@@ -6,6 +6,7 @@ import { Save, RefreshCw, Upload, Image, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { checkStorageAvailability } from '@/integrations/supabase/setup';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -20,6 +21,10 @@ const BrandSettings = () => {
   const [settings, setSettings] = useState<BrandSetting[]>([
     { setting_key: 'company_logo', setting_value: '', description: 'Logo Perusahaan' },
     { setting_key: 'company_favicon', setting_value: '', description: 'Favicon (16x16px)' },
+    { setting_key: 'company_name', setting_value: '', description: 'Nama Perusahaan' },
+    { setting_key: 'company_address', setting_value: '', description: 'Alamat Perusahaan' },
+    { setting_key: 'company_phone', setting_value: '', description: 'Nomor Telepon' },
+    { setting_key: 'company_email', setting_value: '', description: 'Email Perusahaan' },
     { setting_key: 'primary_color', setting_value: '#3B82F6', description: 'Warna Utama' },
     { setting_key: 'secondary_color', setting_value: '#1E40AF', description: 'Warna Sekunder' },
     { setting_key: 'accent_color', setting_value: '#10B981', description: 'Warna Aksen' },
@@ -361,6 +366,14 @@ const BrandSettings = () => {
                   className="flex-1"
                 />
               </div>
+            ) : setting.setting_key === 'company_address' ? (
+              <Textarea
+                id={setting.setting_key}
+                value={setting.setting_value}
+                onChange={(e) => handleInputChange(index, e.target.value)}
+                placeholder={`Masukkan ${setting.description.toLowerCase()}`}
+                rows={3}
+              />
             ) : (
               <Input
                 id={setting.setting_key}
