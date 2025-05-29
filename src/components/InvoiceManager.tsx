@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -569,605 +568,644 @@ const InvoiceManager = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header with Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Total Invoice</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{invoices.length}</div>
-            <p className="text-xs text-gray-500">Semua invoice</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Belum Dibayar</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">
-              {invoices.filter(i => i.status === 'unpaid').length}
-            </div>
-            <p className="text-xs text-gray-500">Invoice pending</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Lunas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {invoices.filter(i => i.status === 'paid').length}
-            </div>
-            <p className="text-xs text-gray-500">Invoice dibayar</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Total Nilai</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-600">
-              {formatCurrency(invoices.reduce((sum, i) => sum + i.total_amount, 0))}
-            </div>
-            <p className="text-xs text-gray-500">Nilai total invoice</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Header Actions */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-            <Receipt className="h-6 w-6 mr-2 text-green-600" />
-            Manajemen Invoice
-          </h2>
-          <p className="text-gray-600">Kelola invoice untuk klien Anda</p>
+    <div className="w-full min-h-screen bg-gradient-to-br from-green-50 via-teal-50 to-blue-50 p-6">
+      <div className="max-w-full space-y-8">
+        {/* Header with Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card className="bg-white shadow-lg border-0 hover:shadow-xl transition-shadow duration-300">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
+                <Receipt className="h-4 w-4 mr-2 text-green-500" />
+                Total Invoice
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-gray-900">{invoices.length}</div>
+              <p className="text-xs text-gray-500 mt-1">Semua invoice</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-white shadow-lg border-0 hover:shadow-xl transition-shadow duration-300">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
+                <Clock className="h-4 w-4 mr-2 text-yellow-500" />
+                Belum Dibayar
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-yellow-600">
+                {invoices.filter(i => i.status === 'unpaid').length}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Invoice pending</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-white shadow-lg border-0 hover:shadow-xl transition-shadow duration-300">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
+                <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
+                Lunas
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-green-600">
+                {invoices.filter(i => i.status === 'paid').length}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Invoice dibayar</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-white shadow-lg border-0 hover:shadow-xl transition-shadow duration-300">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
+                <DollarSign className="h-4 w-4 mr-2 text-teal-500" />
+                Total Nilai
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-teal-600">
+                {formatCurrency(invoices.reduce((sum, i) => sum + i.total_amount, 0))}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Nilai total invoice</p>
+            </CardContent>
+          </Card>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={resetForm} className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white shadow-lg">
-              <Plus className="h-4 w-4 mr-2" />
-              Buat Invoice Baru
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-xl font-semibold flex items-center">
-                <Receipt className="h-5 w-5 mr-2 text-green-600" />
-                {editingId ? 'Edit Invoice' : 'Buat Invoice Baru'}
-              </DialogTitle>
-            </DialogHeader>
-            
-            <div className="space-y-6 mt-6">
-              {/* Source Selection Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Sumber Data</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Quotation Selection */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Pilih dari Penawaran yang Disetujui (Opsional)
-                    </label>
-                    <select
-                      value={formData.quotation_id}
-                      onChange={(e) => handleQuotationSelect(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
-                    >
-                      <option value="">Pilih penawaran atau buat manual</option>
-                      {quotations.map(quotation => (
-                        <option key={quotation.id} value={quotation.id}>
-                          {quotation.quotation_number} - {quotation.client_name} ({formatCurrency(quotation.total_amount)})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
 
-                  {/* Lead Selection (only show if no quotation selected) */}
-                  {!formData.quotation_id && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Pilih dari CRM (Opsional)
+        {/* Header Actions */}
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white rounded-xl p-6 shadow-lg border-0">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 flex items-center mb-2">
+              <Receipt className="h-8 w-8 mr-3 text-green-600" />
+              Manajemen Invoice
+            </h1>
+            <p className="text-gray-600 text-lg">Kelola invoice dan tagihan untuk klien Anda dengan mudah</p>
+          </div>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button 
+                onClick={resetForm} 
+                className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 px-8 py-3 text-lg"
+                size="lg"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Buat Invoice Baru
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-[95vw] w-full max-h-[95vh] overflow-y-auto bg-white">
+              <DialogHeader className="border-b pb-4">
+                <DialogTitle className="text-2xl font-bold flex items-center text-gray-900">
+                  <Receipt className="h-6 w-6 mr-3 text-green-600" />
+                  {editingId ? 'Edit Invoice' : 'Buat Invoice Baru'}
+                </DialogTitle>
+              </DialogHeader>
+              
+              <div className="space-y-8 mt-6">
+                {/* Source Selection Card */}
+                <Card className="shadow-lg border-0">
+                  <CardHeader className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-t-lg">
+                    <CardTitle className="text-xl font-semibold text-gray-900">Sumber Data</CardTitle>
+                    <CardDescription className="text-gray-600">
+                      Pilih dari penawaran yang telah diterima atau buat invoice baru
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6 p-6">
+                    {/* Quotation Selection */}
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold text-gray-700">
+                        Pilih dari Penawaran yang Disetujui (Opsional)
                       </label>
                       <select
-                        value={formData.lead_id}
-                        onChange={(e) => handleLeadSelect(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                        value={formData.quotation_id}
+                        onChange={(e) => handleQuotationSelect(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white shadow-sm"
                       >
-                        <option value="">Pilih kontak dari CRM atau isi manual</option>
-                        {crmContacts.map(contact => (
-                          <option key={contact.id} value={contact.id}>
-                            {contact.client_name} - {contact.client_email}
-                            {contact.client_company && ` (${contact.client_company})`}
+                        <option value="">Pilih penawaran atau buat manual</option>
+                        {quotations.map(quotation => (
+                          <option key={quotation.id} value={quotation.id}>
+                            {quotation.quotation_number} - {quotation.client_name} ({formatCurrency(quotation.total_amount)})
                           </option>
                         ))}
                       </select>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
 
-              {/* Client Information Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center">
-                    <User className="h-5 w-5 mr-2" />
-                    Informasi Klien
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Nama Klien *
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.client_name}
-                        onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        placeholder="Masukkan nama klien"
-                        required
-                      />
-                    </div>
+                    {/* Lead Selection (only show if no quotation selected) */}
+                    {!formData.quotation_id && (
+                      <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700">
+                          Pilih dari CRM (Opsional)
+                        </label>
+                        <select
+                          value={formData.lead_id}
+                          onChange={(e) => handleLeadSelect(e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white shadow-sm"
+                        >
+                          <option value="">Pilih kontak dari CRM atau isi manual</option>
+                          {crmContacts.map(contact => (
+                            <option key={contact.id} value={contact.id}>
+                              {contact.client_name} - {contact.client_email}
+                              {contact.client_company && ` (${contact.client_company})`}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Email Klien *
-                      </label>
-                      <input
-                        type="email"
-                        value={formData.client_email}
-                        onChange={(e) => setFormData({ ...formData, client_email: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        placeholder="email@klien.com"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Perusahaan
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.client_company}
-                        onChange={(e) => setFormData({ ...formData, client_company: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        placeholder="Nama perusahaan"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Tanggal Invoice
-                      </label>
-                      <input
-                        type="date"
-                        value={formData.invoice_date}
-                        onChange={(e) => setFormData({ ...formData, invoice_date: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Tanggal Jatuh Tempo
-                      </label>
-                      <input
-                        type="date"
-                        value={formData.due_date}
-                        onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        PPN (%)
-                      </label>
-                      <input
-                        type="number"
-                        value={formData.tax_percentage}
-                        onChange={(e) => setFormData({ ...formData, tax_percentage: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        min="0"
-                        step="0.01"
-                        placeholder="11"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="mt-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Alamat Klien
-                    </label>
-                    <textarea
-                      value={formData.client_address}
-                      onChange={(e) => setFormData({ ...formData, client_address: e.target.value })}
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      placeholder="Alamat lengkap klien"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Items Card - Same structure as QuotationManager */}
-              <Card>
-                <CardHeader>
-                  <div className="flex justify-between items-center">
-                    <CardTitle className="text-lg flex items-center">
-                      <Receipt className="h-5 w-5 mr-2" />
-                      Item Invoice
+                {/* Client Information Card */}
+                <Card className="shadow-lg border-0">
+                  <CardHeader className="bg-gradient-to-r from-green-50 to-teal-50 rounded-t-lg">
+                    <CardTitle className="text-xl font-semibold flex items-center text-gray-900">
+                      <User className="h-6 w-6 mr-2 text-green-600" />
+                      Informasi Klien
                     </CardTitle>
-                    <Button type="button" onClick={addItem} size="sm" variant="outline">
-                      <Plus className="h-4 w-4 mr-1" />
-                      Tambah Item
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {formData.items.map((item, index) => (
-                      <div key={index} className="p-4 border border-gray-200 rounded-lg bg-gray-50">
-                        <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-                          <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Nama Item *
-                            </label>
-                            <input
-                              type="text"
-                              value={item.item_name}
-                              onChange={(e) => updateItem(index, 'item_name', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
-                              placeholder="Nama produk/layanan"
-                              required
-                            />
-                          </div>
-                          
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Qty
-                            </label>
-                            <input
-                              type="number"
-                              value={item.quantity}
-                              onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 1)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
-                              min="1"
-                            />
-                          </div>
-                          
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Harga Satuan
-                            </label>
-                            <input
-                              type="number"
-                              value={item.unit_price}
-                              onChange={(e) => updateItem(index, 'unit_price', parseFloat(e.target.value) || 0)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
-                              min="0"
-                              placeholder="0"
-                            />
-                          </div>
-                          
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Total
-                            </label>
-                            <div className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg font-medium">
-                              {formatCurrency(item.quantity * item.unit_price)}
+                    <CardDescription className="text-gray-600">
+                      Masukkan data lengkap klien untuk invoice ini
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700">
+                          Nama Klien *
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.client_name}
+                          onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent shadow-sm"
+                          placeholder="Masukkan nama klien"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700">
+                          Email Klien *
+                        </label>
+                        <input
+                          type="email"
+                          value={formData.client_email}
+                          onChange={(e) => setFormData({ ...formData, client_email: e.target.value })}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent shadow-sm"
+                          placeholder="email@klien.com"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700">
+                          Perusahaan
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.client_company}
+                          onChange={(e) => setFormData({ ...formData, client_company: e.target.value })}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent shadow-sm"
+                          placeholder="Nama perusahaan"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700">
+                          Tanggal Invoice
+                        </label>
+                        <input
+                          type="date"
+                          value={formData.invoice_date}
+                          onChange={(e) => setFormData({ ...formData, invoice_date: e.target.value })}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent shadow-sm"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700">
+                          Tanggal Jatuh Tempo
+                        </label>
+                        <input
+                          type="date"
+                          value={formData.due_date}
+                          onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent shadow-sm"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700">
+                          PPN (%)
+                        </label>
+                        <input
+                          type="number"
+                          value={formData.tax_percentage}
+                          onChange={(e) => setFormData({ ...formData, tax_percentage: parseFloat(e.target.value) || 0 })}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent shadow-sm"
+                          min="0"
+                          step="0.01"
+                          placeholder="11"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mt-6 space-y-2">
+                      <label className="block text-sm font-semibold text-gray-700">
+                        Alamat Klien
+                      </label>
+                      <textarea
+                        value={formData.client_address}
+                        onChange={(e) => setFormData({ ...formData, client_address: e.target.value })}
+                        rows={3}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent shadow-sm"
+                        placeholder="Alamat lengkap klien"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Items Card */}
+                <Card className="shadow-lg border-0">
+                  <CardHeader className="bg-gradient-to-r from-teal-50 to-cyan-50 rounded-t-lg">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <CardTitle className="text-xl font-semibold flex items-center text-gray-900">
+                          <Receipt className="h-6 w-6 mr-2 text-teal-600" />
+                          Item Invoice
+                        </CardTitle>
+                        <CardDescription className="text-gray-600">
+                          Tambahkan produk atau layanan yang akan ditagihkan
+                        </CardDescription>
+                      </div>
+                      <Button 
+                        type="button" 
+                        onClick={addItem} 
+                        size="sm"
+                        className="bg-teal-500 hover:bg-teal-600 text-white shadow"
+                      >
+                        <Plus className="h-5 w-5 mr-1" />
+                        Tambah Item
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <div className="space-y-6">
+                      {formData.items.map((item, index) => (
+                        <div key={index} className="p-5 border border-gray-200 rounded-xl bg-gray-50 shadow-sm hover:shadow-md transition-shadow duration-200">
+                          <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+                            <div className="md:col-span-2">
+                              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                Nama Item *
+                              </label>
+                              <input
+                                type="text"
+                                value={item.item_name}
+                                onChange={(e) => updateItem(index, 'item_name', e.target.value)}
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white shadow-sm"
+                                placeholder="Nama produk/layanan"
+                                required
+                              />
+                            </div>
+                            
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                Qty
+                              </label>
+                              <input
+                                type="number"
+                                value={item.quantity}
+                                onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 1)}
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white shadow-sm"
+                                min="1"
+                              />
+                            </div>
+                            
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                Harga Satuan
+                              </label>
+                              <input
+                                type="number"
+                                value={item.unit_price}
+                                onChange={(e) => updateItem(index, 'unit_price', parseFloat(e.target.value) || 0)}
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white shadow-sm"
+                                min="0"
+                                placeholder="0"
+                              />
+                            </div>
+                            
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                Total
+                              </label>
+                              <div className="px-4 py-3 bg-gray-100 border border-gray-300 rounded-xl font-semibold text-teal-700 shadow-inner">
+                                {formatCurrency(item.quantity * item.unit_price)}
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-end">
+                              {formData.items.length > 1 && (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  onClick={() => removeItem(index)}
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                                >
+                                  <Trash2 className="h-5 w-5" />
+                                </Button>
+                              )}
                             </div>
                           </div>
                           
-                          <div className="flex items-end">
-                            {formData.items.length > 1 && (
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => removeItem(index)}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                          <div className="mt-4">
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                              Deskripsi
+                            </label>
+                            <textarea
+                              value={item.description}
+                              onChange={(e) => updateItem(index, 'description', e.target.value)}
+                              rows={2}
+                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white shadow-sm"
+                              placeholder="Deskripsi detail item..."
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Totals Summary */}
+                    <div className="mt-8 bg-gradient-to-r from-green-50 to-teal-50 p-6 rounded-xl border shadow-sm">
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="font-semibold text-gray-700">Subtotal:</span>
+                          <span className="font-semibold text-gray-900 text-lg">{formatCurrency(subtotal)}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="font-semibold text-gray-700">PPN ({formData.tax_percentage}%):</span>
+                          <span className="font-semibold text-gray-900 text-lg">{formatCurrency(taxAmount)}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-xl font-bold border-t pt-3 mt-3 border-gray-300">
+                          <span className="text-gray-900">Total:</span>
+                          <span className="text-teal-600">{formatCurrency(total)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Notes and Terms Card */}
+                <Card className="shadow-lg border-0">
+                  <CardHeader className="bg-gradient-to-r from-cyan-50 to-blue-50 rounded-t-lg">
+                    <CardTitle className="text-xl font-semibold text-gray-900">Catatan & Syarat</CardTitle>
+                    <CardDescription className="text-gray-600">
+                      Tambahkan catatan dan syarat ketentuan untuk invoice ini
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700">
+                          Catatan
+                        </label>
+                        <textarea
+                          value={formData.notes}
+                          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                          rows={5}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent shadow-sm"
+                          placeholder="Catatan tambahan untuk invoice ini..."
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700">
+                          Syarat & Ketentuan
+                        </label>
+                        <textarea
+                          value={formData.terms_conditions}
+                          onChange={(e) => setFormData({ ...formData, terms_conditions: e.target.value })}
+                          rows={5}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent shadow-sm"
+                          placeholder="Syarat dan ketentuan pembayaran..."
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="flex justify-end space-x-4 mt-8 pt-6 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  onClick={() => setIsDialogOpen(false)}
+                  className="px-6"
+                >
+                  Batal
+                </Button>
+                <Button
+                  onClick={handleSave}
+                  disabled={saving}
+                  size="lg"
+                  className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 px-8"
+                >
+                  {saving ? (
+                    <RefreshCw className="h-5 w-5 animate-spin mr-2" />
+                  ) : (
+                    <Receipt className="h-5 w-5 mr-2" />
+                  )}
+                  {saving ? 'Menyimpan...' : (editingId ? 'Update Invoice' : 'Simpan Invoice')}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        {/* Search and Filter */}
+        <Card className="shadow-lg border-0 bg-white">
+          <CardContent className="p-6">
+            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+              <div className="relative flex-1">
+                <Search className="h-5 w-5 absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Cari invoice berdasarkan nama, nomor, atau perusahaan..."
+                  className="pl-12 pr-4 py-3 w-full border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent shadow-sm"
+                />
+              </div>
+              <div className="flex gap-3 w-full sm:w-auto">
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white shadow-sm w-full sm:w-auto"
+                >
+                  <option value="all">Semua Status</option>
+                  {statusOptions.map(status => (
+                    <option key={status.value} value={status.value}>{status.label}</option>
+                  ))}
+                </select>
+                <Button onClick={fetchInvoices} variant="outline" size="icon" className="h-12 w-12">
+                  <RefreshCw className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Invoices Table */}
+        <Card className="shadow-lg border-0 overflow-hidden bg-white">
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader className="bg-gray-50">
+                <TableRow>
+                  <TableHead className="font-semibold text-gray-700">No. Invoice</TableHead>
+                  <TableHead className="font-semibold text-gray-700">Klien</TableHead>
+                  <TableHead className="font-semibold text-gray-700">Tanggal</TableHead>
+                  <TableHead className="font-semibold text-gray-700">Jatuh Tempo</TableHead>
+                  <TableHead className="font-semibold text-gray-700">Total</TableHead>
+                  <TableHead className="font-semibold text-gray-700">Status</TableHead>
+                  <TableHead className="font-semibold text-gray-700 text-center">Aksi</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredInvoices.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-16">
+                      <div className="flex flex-col items-center">
+                        <Receipt className="h-16 w-16 text-gray-300 mb-4" />
+                        <h4 className="text-xl font-medium text-gray-900 mb-2">
+                          {searchTerm ? 'Tidak ada hasil pencarian' : 'Belum Ada Invoice'}
+                        </h4>
+                        <p className="text-gray-500 mb-6 max-w-md text-center">
+                          {searchTerm ? 'Coba kata kunci yang berbeda' : 'Buat invoice pertama Anda untuk klien dan mulai mengelola transaksi keuangan Anda'}
+                        </p>
+                        {!searchTerm && (
+                          <Button onClick={() => setIsDialogOpen(true)} className="bg-green-600 hover:bg-green-700 px-6 py-2 text-lg">
+                            <Plus className="h-5 w-5 mr-2" />
+                            Buat Invoice
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredInvoices.map((invoice) => {
+                    const statusInfo = getStatusInfo(invoice.status);
+                    const StatusIcon = statusInfo.icon;
+                    const overdue = isOverdue(invoice);
+                    
+                    return (
+                      <TableRow key={invoice.id} className="hover:bg-gray-50">
+                        <TableCell className="font-medium">
+                          <div className="flex items-center">
+                            <Receipt className="h-4 w-4 mr-2 text-green-600" />
+                            {invoice.invoice_number}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium flex items-center">
+                              <User className="h-3 w-3 mr-1 text-gray-400" />
+                              {invoice.client_name}
+                            </div>
+                            <div className="text-sm text-gray-500">{invoice.client_email}</div>
+                            {invoice.client_company && (
+                              <div className="text-sm text-gray-500 flex items-center">
+                                <Building className="h-3 w-3 mr-1" />
+                                {invoice.client_company}
+                              </div>
                             )}
                           </div>
-                        </div>
-                        
-                        <div className="mt-3">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Deskripsi
-                          </label>
-                          <textarea
-                            value={item.description}
-                            onChange={(e) => updateItem(index, 'description', e.target.value)}
-                            rows={2}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
-                            placeholder="Deskripsi detail item..."
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Totals Summary */}
-                  <div className="mt-6 bg-gradient-to-r from-green-50 to-teal-50 p-4 rounded-lg border">
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="font-medium">Subtotal:</span>
-                        <span className="font-semibold">{formatCurrency(subtotal)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-medium">PPN ({formData.tax_percentage}%):</span>
-                        <span className="font-semibold">{formatCurrency(taxAmount)}</span>
-                      </div>
-                      <div className="flex justify-between text-lg font-bold border-t pt-2 border-gray-300">
-                        <span>Total:</span>
-                        <span className="text-green-600">{formatCurrency(total)}</span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Notes and Terms Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Catatan & Syarat</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Catatan
-                      </label>
-                      <textarea
-                        value={formData.notes}
-                        onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                        rows={4}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        placeholder="Catatan tambahan untuk invoice ini..."
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Syarat & Ketentuan
-                      </label>
-                      <textarea
-                        value={formData.terms_conditions}
-                        onChange={(e) => setFormData({ ...formData, terms_conditions: e.target.value })}
-                        rows={4}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        placeholder="Syarat dan ketentuan pembayaran..."
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="flex justify-end space-x-3 mt-6 pt-6 border-t">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsDialogOpen(false)}
-              >
-                Batal
-              </Button>
-              <Button
-                onClick={handleSave}
-                disabled={saving}
-                className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700"
-              >
-                {saving ? (
-                  <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <Receipt className="h-4 w-4 mr-2" />
-                )}
-                {saving ? 'Menyimpan...' : (editingId ? 'Update Invoice' : 'Simpan Invoice')}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* Search and Filter */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-            <div className="relative flex-1">
-              <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Cari invoice berdasarkan nama, nomor, atau perusahaan..."
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              />
-            </div>
-            <div className="flex gap-2">
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
-              >
-                <option value="all">Semua Status</option>
-                {statusOptions.map(status => (
-                  <option key={status.value} value={status.value}>{status.label}</option>
-                ))}
-              </select>
-              <Button onClick={fetchInvoices} variant="outline">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Invoices Table */}
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="font-semibold">No. Invoice</TableHead>
-                <TableHead className="font-semibold">Klien</TableHead>
-                <TableHead className="font-semibold">Tanggal</TableHead>
-                <TableHead className="font-semibold">Jatuh Tempo</TableHead>
-                <TableHead className="font-semibold">Total</TableHead>
-                <TableHead className="font-semibold">Status</TableHead>
-                <TableHead className="font-semibold text-center">Aksi</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredInvoices.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-12">
-                    <div className="flex flex-col items-center">
-                      <Receipt className="h-12 w-12 text-gray-400 mb-4" />
-                      <h4 className="text-lg font-medium text-gray-900 mb-2">
-                        {searchTerm ? 'Tidak ada hasil pencarian' : 'Belum Ada Invoice'}
-                      </h4>
-                      <p className="text-gray-500 mb-4">
-                        {searchTerm ? 'Coba kata kunci yang berbeda' : 'Buat invoice pertama Anda untuk klien'}
-                      </p>
-                      {!searchTerm && (
-                        <Button onClick={() => setIsDialogOpen(true)} className="bg-green-600 hover:bg-green-700">
-                          <Plus className="h-4 w-4 mr-2" />
-                          Buat Invoice
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredInvoices.map((invoice) => {
-                  const statusInfo = getStatusInfo(invoice.status);
-                  const StatusIcon = statusInfo.icon;
-                  const overdue = isOverdue(invoice);
-                  
-                  return (
-                    <TableRow key={invoice.id} className="hover:bg-gray-50">
-                      <TableCell className="font-medium">
-                        <div className="flex items-center">
-                          <Receipt className="h-4 w-4 mr-2 text-green-600" />
-                          {invoice.invoice_number}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium flex items-center">
-                            <User className="h-3 w-3 mr-1 text-gray-400" />
-                            {invoice.client_name}
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm flex items-center">
+                            <Calendar className="h-3 w-3 mr-1 text-gray-400" />
+                            {new Date(invoice.invoice_date).toLocaleDateString('id-ID')}
                           </div>
-                          <div className="text-sm text-gray-500">{invoice.client_email}</div>
-                          {invoice.client_company && (
-                            <div className="text-sm text-gray-500 flex items-center">
-                              <Building className="h-3 w-3 mr-1" />
-                              {invoice.client_company}
+                        </TableCell>
+                        <TableCell>
+                          {invoice.due_date ? (
+                            <div className={`text-sm flex items-center ${overdue ? 'text-red-600 font-medium' : ''}`}>
+                              <Calendar className="h-3 w-3 mr-1" />
+                              {new Date(invoice.due_date).toLocaleDateString('id-ID')}
+                              {overdue && <span className="ml-1 text-xs">(Lewat)</span>}
                             </div>
+                          ) : (
+                            <span className="text-gray-400">-</span>
                           )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm flex items-center">
-                          <Calendar className="h-3 w-3 mr-1 text-gray-400" />
-                          {new Date(invoice.invoice_date).toLocaleDateString('id-ID')}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {invoice.due_date ? (
-                          <div className={`text-sm flex items-center ${overdue ? 'text-red-600 font-medium' : ''}`}>
-                            <Calendar className="h-3 w-3 mr-1" />
-                            {new Date(invoice.due_date).toLocaleDateString('id-ID')}
-                            {overdue && <span className="ml-1 text-xs">(Lewat)</span>}
+                        </TableCell>
+                        <TableCell className="font-semibold">
+                          <div className="flex items-center">
+                            <DollarSign className="h-3 w-3 mr-1 text-green-600" />
+                            {formatCurrency(invoice.total_amount)}
                           </div>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="font-semibold">
-                        <div className="flex items-center">
-                          <DollarSign className="h-3 w-3 mr-1 text-green-600" />
-                          {formatCurrency(invoice.total_amount)}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={`${overdue ? 'bg-red-100 text-red-700' : statusInfo.color} flex items-center w-fit`}>
-                          <StatusIcon className="h-3 w-3 mr-1" />
-                          {overdue ? 'Jatuh Tempo' : statusInfo.label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-center space-x-1">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleEdit(invoice)}
-                            className="hover:bg-blue-50"
-                            title="Edit"
-                          >
-                            <Edit3 className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDownload(invoice)}
-                            className="hover:bg-green-50"
-                            title="Download PDF"
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleSendEmail(invoice)}
-                            className="hover:bg-purple-50"
-                            title="Kirim Email"
-                          >
-                            <Mail className="h-4 w-4" />
-                          </Button>
-                          {invoice.status === 'unpaid' && !overdue && (
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={`${overdue ? 'bg-red-100 text-red-700' : statusInfo.color} flex items-center w-fit px-3 py-1.5`}>
+                            <StatusIcon className="h-3 w-3 mr-1" />
+                            {overdue ? 'Jatuh Tempo' : statusInfo.label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-center space-x-1">
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => handleUpdateStatus(invoice.id, 'paid')}
-                              className="hover:bg-green-50"
-                              title="Tandai Lunas"
+                              onClick={() => handleEdit(invoice)}
+                              className="hover:bg-blue-50 h-9 w-9"
+                              title="Edit"
                             >
-                              <CheckCircle className="h-4 w-4" />
+                              <Edit3 className="h-4 w-4" />
                             </Button>
-                          )}
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDelete(invoice.id)}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            title="Hapus"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDownload(invoice)}
+                              className="hover:bg-green-50 h-9 w-9"
+                              title="Download PDF"
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleSendEmail(invoice)}
+                              className="hover:bg-purple-50 h-9 w-9"
+                              title="Kirim Email"
+                            >
+                              <Mail className="h-4 w-4" />
+                            </Button>
+                            {invoice.status === 'unpaid' && !overdue && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleUpdateStatus(invoice.id, 'paid')}
+                                className="hover:bg-green-50 h-9 w-9"
+                                title="Tandai Lunas"
+                              >
+                                <CheckCircle className="h-4 w-4" />
+                              </Button>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDelete(invoice.id)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50 h-9 w-9"
+                              title="Hapus"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -483,570 +482,606 @@ const QuotationManager = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header with Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Total Penawaran</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{quotations.length}</div>
-            <p className="text-xs text-gray-500">Semua penawaran</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Menunggu Respons</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
-              {quotations.filter(q => q.status === 'sent').length}
-            </div>
-            <p className="text-xs text-gray-500">Penawaran terkirim</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Diterima</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {quotations.filter(q => q.status === 'accepted').length}
-            </div>
-            <p className="text-xs text-gray-500">Penawaran disetujui</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Total Nilai</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-600">
-              {formatCurrency(quotations.reduce((sum, q) => sum + q.total_amount, 0))}
-            </div>
-            <p className="text-xs text-gray-500">Nilai total penawaran</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Header Actions */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-            <Calculator className="h-6 w-6 mr-2 text-blue-600" />
-            Manajemen Penawaran
-          </h2>
-          <p className="text-gray-600">Kelola penawaran untuk klien Anda</p>
+    <div className="w-full min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
+      <div className="max-w-full space-y-8">
+        {/* Header with Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card className="bg-white shadow-lg border-0 hover:shadow-xl transition-shadow duration-300">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
+                <FileText className="h-4 w-4 mr-2 text-blue-500" />
+                Total Penawaran
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-gray-900">{quotations.length}</div>
+              <p className="text-xs text-gray-500 mt-1">Semua penawaran</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-white shadow-lg border-0 hover:shadow-xl transition-shadow duration-300">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
+                <Clock className="h-4 w-4 mr-2 text-blue-500" />
+                Menunggu Respons
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-blue-600">
+                {quotations.filter(q => q.status === 'sent').length}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Penawaran terkirim</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-white shadow-lg border-0 hover:shadow-xl transition-shadow duration-300">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
+                <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
+                Diterima
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-green-600">
+                {quotations.filter(q => q.status === 'accepted').length}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Penawaran disetujui</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-white shadow-lg border-0 hover:shadow-xl transition-shadow duration-300">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
+                <DollarSign className="h-4 w-4 mr-2 text-purple-500" />
+                Total Nilai
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-purple-600">
+                {formatCurrency(quotations.reduce((sum, q) => sum + q.total_amount, 0))}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Nilai total penawaran</p>
+            </CardContent>
+          </Card>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={resetForm} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg">
-              <Plus className="h-4 w-4 mr-2" />
-              Buat Penawaran Baru
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-xl font-semibold flex items-center">
-                <FileText className="h-5 w-5 mr-2 text-blue-600" />
-                {editingId ? 'Edit Penawaran' : 'Buat Penawaran Baru'}
-              </DialogTitle>
-            </DialogHeader>
-            
-            <div className="space-y-6 mt-6">
-              {/* Client Information Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center">
-                    <User className="h-5 w-5 mr-2" />
-                    Informasi Klien
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Lead Selection */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Pilih dari CRM (Opsional)
-                    </label>
-                    <select
-                      value={formData.lead_id}
-                      onChange={(e) => handleLeadSelect(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                    >
-                      <option value="">Pilih kontak dari CRM atau isi manual</option>
-                      {crmContacts.map(contact => (
-                        <option key={contact.id} value={contact.id}>
-                          {contact.client_name} - {contact.client_email}
-                          {contact.client_company && ` (${contact.client_company})`}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Nama Klien *
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.client_name}
-                        onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Masukkan nama klien"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Email Klien *
-                      </label>
-                      <input
-                        type="email"
-                        value={formData.client_email}
-                        onChange={(e) => setFormData({ ...formData, client_email: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="email@klien.com"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Perusahaan
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.client_company}
-                        onChange={(e) => setFormData({ ...formData, client_company: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Nama perusahaan"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Tanggal Penawaran
-                      </label>
-                      <input
-                        type="date"
-                        value={formData.quotation_date}
-                        onChange={(e) => setFormData({ ...formData, quotation_date: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Berlaku Hingga
-                      </label>
-                      <input
-                        type="date"
-                        value={formData.valid_until}
-                        onChange={(e) => setFormData({ ...formData, valid_until: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        PPN (%)
-                      </label>
-                      <input
-                        type="number"
-                        value={formData.tax_percentage}
-                        onChange={(e) => setFormData({ ...formData, tax_percentage: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        min="0"
-                        step="0.01"
-                        placeholder="11"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Alamat Klien
-                    </label>
-                    <textarea
-                      value={formData.client_address}
-                      onChange={(e) => setFormData({ ...formData, client_address: e.target.value })}
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Alamat lengkap klien"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Items Card */}
-              <Card>
-                <CardHeader>
-                  <div className="flex justify-between items-center">
-                    <CardTitle className="text-lg flex items-center">
-                      <FileText className="h-5 w-5 mr-2" />
-                      Item Penawaran
+        {/* Header Actions */}
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white rounded-xl p-6 shadow-lg border-0">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 flex items-center mb-2">
+              <Calculator className="h-8 w-8 mr-3 text-blue-600" />
+              Manajemen Penawaran
+            </h1>
+            <p className="text-gray-600 text-lg">Kelola penawaran untuk klien Anda dengan mudah dan efisien</p>
+          </div>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button 
+                onClick={resetForm} 
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 px-8 py-3 text-lg"
+                size="lg"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Buat Penawaran Baru
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-[95vw] w-full max-h-[95vh] overflow-y-auto bg-white">
+              <DialogHeader className="border-b pb-4">
+                <DialogTitle className="text-2xl font-bold flex items-center text-gray-900">
+                  <FileText className="h-6 w-6 mr-3 text-blue-600" />
+                  {editingId ? 'Edit Penawaran' : 'Buat Penawaran Baru'}
+                </DialogTitle>
+              </DialogHeader>
+              
+              <div className="space-y-8 mt-6">
+                {/* Client Information Card */}
+                <Card className="shadow-lg border-0">
+                  <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-lg">
+                    <CardTitle className="text-xl font-semibold flex items-center text-gray-900">
+                      <User className="h-6 w-6 mr-2 text-blue-600" />
+                      Informasi Klien
                     </CardTitle>
-                    <Button type="button" onClick={addItem} size="sm" variant="outline">
-                      <Plus className="h-4 w-4 mr-1" />
-                      Tambah Item
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {formData.items.map((item, index) => (
-                      <div key={index} className="p-4 border border-gray-200 rounded-lg bg-gray-50">
-                        <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-                          <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Nama Item *
-                            </label>
-                            <input
-                              type="text"
-                              value={item.item_name}
-                              onChange={(e) => updateItem(index, 'item_name', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                              placeholder="Nama produk/layanan"
-                              required
-                            />
-                          </div>
-                          
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Qty
-                            </label>
-                            <input
-                              type="number"
-                              value={item.quantity}
-                              onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 1)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                              min="1"
-                            />
-                          </div>
-                          
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Harga Satuan
-                            </label>
-                            <input
-                              type="number"
-                              value={item.unit_price}
-                              onChange={(e) => updateItem(index, 'unit_price', parseFloat(e.target.value) || 0)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                              min="0"
-                              placeholder="0"
-                            />
-                          </div>
-                          
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Total
-                            </label>
-                            <div className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg font-medium">
-                              {formatCurrency(item.quantity * item.unit_price)}
+                    <CardDescription className="text-gray-600">
+                      Masukkan data lengkap klien untuk penawaran ini
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6 p-6">
+                    {/* Lead Selection */}
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold text-gray-700">
+                        Pilih dari CRM (Opsional)
+                      </label>
+                      <select
+                        value={formData.lead_id}
+                        onChange={(e) => handleLeadSelect(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm"
+                      >
+                        <option value="">Pilih kontak dari CRM atau isi manual</option>
+                        {crmContacts.map(contact => (
+                          <option key={contact.id} value={contact.id}>
+                            {contact.client_name} - {contact.client_email}
+                            {contact.client_company && ` (${contact.client_company})`}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700">
+                          Nama Klien *
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.client_name}
+                          onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
+                          placeholder="Masukkan nama klien"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700">
+                          Email Klien *
+                        </label>
+                        <input
+                          type="email"
+                          value={formData.client_email}
+                          onChange={(e) => setFormData({ ...formData, client_email: e.target.value })}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
+                          placeholder="email@klien.com"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700">
+                          Perusahaan
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.client_company}
+                          onChange={(e) => setFormData({ ...formData, client_company: e.target.value })}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
+                          placeholder="Nama perusahaan"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700">
+                          Tanggal Penawaran
+                        </label>
+                        <input
+                          type="date"
+                          value={formData.quotation_date}
+                          onChange={(e) => setFormData({ ...formData, quotation_date: e.target.value })}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700">
+                          Berlaku Hingga
+                        </label>
+                        <input
+                          type="date"
+                          value={formData.valid_until}
+                          onChange={(e) => setFormData({ ...formData, valid_until: e.target.value })}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700">
+                          PPN (%)
+                        </label>
+                        <input
+                          type="number"
+                          value={formData.tax_percentage}
+                          onChange={(e) => setFormData({ ...formData, tax_percentage: parseFloat(e.target.value) || 0 })}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
+                          min="0"
+                          step="0.01"
+                          placeholder="11"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="block text-sm font-semibold text-gray-700">
+                        Alamat Klien
+                      </label>
+                      <textarea
+                        value={formData.client_address}
+                        onChange={(e) => setFormData({ ...formData, client_address: e.target.value })}
+                        rows={3}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
+                        placeholder="Alamat lengkap klien"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Items Card */}
+                <Card className="shadow-lg border-0">
+                  <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-t-lg">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <CardTitle className="text-xl font-semibold flex items-center text-gray-900">
+                          <FileText className="h-6 w-6 mr-2 text-green-600" />
+                          Item Penawaran
+                        </CardTitle>
+                        <CardDescription className="text-gray-600">
+                          Tambahkan produk atau layanan yang akan ditawarkan
+                        </CardDescription>
+                      </div>
+                      <Button 
+                        type="button" 
+                        onClick={addItem} 
+                        size="sm"
+                        className="bg-green-500 hover:bg-green-600 text-white shadow"
+                      >
+                        <Plus className="h-5 w-5 mr-1" />
+                        Tambah Item
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <div className="space-y-6">
+                      {formData.items.map((item, index) => (
+                        <div key={index} className="p-5 border border-gray-200 rounded-xl bg-gray-50 shadow-sm hover:shadow-md transition-shadow duration-200">
+                          <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+                            <div className="md:col-span-2">
+                              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                Nama Item *
+                              </label>
+                              <input
+                                type="text"
+                                value={item.item_name}
+                                onChange={(e) => updateItem(index, 'item_name', e.target.value)}
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm"
+                                placeholder="Nama produk/layanan"
+                                required
+                              />
+                            </div>
+                            
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                Qty
+                              </label>
+                              <input
+                                type="number"
+                                value={item.quantity}
+                                onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 1)}
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm"
+                                min="1"
+                              />
+                            </div>
+                            
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                Harga Satuan
+                              </label>
+                              <input
+                                type="number"
+                                value={item.unit_price}
+                                onChange={(e) => updateItem(index, 'unit_price', parseFloat(e.target.value) || 0)}
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm"
+                                min="0"
+                                placeholder="0"
+                              />
+                            </div>
+                            
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                Total
+                              </label>
+                              <div className="px-4 py-3 bg-gray-100 border border-gray-300 rounded-xl font-semibold text-green-700 shadow-inner">
+                                {formatCurrency(item.quantity * item.unit_price)}
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-end">
+                              {formData.items.length > 1 && (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  onClick={() => removeItem(index)}
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                                >
+                                  <Trash2 className="h-5 w-5" />
+                                </Button>
+                              )}
                             </div>
                           </div>
                           
-                          <div className="flex items-end">
-                            {formData.items.length > 1 && (
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => removeItem(index)}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                          <div className="mt-4">
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                              Deskripsi
+                            </label>
+                            <textarea
+                              value={item.description}
+                              onChange={(e) => updateItem(index, 'description', e.target.value)}
+                              rows={2}
+                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm"
+                              placeholder="Deskripsi detail item..."
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Totals Summary */}
+                    <div className="mt-8 bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-xl border shadow-sm">
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="font-semibold text-gray-700">Subtotal:</span>
+                          <span className="font-semibold text-gray-900 text-lg">{formatCurrency(subtotal)}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="font-semibold text-gray-700">PPN ({formData.tax_percentage}%):</span>
+                          <span className="font-semibold text-gray-900 text-lg">{formatCurrency(taxAmount)}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-xl font-bold border-t pt-3 mt-3 border-gray-300">
+                          <span className="text-gray-900">Total:</span>
+                          <span className="text-blue-600">{formatCurrency(total)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Notes and Terms Card */}
+                <Card className="shadow-lg border-0">
+                  <CardHeader className="bg-gradient-to-r from-violet-50 to-purple-50 rounded-t-lg">
+                    <CardTitle className="text-xl font-semibold text-gray-900">Catatan & Syarat</CardTitle>
+                    <CardDescription className="text-gray-600">
+                      Tambahkan catatan dan syarat ketentuan untuk penawaran ini
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700">
+                          Catatan
+                        </label>
+                        <textarea
+                          value={formData.notes}
+                          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                          rows={5}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent shadow-sm"
+                          placeholder="Catatan tambahan untuk penawaran ini..."
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700">
+                          Syarat & Ketentuan
+                        </label>
+                        <textarea
+                          value={formData.terms_conditions}
+                          onChange={(e) => setFormData({ ...formData, terms_conditions: e.target.value })}
+                          rows={5}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent shadow-sm"
+                          placeholder="Syarat dan ketentuan penawaran..."
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="flex justify-end space-x-4 mt-8 pt-6 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  onClick={() => setIsDialogOpen(false)}
+                  className="px-6"
+                >
+                  Batal
+                </Button>
+                <Button
+                  onClick={handleSave}
+                  disabled={saving}
+                  size="lg"
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-8"
+                >
+                  {saving ? (
+                    <RefreshCw className="h-5 w-5 animate-spin mr-2" />
+                  ) : (
+                    <FileText className="h-5 w-5 mr-2" />
+                  )}
+                  {saving ? 'Menyimpan...' : (editingId ? 'Update Penawaran' : 'Simpan Penawaran')}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        {/* Search and Filter */}
+        <Card className="shadow-lg border-0 bg-white">
+          <CardContent className="p-6">
+            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+              <div className="relative flex-1">
+                <Search className="h-5 w-5 absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Cari penawaran berdasarkan nama, nomor, atau perusahaan..."
+                  className="pl-12 pr-4 py-3 w-full border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
+                />
+              </div>
+              <div className="flex gap-3 w-full sm:w-auto">
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm w-full sm:w-auto"
+                >
+                  <option value="all">Semua Status</option>
+                  {statusOptions.map(status => (
+                    <option key={status.value} value={status.value}>{status.label}</option>
+                  ))}
+                </select>
+                <Button onClick={fetchQuotations} variant="outline" size="icon" className="h-12 w-12">
+                  <RefreshCw className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Quotations Table */}
+        <Card className="shadow-lg border-0 overflow-hidden bg-white">
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader className="bg-gray-50">
+                <TableRow>
+                  <TableHead className="font-semibold text-gray-700">No. Penawaran</TableHead>
+                  <TableHead className="font-semibold text-gray-700">Klien</TableHead>
+                  <TableHead className="font-semibold text-gray-700">Tanggal</TableHead>
+                  <TableHead className="font-semibold text-gray-700">Total</TableHead>
+                  <TableHead className="font-semibold text-gray-700">Status</TableHead>
+                  <TableHead className="font-semibold text-gray-700 text-center">Aksi</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredQuotations.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-16">
+                      <div className="flex flex-col items-center">
+                        <FileText className="h-16 w-16 text-gray-300 mb-4" />
+                        <h4 className="text-xl font-medium text-gray-900 mb-2">
+                          {searchTerm ? 'Tidak ada hasil pencarian' : 'Belum Ada Penawaran'}
+                        </h4>
+                        <p className="text-gray-500 mb-6 max-w-md text-center">
+                          {searchTerm ? 'Coba kata kunci yang berbeda' : 'Buat penawaran pertama Anda untuk klien dan mulai mengelola proses penjualan Anda'}
+                        </p>
+                        {!searchTerm && (
+                          <Button onClick={() => setIsDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700 px-6 py-2 text-lg">
+                            <Plus className="h-5 w-5 mr-2" />
+                            Buat Penawaran
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredQuotations.map((quotation) => {
+                    const statusInfo = getStatusInfo(quotation.status);
+                    const StatusIcon = statusInfo.icon;
+                    
+                    return (
+                      <TableRow key={quotation.id} className="hover:bg-gray-50">
+                        <TableCell className="font-medium">
+                          <div className="flex items-center">
+                            <FileText className="h-4 w-4 mr-2 text-blue-600" />
+                            {quotation.quotation_number}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium flex items-center">
+                              <User className="h-3 w-3 mr-1 text-gray-400" />
+                              {quotation.client_name}
+                            </div>
+                            <div className="text-sm text-gray-500">{quotation.client_email}</div>
+                            {quotation.client_company && (
+                              <div className="text-sm text-gray-500 flex items-center">
+                                <Building className="h-3 w-3 mr-1" />
+                                {quotation.client_company}
+                              </div>
                             )}
                           </div>
-                        </div>
-                        
-                        <div className="mt-3">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Deskripsi
-                          </label>
-                          <textarea
-                            value={item.description}
-                            onChange={(e) => updateItem(index, 'description', e.target.value)}
-                            rows={2}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                            placeholder="Deskripsi detail item..."
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Totals Summary */}
-                  <div className="mt-6 bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg border">
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="font-medium">Subtotal:</span>
-                        <span className="font-semibold">{formatCurrency(subtotal)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-medium">PPN ({formData.tax_percentage}%):</span>
-                        <span className="font-semibold">{formatCurrency(taxAmount)}</span>
-                      </div>
-                      <div className="flex justify-between text-lg font-bold border-t pt-2 border-gray-300">
-                        <span>Total:</span>
-                        <span className="text-blue-600">{formatCurrency(total)}</span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Notes and Terms Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Catatan & Syarat</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Catatan
-                      </label>
-                      <textarea
-                        value={formData.notes}
-                        onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                        rows={4}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Catatan tambahan untuk penawaran ini..."
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Syarat & Ketentuan
-                      </label>
-                      <textarea
-                        value={formData.terms_conditions}
-                        onChange={(e) => setFormData({ ...formData, terms_conditions: e.target.value })}
-                        rows={4}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Syarat dan ketentuan penawaran..."
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="flex justify-end space-x-3 mt-6 pt-6 border-t">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsDialogOpen(false)}
-              >
-                Batal
-              </Button>
-              <Button
-                onClick={handleSave}
-                disabled={saving}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-              >
-                {saving ? (
-                  <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <FileText className="h-4 w-4 mr-2" />
-                )}
-                {saving ? 'Menyimpan...' : (editingId ? 'Update Penawaran' : 'Simpan Penawaran')}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* Search and Filter */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-            <div className="relative flex-1">
-              <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Cari penawaran berdasarkan nama, nomor, atau perusahaan..."
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <div className="flex gap-2">
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-              >
-                <option value="all">Semua Status</option>
-                {statusOptions.map(status => (
-                  <option key={status.value} value={status.value}>{status.label}</option>
-                ))}
-              </select>
-              <Button onClick={fetchQuotations} variant="outline">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Quotations Table */}
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="font-semibold">No. Penawaran</TableHead>
-                <TableHead className="font-semibold">Klien</TableHead>
-                <TableHead className="font-semibold">Tanggal</TableHead>
-                <TableHead className="font-semibold">Total</TableHead>
-                <TableHead className="font-semibold">Status</TableHead>
-                <TableHead className="font-semibold text-center">Aksi</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredQuotations.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-12">
-                    <div className="flex flex-col items-center">
-                      <FileText className="h-12 w-12 text-gray-400 mb-4" />
-                      <h4 className="text-lg font-medium text-gray-900 mb-2">
-                        {searchTerm ? 'Tidak ada hasil pencarian' : 'Belum Ada Penawaran'}
-                      </h4>
-                      <p className="text-gray-500 mb-4">
-                        {searchTerm ? 'Coba kata kunci yang berbeda' : 'Buat penawaran pertama Anda untuk klien'}
-                      </p>
-                      {!searchTerm && (
-                        <Button onClick={() => setIsDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700">
-                          <Plus className="h-4 w-4 mr-2" />
-                          Buat Penawaran
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredQuotations.map((quotation) => {
-                  const statusInfo = getStatusInfo(quotation.status);
-                  const StatusIcon = statusInfo.icon;
-                  
-                  return (
-                    <TableRow key={quotation.id} className="hover:bg-gray-50">
-                      <TableCell className="font-medium">
-                        <div className="flex items-center">
-                          <FileText className="h-4 w-4 mr-2 text-blue-600" />
-                          {quotation.quotation_number}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium flex items-center">
-                            <User className="h-3 w-3 mr-1 text-gray-400" />
-                            {quotation.client_name}
-                          </div>
-                          <div className="text-sm text-gray-500">{quotation.client_email}</div>
-                          {quotation.client_company && (
-                            <div className="text-sm text-gray-500 flex items-center">
-                              <Building className="h-3 w-3 mr-1" />
-                              {quotation.client_company}
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            <div className="flex items-center">
+                              <Calendar className="h-3 w-3 mr-1 text-gray-400" />
+                              {new Date(quotation.quotation_date).toLocaleDateString('id-ID')}
                             </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
+                            {quotation.valid_until && (
+                              <div className="text-gray-500 text-xs">
+                                Berlaku hingga: {new Date(quotation.valid_until).toLocaleDateString('id-ID')}
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-semibold">
                           <div className="flex items-center">
-                            <Calendar className="h-3 w-3 mr-1 text-gray-400" />
-                            {new Date(quotation.quotation_date).toLocaleDateString('id-ID')}
+                            <DollarSign className="h-3 w-3 mr-1 text-green-600" />
+                            {formatCurrency(quotation.total_amount)}
                           </div>
-                          {quotation.valid_until && (
-                            <div className="text-gray-500 text-xs">
-                              Berlaku hingga: {new Date(quotation.valid_until).toLocaleDateString('id-ID')}
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-semibold">
-                        <div className="flex items-center">
-                          <DollarSign className="h-3 w-3 mr-1 text-green-600" />
-                          {formatCurrency(quotation.total_amount)}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={`${statusInfo.color} flex items-center w-fit`}>
-                          <StatusIcon className="h-3 w-3 mr-1" />
-                          {statusInfo.label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-center space-x-1">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleEdit(quotation)}
-                            className="hover:bg-blue-50"
-                            title="Edit"
-                          >
-                            <Edit3 className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDownload(quotation)}
-                            className="hover:bg-green-50"
-                            title="Download PDF"
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleSendEmail(quotation)}
-                            className="hover:bg-purple-50"
-                            title="Kirim Email"
-                          >
-                            <Mail className="h-4 w-4" />
-                          </Button>
-                          {quotation.status === 'draft' && (
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={`${statusInfo.color} flex items-center w-fit px-3 py-1.5`}>
+                            <StatusIcon className="h-3 w-3 mr-1" />
+                            {statusInfo.label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-center space-x-1">
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => handleUpdateStatus(quotation.id, 'sent')}
-                              className="hover:bg-blue-50"
-                              title="Tandai Terkirim"
+                              onClick={() => handleEdit(quotation)}
+                              className="hover:bg-blue-50 h-9 w-9"
+                              title="Edit"
                             >
-                              <CheckCircle className="h-4 w-4" />
+                              <Edit3 className="h-4 w-4" />
                             </Button>
-                          )}
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDelete(quotation.id)}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            title="Hapus"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDownload(quotation)}
+                              className="hover:bg-green-50 h-9 w-9"
+                              title="Download PDF"
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleSendEmail(quotation)}
+                              className="hover:bg-purple-50 h-9 w-9"
+                              title="Kirim Email"
+                            >
+                              <Mail className="h-4 w-4" />
+                            </Button>
+                            {quotation.status === 'draft' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleUpdateStatus(quotation.id, 'sent')}
+                                className="hover:bg-blue-50 h-9 w-9"
+                                title="Tandai Terkirim"
+                              >
+                                <CheckCircle className="h-4 w-4" />
+                              </Button>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDelete(quotation.id)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50 h-9 w-9"
+                              title="Hapus"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
