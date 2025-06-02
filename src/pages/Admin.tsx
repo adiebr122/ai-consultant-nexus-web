@@ -16,24 +16,26 @@ import QuotationManager from '@/components/QuotationManager';
 import InvoiceManager from '@/components/InvoiceManager';
 import UserManagement from '@/components/UserManagement';
 import SettingsManager from '@/components/SettingsManager';
+import { DashboardStats } from '@/components/admin/DashboardStats';
+import { DashboardCharts } from '@/components/admin/DashboardCharts';
+import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { 
-  Users, 
   FileText, 
-  Star, 
-  MessageSquare, 
-  Building,
-  Calculator,
-  Receipt,
   TrendingUp,
   Eye,
   Mail,
   Phone,
   LogOut,
   User,
-  Briefcase
+  Briefcase,
+  Users,
+  Calculator,
+  Receipt,
+  MessageSquare,
+  Building
 } from 'lucide-react';
 
 const Admin = () => {
@@ -157,64 +159,7 @@ interface DashboardContentProps {
 }
 
 const DashboardContent = ({ onTabChange }: DashboardContentProps) => {
-  const statsCards = [
-    {
-      title: 'Total Kontak CRM',
-      value: '0',
-      description: 'Kontak yang terdaftar',
-      icon: Users,
-      color: 'text-blue-600',
-      bg: 'bg-blue-100'
-    },
-    {
-      title: 'Penawaran Aktif',
-      value: '0',
-      description: 'Penawaran yang terkirim',
-      icon: Calculator,
-      color: 'text-purple-600',
-      bg: 'bg-purple-100'
-    },
-    {
-      title: 'Invoice Pending',
-      value: '0',
-      description: 'Invoice belum dibayar',
-      icon: Receipt,
-      color: 'text-green-600',
-      bg: 'bg-green-100'
-    },
-    {
-      title: 'Form Submissions',
-      value: '0',
-      description: 'Formulir masuk hari ini',
-      icon: MessageSquare,
-      color: 'text-orange-600',
-      bg: 'bg-orange-100'
-    },
-    {
-      title: 'Client Logos',
-      value: '0',
-      description: 'Logo klien aktif',
-      icon: Building,
-      color: 'text-cyan-600',
-      bg: 'bg-cyan-100'
-    },
-    {
-      title: 'Portfolio Projects',
-      value: '0',
-      description: 'Proyek portfolio aktif',
-      icon: Briefcase,
-      color: 'text-indigo-600',
-      bg: 'bg-indigo-100'
-    },
-    {
-      title: 'Testimonials',
-      value: '0',
-      description: 'Testimonial aktif',
-      icon: Star,
-      color: 'text-yellow-600',
-      bg: 'bg-yellow-100'
-    }
-  ];
+  const { stats } = useDashboardStats();
 
   const quickActions = [
     {
@@ -281,27 +226,10 @@ const DashboardContent = ({ onTabChange }: DashboardContentProps) => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {statsCards.map((card, index) => {
-          const IconComponent = card.icon;
-          return (
-            <Card key={index} className="hover:shadow-lg transition-shadow duration-200">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">
-                  {card.title}
-                </CardTitle>
-                <div className={`p-2 rounded-lg ${card.bg}`}>
-                  <IconComponent className={`h-4 w-4 ${card.color}`} />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-gray-900">{card.value}</div>
-                <p className="text-xs text-gray-500 mt-1">{card.description}</p>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+      <DashboardStats stats={stats} />
+
+      {/* Charts */}
+      <DashboardCharts stats={stats} />
 
       {/* Quick Actions */}
       <div className="bg-white rounded-xl shadow-sm border p-6">
