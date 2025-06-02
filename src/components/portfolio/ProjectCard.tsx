@@ -1,5 +1,4 @@
 
-import { useState } from 'react';
 import { 
   Edit, 
   Trash2, 
@@ -41,6 +40,39 @@ interface ProjectCardProps {
 }
 
 export const ProjectCard = ({ project, index, onEdit, onDelete, onView }: ProjectCardProps) => {
+  const handleEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log('Edit clicked for project:', project.title, 'at index:', index);
+    onEdit(project, index);
+  };
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log('Delete clicked for project:', project.title, 'at index:', index);
+    onDelete(index);
+  };
+
+  const handleView = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onView) {
+      onView(project);
+    }
+  };
+
+  const handleDemoClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (project.demo_url) {
+      window.open(project.demo_url, '_blank');
+    }
+  };
+
+  const handleGithubClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (project.github_url) {
+      window.open(project.github_url, '_blank');
+    }
+  };
+
   return (
     <Card className="group hover:shadow-xl transition-all duration-300 border-2 hover:border-blue-200 bg-white">
       <CardHeader className="pb-3">
@@ -58,8 +90,9 @@ export const ProjectCard = ({ project, index, onEdit, onDelete, onView }: Projec
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => onView(project)}
+                onClick={handleView}
                 className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600"
+                title="Lihat Detail"
               >
                 <Eye className="h-4 w-4" />
               </Button>
@@ -67,16 +100,18 @@ export const ProjectCard = ({ project, index, onEdit, onDelete, onView }: Projec
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onEdit(project, index)}
+              onClick={handleEdit}
               className="h-8 w-8 p-0 hover:bg-yellow-50 hover:text-yellow-600"
+              title="Edit Proyek"
             >
               <Edit className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onDelete(index)}
+              onClick={handleDelete}
               className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+              title="Hapus Proyek"
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -134,13 +169,25 @@ export const ProjectCard = ({ project, index, onEdit, onDelete, onView }: Projec
           <div className="flex justify-between items-center pt-2 border-t border-gray-100">
             <div className="flex space-x-2">
               {project.demo_url && (
-                <Button variant="ghost" size="sm" className="h-8 px-2 text-blue-600 hover:bg-blue-50">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={handleDemoClick}
+                  className="h-8 px-2 text-blue-600 hover:bg-blue-50"
+                  title="Lihat Demo"
+                >
                   <Globe className="h-3 w-3 mr-1" />
                   <span className="text-xs">Demo</span>
                 </Button>
               )}
               {project.github_url && (
-                <Button variant="ghost" size="sm" className="h-8 px-2 text-gray-600 hover:bg-gray-50">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={handleGithubClick}
+                  className="h-8 px-2 text-gray-600 hover:bg-gray-50"
+                  title="Lihat Source Code"
+                >
                   <Github className="h-3 w-3 mr-1" />
                   <span className="text-xs">Code</span>
                 </Button>

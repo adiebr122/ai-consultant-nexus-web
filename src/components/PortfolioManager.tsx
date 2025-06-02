@@ -252,6 +252,7 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
   };
 
   const editProject = (project: Project, index: number) => {
+    console.log('Editing project at index:', index, project);
     setFormProject({ ...project });
     setEditingIndex(index);
     setShowProjectForm(true);
@@ -259,6 +260,7 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
 
   const deleteProject = (index: number) => {
     if (window.confirm('Apakah Anda yakin ingin menghapus proyek ini?')) {
+      console.log('Deleting project at index:', index);
       const newProjects = content.projects.filter((_, i) => i !== index);
       setContent({ ...content, projects: newProjects });
       
@@ -271,9 +273,11 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
   };
 
   const saveProject = (project: Project) => {
+    console.log('Saving project:', project);
     const newProjects = [...content.projects];
     
     if (editingIndex !== null) {
+      console.log('Updating project at index:', editingIndex);
       newProjects[editingIndex] = { ...project };
       toast({
         title: "Berhasil",
@@ -281,6 +285,7 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
         variant: "default",
       });
     } else {
+      console.log('Adding new project');
       newProjects.push({ ...project });
       toast({
         title: "Berhasil",
@@ -362,7 +367,7 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {content.projects.map((project, index) => (
                 <ProjectCard
-                  key={index}
+                  key={`${project.title}-${index}`}
                   project={project}
                   index={index}
                   onEdit={editProject}
