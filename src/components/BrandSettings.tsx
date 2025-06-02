@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -6,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { checkStorageAvailability } from '@/integrations/supabase/setup';
 import { useAuth } from '@/hooks/useAuth';
 
 interface BrandSetting {
@@ -33,60 +33,14 @@ const BrandSettings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState<string | null>(null);
-  const [storageAvailable, setStorageAvailable] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
   useEffect(() => {
     if (user) {
       fetchBrandSettings();
-      initializeStorage();
     }
   }, [user]);
-
-  const initializeStorage = async () => {
-    try {
-      // Try to create bucket if it doesn't exist
-      const { data: buckets, error: listError } = await supabase.storage.listBuckets();
-      
-      if (listError) {
-        console.error('Error listing buckets:', listError);
-        setStorageAvailable(false);
-        return;
-      }
-
-      const brandBucket = buckets?.find(bucket => bucket.name === 'brand-assets');
-      
-      if (!brandBucket) {
-        console.log('Creating brand-assets bucket...');
-        const { error: createError } = await supabase.storage.createBucket('brand-assets', {
-          public: true,
-          allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'],
-          fileSizeLimit: 10485760 // 10MB
-        });
-
-        if (createError) {
-          console.error('Error creating brand-assets bucket:', createError);
-          toast({
-            title: "Info",
-            description: "Storage bucket akan dibuat otomatis saat upload pertama",
-            variant: "default",
-          });
-        }
-      }
-
-      setStorageAvailable(true);
-    } catch (error) {
-      console.error('Error initializing storage:', error);
-      setStorageAvailable(false);
-    }
-  };
-
-  const checkStorage = async () => {
-    const available = await checkStorageAvailability();
-    setStorageAvailable(available);
-    console.log('Storage availability:', available);
-  };
 
   const fetchBrandSettings = async () => {
     if (!user) return;
@@ -159,8 +113,7 @@ const BrandSettings = () => {
       
       console.log('Uploading to storage with filename:', fileName);
       
-      // Try to upload to storage
-      let uploadData;
+      // Upload to storage (bucket now exists)
       const { data, error } = await supabase.storage
         .from('brand-assets')
         .upload(fileName, file, {
@@ -170,39 +123,10 @@ const BrandSettings = () => {
 
       if (error) {
         console.error('Storage upload error:', error);
-        // If bucket doesn't exist, try to create it
-        if (error.message.includes('not found')) {
-          const { error: createError } = await supabase.storage.createBucket('brand-assets', {
-            public: true,
-            allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'],
-            fileSizeLimit: 10485760
-          });
-          
-          if (!createError) {
-            // Retry upload after creating bucket
-            const { data: retryData, error: retryError } = await supabase.storage
-              .from('brand-assets')
-              .upload(fileName, file, {
-                cacheControl: '3600',
-                upsert: true
-              });
-            
-            if (retryError) {
-              throw retryError;
-            } else {
-              uploadData = retryData;
-            }
-          } else {
-            throw error;
-          }
-        } else {
-          throw error;
-        }
-      } else {
-        uploadData = data;
+        throw error;
       }
 
-      console.log('Upload successful:', uploadData);
+      console.log('Upload successful:', data);
       
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
@@ -219,7 +143,6 @@ const BrandSettings = () => {
         description: "Gambar berhasil diupload",
       });
 
-      setStorageAvailable(true);
     } catch (error: any) {
       console.error('Error uploading file:', error);
       toast({
