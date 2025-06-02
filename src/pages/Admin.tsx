@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Navigate, useNavigate } from 'react-router-dom';
@@ -31,7 +32,8 @@ import {
   Mail,
   Phone,
   LogOut,
-  User
+  User,
+  Briefcase
 } from 'lucide-react';
 
 const Admin = () => {
@@ -193,6 +195,14 @@ const DashboardContent = () => {
       bg: 'bg-cyan-100'
     },
     {
+      title: 'Portfolio Projects',
+      value: '0',
+      description: 'Proyek portfolio aktif',
+      icon: Briefcase,
+      color: 'text-indigo-600',
+      bg: 'bg-indigo-100'
+    },
+    {
       title: 'Testimonials',
       value: '0',
       description: 'Testimonial aktif',
@@ -203,6 +213,13 @@ const DashboardContent = () => {
   ];
 
   const quickActions = [
+    {
+      title: 'Kelola Portfolio',
+      description: 'Tambah atau edit proyek portfolio',
+      icon: Briefcase,
+      action: 'portfolio',
+      color: 'bg-indigo-600 hover:bg-indigo-700'
+    },
     {
       title: 'Buat Penawaran',
       description: 'Buat penawaran baru untuk klien',
@@ -255,7 +272,7 @@ const DashboardContent = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {statsCards.map((card, index) => {
           const IconComponent = card.icon;
           return (
@@ -280,7 +297,7 @@ const DashboardContent = () => {
       {/* Quick Actions */}
       <div className="bg-white rounded-xl shadow-sm border p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           {quickActions.map((action, index) => {
             const IconComponent = action.icon;
             return (
