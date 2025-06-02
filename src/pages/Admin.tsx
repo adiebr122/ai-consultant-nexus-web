@@ -79,7 +79,7 @@ const Admin = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <DashboardContent />;
+        return <DashboardContent onTabChange={setActiveTab} />;
       case 'hero':
         return <HeroEditor />;
       case 'services':
@@ -105,7 +105,7 @@ const Admin = () => {
       case 'settings':
         return <SettingsManager />;
       default:
-        return <DashboardContent />;
+        return <DashboardContent onTabChange={setActiveTab} />;
     }
   };
 
@@ -152,7 +152,11 @@ const Admin = () => {
   );
 };
 
-const DashboardContent = () => {
+interface DashboardContentProps {
+  onTabChange: (tab: string) => void;
+}
+
+const DashboardContent = ({ onTabChange }: DashboardContentProps) => {
   const statsCards = [
     {
       title: 'Total Kontak CRM',
@@ -250,6 +254,11 @@ const DashboardContent = () => {
     }
   ];
 
+  const handleQuickAction = (action: string) => {
+    console.log('Quick action clicked:', action);
+    onTabChange(action);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -303,6 +312,7 @@ const DashboardContent = () => {
             return (
               <div
                 key={index}
+                onClick={() => handleQuickAction(action.action)}
                 className={`p-4 rounded-lg text-white cursor-pointer transition-all duration-200 hover:scale-105 ${action.color}`}
               >
                 <div className="flex items-center space-x-3">
