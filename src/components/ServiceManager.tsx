@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -63,7 +64,16 @@ const ServiceManager = () => {
       if (error) throw error;
       
       console.log('Services data:', data);
-      setServices(data || []);
+      
+      // Transform the data to match our interface
+      const transformedServices: Service[] = (data || []).map(service => ({
+        ...service,
+        service_features: Array.isArray(service.service_features) 
+          ? service.service_features as string[]
+          : []
+      }));
+      
+      setServices(transformedServices);
     } catch (error) {
       console.error('Error fetching services:', error);
       toast({
@@ -130,7 +140,6 @@ const ServiceManager = () => {
     return matchesSearch && matchesCategory;
   });
 
-  // Get unique categories for filter
   const categories = [...new Set(services.map(service => service.service_category))];
 
   if (!user) {
