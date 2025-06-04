@@ -193,6 +193,10 @@ const Services = () => {
     window.open(whatsappLink, '_blank');
   };
 
+  const handleServiceDetail = (serviceId: string) => {
+    window.location.href = `/services/${serviceId}`;
+  };
+
   if (loading) {
     return (
       <section id="layanan" className="py-20 bg-white">
@@ -270,28 +274,21 @@ const Services = () => {
                     {service.service_description}
                   </p>
 
-                  <div className="flex items-center justify-between mb-6">
-                    <div>
-                      <span className="text-sm text-gray-500">Mulai dari</span>
-                      <div className="text-xl font-bold text-green-600">
-                        {service.price_currency} {service.price_starting_from?.toLocaleString('id-ID')}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-sm text-gray-500">Durasi</span>
-                      <div className="text-sm font-semibold text-gray-700">
-                        {service.estimated_duration}
-                      </div>
-                    </div>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handleServiceDetail(service.id)}
+                      className="flex-1 bg-gray-100 text-gray-700 px-4 py-3 rounded-xl hover:bg-gray-200 transition-all duration-300 flex items-center justify-center font-semibold"
+                    >
+                      Lihat Detail
+                    </button>
+                    <button
+                      onClick={() => handleServiceClick(service.service_name)}
+                      className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-3 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 flex items-center justify-center font-semibold shadow-lg hover:shadow-xl"
+                    >
+                      Konsultasi
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </button>
                   </div>
-                  
-                  <button
-                    onClick={() => handleServiceClick(service.service_name)}
-                    className="group/btn bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 flex items-center justify-center font-semibold shadow-lg hover:shadow-xl w-full"
-                  >
-                    Konsultasi Gratis
-                    <ArrowRight className="ml-2 h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
-                  </button>
                 </div>
               );
             })}
