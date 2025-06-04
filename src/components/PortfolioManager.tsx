@@ -1,14 +1,16 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Plus, 
   Save, 
-  FileText
+  FileText,
+  Search,
+  Filter
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
 import { ProjectCard } from './portfolio/ProjectCard';
 import { ProjectForm } from './portfolio/ProjectForm';
@@ -55,6 +57,8 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
   const [saving, setSaving] = useState(false);
   const [showProjectForm, setShowProjectForm] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
   const [formProject, setFormProject] = useState<Project>({
     title: '',
     description: '',
@@ -118,6 +122,82 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
       challenges: 'Menangani traffic tinggi pada event flash sale dan mengintegrasikan multiple payment gateway dengan tingkat keamanan tinggi.',
       solutions: 'Implementasi microservices architecture dengan load balancing dan caching strategy yang optimal, serta enkripsi end-to-end untuk payment processing.',
       results: 'Platform mampu menangani 100,000+ concurrent users dengan uptime 99.9% dan peningkatan conversion rate 40%.'
+    },
+    {
+      title: 'Mobile App Ride Sharing',
+      description: 'Aplikasi ride sharing dengan AI route optimization yang mengurangi waktu tempuh hingga 25%.',
+      detailed_description: 'Aplikasi mobile ride sharing dengan teknologi GPS tracking real-time, sistem matching driver-passenger otomatis, dan algoritma optimasi rute berbasis AI untuk efisiensi maksimal.',
+      image_url: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+      gallery_images: [
+        'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
+      ],
+      client: 'Gojek Indonesia',
+      category: 'Mobile App',
+      technologies: ['React Native', 'Python', 'Machine Learning', 'Google Maps API', 'Firebase'],
+      demo_url: 'https://demo.example.com/ridesharing',
+      project_duration: '10 bulan',
+      team_size: '15 developer, 4 mobile specialist, 2 ML engineer',
+      challenges: 'Mengoptimalkan algoritma matching dan routing dalam kondisi traffic padat serta memastikan akurasi lokasi yang presisi.',
+      solutions: 'Pengembangan algoritma machine learning untuk prediksi traffic pattern dan implementasi GPS correction algorithm untuk akurasi lokasi.',
+      results: 'Pengurangan waktu tunggu driver rata-rata 30% dan efisiensi rute yang menghemat waktu tempuh hingga 25%.'
+    },
+    {
+      title: 'Sistem Manajemen Rumah Sakit',
+      description: 'Platform terintegrasi untuk manajemen rumah sakit dengan fitur AI diagnosis support dan electronic medical records.',
+      detailed_description: 'Sistem informasi rumah sakit komprehensif yang mengintegrasikan manajemen pasien, jadwal dokter, billing system, dan fitur AI assistant untuk membantu diagnosis awal berdasarkan gejala yang diinput.',
+      image_url: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+      gallery_images: [
+        'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
+      ],
+      client: 'RS Siloam',
+      category: 'Healthcare System',
+      technologies: ['Vue.js', 'Laravel', 'MySQL', 'AI/ML', 'HL7 FHIR', 'Docker'],
+      demo_url: 'https://demo.example.com/hospital',
+      project_duration: '12 bulan',
+      team_size: '20 developer, 5 healthcare specialist, 3 security expert',
+      challenges: 'Memastikan keamanan data kesehatan sesuai standar internasional dan integrasi dengan berbagai medical devices.',
+      solutions: 'Implementasi enkripsi tingkat enterprise, audit trail system, dan standardisasi HL7 FHIR untuk interoperability.',
+      results: 'Efisiensi operasional rumah sakit meningkat 60% dengan pengurangan waktu administrasi dan peningkatan akurasi diagnosis.'
+    },
+    {
+      title: 'Smart City Dashboard',
+      description: 'Dashboard analitik real-time untuk monitoring dan manajemen kota cerdas dengan IoT integration.',
+      detailed_description: 'Platform dashboard yang mengintegrasikan data dari berbagai sensor IoT di seluruh kota untuk monitoring traffic, kualitas udara, konsumsi energi, dan layanan publik dalam satu interface yang komprehensif.',
+      image_url: 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+      gallery_images: [
+        'https://images.unsplash.com/photo-1605810230434-7631ac76ec81?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1649972904349-6e44c42644a7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
+      ],
+      client: 'Pemerintah DKI Jakarta',
+      category: 'IoT & Analytics',
+      technologies: ['Angular', 'Spring Boot', 'Apache Kafka', 'Elasticsearch', 'Grafana', 'IoT Sensors'],
+      demo_url: 'https://demo.example.com/smartcity',
+      project_duration: '15 bulan',
+      team_size: '25 developer, 5 IoT specialist, 3 data scientist',
+      challenges: 'Mengintegrasikan data dari ribuan sensor dengan protokol berbeda dan memastikan real-time processing untuk data yang massive.',
+      solutions: 'Arsitektur event-driven dengan Apache Kafka untuk data streaming dan implementasi data lake untuk storage dan analytics.',
+      results: 'Peningkatan efisiensi traffic management 35% dan respons time emergency services berkurang 40%.'
+    },
+    {
+      title: 'Financial Trading Platform',
+      description: 'Platform trading online dengan algoritma AI untuk analisis pasar dan automated trading strategies.',
+      detailed_description: 'Platform trading saham dan cryptocurrency dengan fitur real-time market data, technical analysis tools, dan algoritma machine learning untuk prediksi trend pasar dan automated trading.',
+      image_url: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+      gallery_images: [
+        'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
+      ],
+      client: 'PT Indo Premier Sekuritas',
+      category: 'Fintech',
+      technologies: ['React', 'Python', 'TensorFlow', 'WebSocket', 'Redis', 'PostgreSQL'],
+      demo_url: 'https://demo.example.com/trading',
+      project_duration: '9 bulan',
+      team_size: '18 developer, 4 financial analyst, 3 ML engineer',
+      challenges: 'Memproses data market real-time dengan latency rendah dan memastikan keamanan transaksi finansial tingkat bank.',
+      solutions: 'Implementasi low-latency architecture dengan WebSocket connections dan multi-layer security with 2FA and biometric authentication.',
+      results: 'Platform mampu memproses 50,000+ transaksi per detik dengan latency rata-rata 10ms and 99.99% security.'
     }
   ];
 
@@ -298,6 +378,22 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
     resetForm();
   };
 
+  // Filter projects based on search term and category
+  const filteredProjects = content.projects.filter(project => {
+    const matchesSearch = searchTerm === '' || 
+      project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      project.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      project.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      project.technologies.some(tech => tech.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const matchesCategory = filterCategory === '' || project.category === filterCategory;
+    
+    return matchesSearch && matchesCategory;
+  });
+
+  // Get unique categories for filter
+  const categories = [...new Set(content.projects.map(project => project.category))];
+
   if (!user) {
     return (
       <div className="text-center py-12">
@@ -320,7 +416,7 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Kelola Portfolio</h2>
-          <p className="text-gray-600 mt-1">Total proyek: {content.projects.length}</p>
+          <p className="text-gray-600 mt-1">Total proyek: {content.projects.length} | Ditampilkan: {filteredProjects.length}</p>
         </div>
         <div className="flex space-x-3">
           <Button
@@ -341,9 +437,54 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
         onDescriptionChange={(description) => setContent({ ...content, description })}
       />
 
+      {/* Search and Filter */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Filter dan Pencarian</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="h-4 w-4 absolute left-3 top-3 text-gray-400" />
+                <Input
+                  placeholder="Cari proyek berdasarkan nama, deskripsi, klien, atau teknologi..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <select
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Semua Kategori</option>
+                {categories.map(category => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
+              </select>
+              <Button
+                onClick={() => {
+                  setSearchTerm('');
+                  setFilterCategory('');
+                }}
+                variant="outline"
+                size="sm"
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                Reset
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Daftar Proyek Portfolio</CardTitle>
+          <CardTitle>Daftar Proyek Portfolio ({filteredProjects.length})</CardTitle>
           <Button
             onClick={addProject}
             className="bg-green-600 text-white hover:bg-green-700"
@@ -353,28 +494,40 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
           </Button>
         </CardHeader>
         <CardContent>
-          {content.projects.length === 0 ? (
+          {filteredProjects.length === 0 ? (
             <div className="text-center py-12">
               <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Belum Ada Proyek</h3>
-              <p className="text-gray-500 mb-4">Mulai dengan menambahkan proyek portfolio pertama Anda</p>
-              <Button onClick={addProject} className="bg-blue-600 text-white hover:bg-blue-700">
-                <Plus className="h-4 w-4 mr-2" />
-                Tambah Proyek Pertama
-              </Button>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {content.projects.length === 0 ? 'Belum Ada Proyek' : 'Tidak Ada Proyek yang Sesuai Filter'}
+              </h3>
+              <p className="text-gray-500 mb-4">
+                {content.projects.length === 0 
+                  ? 'Mulai dengan menambahkan proyek portfolio pertama Anda'
+                  : 'Coba ubah kata kunci pencarian atau filter kategori'
+                }
+              </p>
+              {content.projects.length === 0 && (
+                <Button onClick={addProject} className="bg-blue-600 text-white hover:bg-blue-700">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Tambah Proyek Pertama
+                </Button>
+              )}
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {content.projects.map((project, index) => (
-                <ProjectCard
-                  key={`${project.title}-${index}`}
-                  project={project}
-                  index={index}
-                  onEdit={editProject}
-                  onDelete={deleteProject}
-                  onView={onProjectSelect}
-                />
-              ))}
+              {filteredProjects.map((project, index) => {
+                const originalIndex = content.projects.findIndex(p => p === project);
+                return (
+                  <ProjectCard
+                    key={`${project.title}-${originalIndex}`}
+                    project={project}
+                    index={originalIndex}
+                    onEdit={editProject}
+                    onDelete={deleteProject}
+                    onView={onProjectSelect}
+                  />
+                );
+              })}
             </div>
           )}
         </CardContent>

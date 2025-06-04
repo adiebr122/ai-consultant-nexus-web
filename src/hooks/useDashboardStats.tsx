@@ -48,9 +48,18 @@ export const useDashboardStats = () => {
         supabase.from('invoices').select('id', { count: 'exact' }).eq('user_id', user.id).eq('status', 'unpaid'),
         supabase.from('form_submissions').select('id', { count: 'exact' }).gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()),
         supabase.from('client_logos').select('id', { count: 'exact' }).eq('is_active', true),
-        supabase.from('website_content').select('id', { count: 'exact' }).eq('section', 'portfolio').eq('user_id', user.id).eq('is_active', true),
+        supabase.from('website_content').select('*').eq('section', 'portfolio').eq('user_id', user.id).eq('is_active', true).maybeSingle(),
         supabase.from('testimonials').select('id', { count: 'exact' }).eq('user_id', user.id).eq('is_active', true),
       ]);
+
+      // Count portfolio projects from metadata
+      let portfolioCount = 0;
+      if (portfolioResponse.data && portfolioResponse.data.metadata) {
+        const metadata = portfolioResponse.data.metadata as any;
+        if (metadata.projects && Array.isArray(metadata.projects)) {
+          portfolioCount = metadata.projects.length;
+        }
+      }
 
       setStats({
         totalCRMContacts: crmResponse.count || 0,
@@ -58,7 +67,7 @@ export const useDashboardStats = () => {
         pendingInvoices: invoicesResponse.count || 0,
         formSubmissions: submissionsResponse.count || 0,
         clientLogos: logosResponse.count || 0,
-        portfolioProjects: portfolioResponse.count || 0,
+        portfolioProjects: portfolioCount,
         testimonials: testimonialsResponse.count || 0,
         loading: false,
       });
