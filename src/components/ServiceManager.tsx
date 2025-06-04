@@ -1,4 +1,5 @@
 
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -17,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
 import ServiceDetail from './ServiceDetail';
+import ServiceForm from './ServiceForm';
 
 interface Service {
   id: string;
@@ -41,6 +43,8 @@ const ServiceManager = () => {
   const [filterCategory, setFilterCategory] = useState('');
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [showDetail, setShowDetail] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [editingService, setEditingService] = useState<Service | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -128,6 +132,27 @@ const ServiceManager = () => {
     setSelectedService(null);
   };
 
+  const handleAddService = () => {
+    setEditingService(null);
+    setShowForm(true);
+  };
+
+  const handleEditService = (service: Service) => {
+    setEditingService(service);
+    setShowForm(true);
+  };
+
+  const handleFormSave = () => {
+    setShowForm(false);
+    setEditingService(null);
+    fetchServices();
+  };
+
+  const handleFormCancel = () => {
+    setShowForm(false);
+    setEditingService(null);
+  };
+
   // Filter services based on search term and category
   const filteredServices = services.filter(service => {
     const matchesSearch = searchTerm === '' || 
@@ -155,6 +180,10 @@ const ServiceManager = () => {
     return <ServiceDetail service={selectedService} onBack={closeDetail} />;
   }
 
+  if (showForm) {
+    return <ServiceForm service={editingService} onSave={handleFormSave} onCancel={handleFormCancel} />;
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -170,6 +199,10 @@ const ServiceManager = () => {
           <h2 className="text-2xl font-bold text-gray-900">Kelola Layanan</h2>
           <p className="text-gray-600 mt-1">Total layanan: {services.length} | Ditampilkan: {filteredServices.length}</p>
         </div>
+        <Button onClick={handleAddService}>
+          <Plus className="h-4 w-4 mr-2" />
+          Tambah Layanan
+        </Button>
       </div>
 
       {/* Search and Filter */}
@@ -234,6 +267,12 @@ const ServiceManager = () => {
                   : 'Coba ubah kata kunci pencarian atau filter kategori'
                 }
               </p>
+              {services.length === 0 && (
+                <Button onClick={handleAddService}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Tambah Layanan Pertama
+                </Button>
+              )}
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -250,6 +289,20 @@ const ServiceManager = () => {
                         title="Lihat Detail"
                       >
                         <Eye className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => handleEditService(service)}
+                        className="text-green-600 hover:text-green-800 p-1"
+                        title="Edit"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => deleteService(service.id)}
+                        className="text-red-600 hover:text-red-800 p-1"
+                        title="Hapus"
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                   </div>
