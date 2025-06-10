@@ -35,6 +35,11 @@ ADD COLUMN IF NOT EXISTS chat_rating INTEGER CHECK (chat_rating >= 1 AND chat_ra
 ADD COLUMN IF NOT EXISTS chat_feedback TEXT,
 ADD COLUMN IF NOT EXISTS email_sent BOOLEAN DEFAULT false;
 
+-- Drop existing check constraint if it exists and add the correct one
+ALTER TABLE public.chat_conversations DROP CONSTRAINT IF EXISTS chat_conversations_status_check;
+ALTER TABLE public.chat_conversations ADD CONSTRAINT chat_conversations_status_check 
+CHECK (status IN ('unassigned', 'active', 'pending', 'closed'));
+
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_chat_conversations_agent_id ON public.chat_conversations(agent_id);
 CREATE INDEX IF NOT EXISTS idx_chat_conversations_status ON public.chat_conversations(status);

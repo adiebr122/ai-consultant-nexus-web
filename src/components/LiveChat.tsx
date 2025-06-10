@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { MessageCircle, X, Send, Star, Mail } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -47,7 +46,7 @@ const LiveChat = () => {
     try {
       setLoading(true);
       
-      // Create new conversation
+      // Create new conversation with status 'unassigned'
       const { data: conversation, error } = await supabase
         .from('chat_conversations')
         .insert({
@@ -56,7 +55,7 @@ const LiveChat = () => {
           customer_email: customerInfo.email || null,
           customer_company: customerInfo.company || null,
           platform: 'website',
-          status: 'active',
+          status: 'unassigned',
           last_message_content: 'Percakapan dimulai',
           last_message_time: new Date().toISOString(),
           chat_started_at: new Date().toISOString()
@@ -64,7 +63,10 @@ const LiveChat = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating conversation:', error);
+        throw error;
+      }
 
       setConversationId(conversation.id);
       setShowCustomerForm(false);
@@ -105,11 +107,16 @@ const LiveChat = () => {
           notes: 'Lead dari Live Chat website'
         });
 
+      toast({
+        title: "Chat Dimulai",
+        description: "Percakapan berhasil dimulai. Tim CS akan segera merespons.",
+      });
+
     } catch (error) {
       console.error('Error creating conversation:', error);
       toast({
         title: "Error",
-        description: "Gagal memulai percakapan",
+        description: "Gagal memulai percakapan. Silakan coba lagi.",
         variant: "destructive",
       });
     } finally {
@@ -144,13 +151,14 @@ const LiveChat = () => {
           message_type: 'text'
         });
 
-      // Update conversation last message
+      // Update conversation last message and change status to active
       await supabase
         .from('chat_conversations')
         .update({
           last_message_content: userMessage.text,
           last_message_time: new Date().toISOString(),
-          unread_count: 1
+          unread_count: 1,
+          status: 'active'
         })
         .eq('id', conversationId);
 
