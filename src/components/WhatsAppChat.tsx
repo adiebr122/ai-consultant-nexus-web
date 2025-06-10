@@ -13,7 +13,9 @@ import {
   CheckCircle,
   AlertCircle,
   Plus,
-  Search
+  Search,
+  Globe,
+  Smartphone
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -21,6 +23,7 @@ interface Conversation {
   id: string;
   customer_name: string;
   customer_phone: string;
+  customer_email?: string;
   platform: string;
   status: string;
   last_message_content: string;
@@ -45,15 +48,22 @@ const WhatsAppChat = () => {
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [platformFilter, setPlatformFilter] = useState('');
 
   // Fetch conversations
   const { data: conversations = [], isLoading: conversationsLoading } = useQuery({
-    queryKey: ['conversations'],
+    queryKey: ['conversations', platformFilter],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('chat_conversations')
         .select('*')
         .order('updated_at', { ascending: false });
+      
+      if (platformFilter) {
+        query = query.eq('platform', platformFilter);
+      }
+      
+      const { data, error } = await query;
       
       if (error) throw error;
       return data as Conversation[];
@@ -93,6 +103,16 @@ const WhatsAppChat = () => {
         });
       
       if (error) throw error;
+
+      // Update conversation
+      await supabase
+        .from('chat_conversations')
+        .update({
+          last_message_content: content,
+          last_message_time: new Date().toISOString(),
+          unread_count: 0
+        })
+        .eq('id', conversationId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['messages', selectedConversation] });
@@ -111,6 +131,16 @@ const WhatsAppChat = () => {
       });
     }
   });
+
+  // Mark conversation as read when selected
+  useEffect(() => {
+    if (selectedConversation) {
+      supabase
+        .from('chat_conversations')
+        .update({ unread_count: 0 })
+        .eq('id', selectedConversation);
+    }
+  }, [selectedConversation]);
 
   // Real-time subscriptions
   useEffect(() => {
@@ -164,7 +194,8 @@ const WhatsAppChat = () => {
 
   const filteredConversations = conversations.filter(conv =>
     conv.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    conv.customer_phone.includes(searchTerm)
+    conv.customer_phone.includes(searchTerm) ||
+    (conv.customer_email && conv.customer_email.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const selectedConversationData = conversations.find(conv => conv.id === selectedConversation);
@@ -185,6 +216,22 @@ const WhatsAppChat = () => {
     }
   };
 
+  const getPlatformIcon = (platform: string) => {
+    switch (platform) {
+      case 'website': return <Globe className="h-4 w-4" />;
+      case 'whatsapp': return <Smartphone className="h-4 w-4" />;
+      default: return <MessageCircle className="h-4 w-4" />;
+    }
+  };
+
+  const getPlatformColor = (platform: string) => {
+    switch (platform) {
+      case 'website': return 'bg-blue-100 text-blue-800';
+      case 'whatsapp': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   return (
     <div className="flex h-[600px] bg-white rounded-xl shadow-lg overflow-hidden">
       {/* Conversations List */}
@@ -193,22 +240,34 @@ const WhatsAppChat = () => {
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold flex items-center">
               <MessageCircle className="h-5 w-5 mr-2 text-green-600" />
-              WhatsApp Chat
+              Live Chat ({filteredConversations.length})
             </h3>
             <button className="text-green-600 hover:text-green-700">
               <Settings className="h-5 w-5" />
             </button>
           </div>
           
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Cari konversasi..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            />
+          <div className="space-y-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Cari konversasi..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              />
+            </div>
+            
+            <select
+              value={platformFilter}
+              onChange={(e) => setPlatformFilter(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            >
+              <option value="">Semua Platform</option>
+              <option value="website">Website</option>
+              <option value="whatsapp">WhatsApp</option>
+            </select>
           </div>
         </div>
 
@@ -234,15 +293,24 @@ const WhatsAppChat = () => {
                     <div className="flex items-center mb-1">
                       <h4 className="font-medium text-gray-900">{conversation.customer_name}</h4>
                       {conversation.unread_count > 0 && (
-                        <span className="ml-2 bg-green-500 text-white text-xs rounded-full px-2 py-1">
+                        <span className="ml-2 bg-red-500 text-white text-xs rounded-full px-2 py-1">
                           {conversation.unread_count}
                         </span>
                       )}
+                    </div>
+                    <div className="flex items-center mb-1 space-x-2">
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${getPlatformColor(conversation.platform)}`}>
+                        {getPlatformIcon(conversation.platform)}
+                        <span className="ml-1 capitalize">{conversation.platform}</span>
+                      </span>
                     </div>
                     <p className="text-sm text-gray-600 flex items-center mb-1">
                       <Phone className="h-3 w-3 mr-1" />
                       {conversation.customer_phone}
                     </p>
+                    {conversation.customer_email && (
+                      <p className="text-xs text-gray-500 mb-1">{conversation.customer_email}</p>
+                    )}
                     <p className="text-sm text-gray-500 truncate">
                       {conversation.last_message_content}
                     </p>
@@ -275,12 +343,21 @@ const WhatsAppChat = () => {
                   <h3 className="font-semibold text-gray-900">
                     {selectedConversationData?.customer_name}
                   </h3>
-                  <p className="text-sm text-gray-600 flex items-center">
-                    <Phone className="h-3 w-3 mr-1" />
-                    {selectedConversationData?.customer_phone}
-                  </p>
+                  <div className="flex items-center space-x-3 text-sm text-gray-600">
+                    <span className="flex items-center">
+                      <Phone className="h-3 w-3 mr-1" />
+                      {selectedConversationData?.customer_phone}
+                    </span>
+                    {selectedConversationData?.customer_email && (
+                      <span>{selectedConversationData.customer_email}</span>
+                    )}
+                  </div>
                 </div>
                 <div className="flex items-center space-x-2">
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${getPlatformColor(selectedConversationData?.platform || '')}`}>
+                    {getPlatformIcon(selectedConversationData?.platform || '')}
+                    <span className="ml-1 capitalize">{selectedConversationData?.platform}</span>
+                  </span>
                   <span className={`px-2 py-1 text-xs rounded-full ${
                     selectedConversationData?.status === 'active' ? 'bg-green-100 text-green-800' :
                     selectedConversationData?.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
@@ -315,11 +392,18 @@ const WhatsAppChat = () => {
                       }`}
                     >
                       <p className="text-sm">{message.message_content}</p>
-                      <p className={`text-xs mt-1 ${
-                        message.sender_type === 'agent' ? 'text-green-100' : 'text-gray-500'
-                      }`}>
-                        {formatTime(message.message_time)}
-                      </p>
+                      <div className="flex items-center justify-between mt-1">
+                        <p className={`text-xs ${
+                          message.sender_type === 'agent' ? 'text-green-100' : 'text-gray-500'
+                        }`}>
+                          {message.sender_name}
+                        </p>
+                        <p className={`text-xs ${
+                          message.sender_type === 'agent' ? 'text-green-100' : 'text-gray-500'
+                        }`}>
+                          {formatTime(message.message_time)}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 ))
