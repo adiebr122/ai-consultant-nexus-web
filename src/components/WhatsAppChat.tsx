@@ -15,7 +15,10 @@ import {
   Plus,
   Search,
   Globe,
-  Smartphone
+  Smartphone,
+  Building,
+  Mail,
+  UserCheck
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -24,11 +27,17 @@ interface Conversation {
   customer_name: string;
   customer_phone: string;
   customer_email?: string;
+  customer_company?: string;
   platform: string;
   status: string;
   last_message_content: string;
   last_message_time: string;
   unread_count: number;
+  chat_agents?: {
+    agent_name: string;
+    agent_email: string;
+  };
+  agent_id?: string;
 }
 
 interface Message {
@@ -41,6 +50,14 @@ interface Message {
   message_time: string;
 }
 
+interface Agent {
+  id: string;
+  agent_name: string;
+  agent_email: string;
+  is_active: boolean;
+  is_online: boolean;
+}
+
 const WhatsAppChat = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -49,24 +66,51 @@ const WhatsAppChat = () => {
   const [newMessage, setNewMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [platformFilter, setPlatformFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
 
   // Fetch conversations
   const { data: conversations = [], isLoading: conversationsLoading } = useQuery({
-    queryKey: ['conversations', platformFilter],
+    queryKey: ['conversations', platformFilter, statusFilter],
     queryFn: async () => {
       let query = supabase
         .from('chat_conversations')
-        .select('*')
+        .select(`
+          *,
+          chat_agents (
+            agent_name,
+            agent_email
+          )
+        `)
         .order('updated_at', { ascending: false });
       
       if (platformFilter) {
         query = query.eq('platform', platformFilter);
       }
       
+      if (statusFilter) {
+        query = query.eq('status', statusFilter);
+      }
+      
       const { data, error } = await query;
       
       if (error) throw error;
       return data as Conversation[];
+    },
+    enabled: !!user
+  });
+
+  // Fetch agents for assignment
+  const { data: agents = [] } = useQuery({
+    queryKey: ['available_agents'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('chat_agents')
+        .select('*')
+        .eq('is_active', true)
+        .order('agent_name');
+      
+      if (error) throw error;
+      return data as Agent[];
     },
     enabled: !!user
   });
@@ -110,7 +154,8 @@ const WhatsAppChat = () => {
         .update({
           last_message_content: content,
           last_message_time: new Date().toISOString(),
-          unread_count: 0
+          unread_count: 0,
+          status: 'active'
         })
         .eq('id', conversationId);
     },
@@ -128,6 +173,61 @@ const WhatsAppChat = () => {
         title: "Error",
         description: "Gagal mengirim pesan: " + error.message,
         variant: "destructive",
+      });
+    }
+  });
+
+  // Assign agent mutation
+  const assignAgentMutation = useMutation({
+    mutationFn: async ({ conversationId, agentId }: { conversationId: string; agentId: string }) => {
+      const { error } = await supabase
+        .from('chat_conversations')
+        .update({ 
+          agent_id: agentId,
+          status: 'active',
+          assigned_to: user?.id
+        })
+        .eq('id', conversationId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      toast({
+        title: "Berhasil",
+        description: "Agent berhasil ditugaskan",
+      });
+    }
+  });
+
+  // Close conversation mutation
+  const closeConversationMutation = useMutation({
+    mutationFn: async (conversationId: string) => {
+      const { error } = await supabase
+        .from('chat_conversations')
+        .update({ 
+          status: 'closed',
+          chat_ended_at: new Date().toISOString()
+        })
+        .eq('id', conversationId);
+      
+      if (error) throw error;
+
+      // Send transcript email
+      await fetch('/functions/v1/send-chat-transcript', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ conversationId })
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      toast({
+        title: "Percakapan Ditutup",
+        description: "Transkrip telah dikirim ke email admin dan customer",
       });
     }
   });
@@ -195,7 +295,8 @@ const WhatsAppChat = () => {
   const filteredConversations = conversations.filter(conv =>
     conv.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     conv.customer_phone.includes(searchTerm) ||
-    (conv.customer_email && conv.customer_email.toLowerCase().includes(searchTerm.toLowerCase()))
+    (conv.customer_email && conv.customer_email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (conv.customer_company && conv.customer_company.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const selectedConversationData = conversations.find(conv => conv.id === selectedConversation);
@@ -212,6 +313,7 @@ const WhatsAppChat = () => {
       case 'active': return 'text-green-600';
       case 'pending': return 'text-yellow-600';
       case 'closed': return 'text-gray-600';
+      case 'unassigned': return 'text-orange-600';
       default: return 'text-blue-600';
     }
   };
@@ -233,18 +335,15 @@ const WhatsAppChat = () => {
   };
 
   return (
-    <div className="flex h-[600px] bg-white rounded-xl shadow-lg overflow-hidden">
+    <div className="flex h-[700px] bg-white rounded-xl shadow-lg overflow-hidden">
       {/* Conversations List */}
       <div className="w-1/3 border-r border-gray-200 flex flex-col">
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold flex items-center">
-              <MessageCircle className="h-5 w-5 mr-2 text-green-600" />
+              <MessageCircle className="h-5 w-5 mr-2 text-blue-600" />
               Live Chat ({filteredConversations.length})
             </h3>
-            <button className="text-green-600 hover:text-green-700">
-              <Settings className="h-5 w-5" />
-            </button>
           </div>
           
           <div className="space-y-2">
@@ -255,19 +354,33 @@ const WhatsAppChat = () => {
                 placeholder="Cari konversasi..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
             
-            <select
-              value={platformFilter}
-              onChange={(e) => setPlatformFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            >
-              <option value="">Semua Platform</option>
-              <option value="website">Website</option>
-              <option value="whatsapp">WhatsApp</option>
-            </select>
+            <div className="grid grid-cols-2 gap-2">
+              <select
+                value={platformFilter}
+                onChange={(e) => setPlatformFilter(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              >
+                <option value="">Semua Platform</option>
+                <option value="website">Website</option>
+                <option value="whatsapp">WhatsApp</option>
+              </select>
+              
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              >
+                <option value="">Semua Status</option>
+                <option value="unassigned">Belum Ditugaskan</option>
+                <option value="active">Aktif</option>
+                <option value="pending">Pending</option>
+                <option value="closed">Ditutup</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -285,7 +398,7 @@ const WhatsAppChat = () => {
                 key={conversation.id}
                 onClick={() => setSelectedConversation(conversation.id)}
                 className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${
-                  selectedConversation === conversation.id ? 'bg-green-50 border-l-4 border-l-green-500' : ''
+                  selectedConversation === conversation.id ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
                 }`}
               >
                 <div className="flex items-start justify-between">
@@ -308,8 +421,23 @@ const WhatsAppChat = () => {
                       <Phone className="h-3 w-3 mr-1" />
                       {conversation.customer_phone}
                     </p>
+                    {conversation.customer_company && (
+                      <p className="text-xs text-gray-500 flex items-center mb-1">
+                        <Building className="h-3 w-3 mr-1" />
+                        {conversation.customer_company}
+                      </p>
+                    )}
                     {conversation.customer_email && (
-                      <p className="text-xs text-gray-500 mb-1">{conversation.customer_email}</p>
+                      <p className="text-xs text-gray-500 flex items-center mb-1">
+                        <Mail className="h-3 w-3 mr-1" />
+                        {conversation.customer_email}
+                      </p>
+                    )}
+                    {conversation.chat_agents && (
+                      <p className="text-xs text-blue-600 flex items-center mb-1">
+                        <UserCheck className="h-3 w-3 mr-1" />
+                        {conversation.chat_agents.agent_name}
+                      </p>
                     )}
                     <p className="text-sm text-gray-500 truncate">
                       {conversation.last_message_content}
@@ -349,7 +477,16 @@ const WhatsAppChat = () => {
                       {selectedConversationData?.customer_phone}
                     </span>
                     {selectedConversationData?.customer_email && (
-                      <span>{selectedConversationData.customer_email}</span>
+                      <span className="flex items-center">
+                        <Mail className="h-3 w-3 mr-1" />
+                        {selectedConversationData.customer_email}
+                      </span>
+                    )}
+                    {selectedConversationData?.customer_company && (
+                      <span className="flex items-center">
+                        <Building className="h-3 w-3 mr-1" />
+                        {selectedConversationData.customer_company}
+                      </span>
                     )}
                   </div>
                 </div>
@@ -361,10 +498,44 @@ const WhatsAppChat = () => {
                   <span className={`px-2 py-1 text-xs rounded-full ${
                     selectedConversationData?.status === 'active' ? 'bg-green-100 text-green-800' :
                     selectedConversationData?.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                    selectedConversationData?.status === 'unassigned' ? 'bg-orange-100 text-orange-800' :
                     'bg-gray-100 text-gray-800'
                   }`}>
                     {selectedConversationData?.status}
                   </span>
+                  
+                  {/* Agent Assignment */}
+                  {selectedConversationData?.status !== 'closed' && (
+                    <div className="flex items-center space-x-2">
+                      {!selectedConversationData?.agent_id && (
+                        <select
+                          onChange={(e) => {
+                            if (e.target.value) {
+                              assignAgentMutation.mutate({
+                                conversationId: selectedConversation,
+                                agentId: e.target.value
+                              });
+                            }
+                          }}
+                          className="text-xs px-2 py-1 border border-gray-300 rounded"
+                        >
+                          <option value="">Pilih Agent</option>
+                          {agents.map(agent => (
+                            <option key={agent.id} value={agent.id}>
+                              {agent.agent_name}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                      
+                      <button
+                        onClick={() => closeConversationMutation.mutate(selectedConversation)}
+                        className="text-xs bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded"
+                      >
+                        Tutup Chat
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -387,19 +558,19 @@ const WhatsAppChat = () => {
                     <div
                       className={`max-w-xs px-4 py-2 rounded-lg ${
                         message.sender_type === 'agent'
-                          ? 'bg-green-500 text-white'
+                          ? 'bg-blue-500 text-white'
                           : 'bg-gray-100 text-gray-800'
                       }`}
                     >
                       <p className="text-sm">{message.message_content}</p>
                       <div className="flex items-center justify-between mt-1">
                         <p className={`text-xs ${
-                          message.sender_type === 'agent' ? 'text-green-100' : 'text-gray-500'
+                          message.sender_type === 'agent' ? 'text-blue-100' : 'text-gray-500'
                         }`}>
                           {message.sender_name}
                         </p>
                         <p className={`text-xs ${
-                          message.sender_type === 'agent' ? 'text-green-100' : 'text-gray-500'
+                          message.sender_type === 'agent' ? 'text-blue-100' : 'text-gray-500'
                         }`}>
                           {formatTime(message.message_time)}
                         </p>
@@ -411,24 +582,26 @@ const WhatsAppChat = () => {
             </div>
 
             {/* Message Input */}
-            <form onSubmit={handleSendMessage} className="p-4 border-t border-gray-200">
-              <div className="flex space-x-2">
-                <input
-                  type="text"
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Ketik pesan..."
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-                <button
-                  type="submit"
-                  disabled={!newMessage.trim() || sendMessageMutation.isPending}
-                  className="bg-green-500 text-white p-2 rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50"
-                >
-                  <Send className="h-4 w-4" />
-                </button>
-              </div>
-            </form>
+            {selectedConversationData?.status !== 'closed' && (
+              <form onSubmit={handleSendMessage} className="p-4 border-t border-gray-200">
+                <div className="flex space-x-2">
+                  <input
+                    type="text"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    placeholder="Ketik pesan..."
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!newMessage.trim() || sendMessageMutation.isPending}
+                    className="bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
+                  >
+                    <Send className="h-4 w-4" />
+                  </button>
+                </div>
+              </form>
+            )}
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center bg-gray-50">

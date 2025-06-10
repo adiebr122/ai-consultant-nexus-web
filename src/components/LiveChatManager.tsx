@@ -11,10 +11,12 @@ import {
   Phone,
   Clock,
   CheckCircle,
-  AlertTriangle
+  AlertTriangle,
+  UserCheck
 } from 'lucide-react';
 import WhatsAppChat from './WhatsAppChat';
 import WhatsAppConfig from './WhatsAppConfig';
+import ChatAgentManager from './ChatAgentManager';
 
 const LiveChatManager = () => {
   const { user } = useAuth();
@@ -24,23 +26,27 @@ const LiveChatManager = () => {
   const { data: chatStats } = useQuery({
     queryKey: ['chat_stats'],
     queryFn: async () => {
-      const [conversationsResult, messagesResult, devicesResult] = await Promise.all([
-        supabase.from('chat_conversations').select('id, status'),
+      const [conversationsResult, messagesResult, agentsResult] = await Promise.all([
+        supabase.from('chat_conversations').select('id, status, platform'),
         supabase.from('chat_messages').select('id').gte('message_time', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()),
-        supabase.from('whatsapp_devices').select('id, connection_status').eq('user_id', user?.id || '')
+        supabase.from('chat_agents').select('id, is_active, is_online')
       ]);
 
       const conversations = conversationsResult.data || [];
       const todayMessages = messagesResult.data || [];
-      const devices = devicesResult.data || [];
+      const agents = agentsResult.data || [];
 
       return {
         totalConversations: conversations.length,
         activeConversations: conversations.filter(c => c.status === 'active').length,
         pendingConversations: conversations.filter(c => c.status === 'pending').length,
+        unassignedConversations: conversations.filter(c => c.status === 'unassigned').length,
+        websiteChats: conversations.filter(c => c.platform === 'website').length,
+        whatsappChats: conversations.filter(c => c.platform === 'whatsapp').length,
         todayMessages: todayMessages.length,
-        connectedDevices: devices.filter(d => d.connection_status === 'connected').length,
-        totalDevices: devices.length
+        totalAgents: agents.length,
+        activeAgents: agents.filter(a => a.is_active).length,
+        onlineAgents: agents.filter(a => a.is_online).length
       };
     },
     enabled: !!user
@@ -48,6 +54,7 @@ const LiveChatManager = () => {
 
   const tabs = [
     { id: 'chat', label: 'Live Chat', icon: MessageCircle },
+    { id: 'agents', label: 'Manajemen Agent', icon: UserCheck },
     { id: 'config', label: 'Konfigurasi', icon: Settings },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 }
   ];
@@ -57,7 +64,7 @@ const LiveChatManager = () => {
       <h3 className="text-2xl font-bold">Analytics Live Chat</h3>
       
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-xl shadow-lg">
           <div className="flex items-center justify-between">
             <div>
@@ -81,10 +88,40 @@ const LiveChatManager = () => {
         <div className="bg-white p-6 rounded-xl shadow-lg">
           <div className="flex items-center justify-between">
             <div>
+              <p className="text-sm text-gray-600">Belum Ditugaskan</p>
+              <p className="text-2xl font-bold text-orange-600">{chatStats?.unassignedConversations || 0}</p>
+            </div>
+            <AlertTriangle className="h-8 w-8 text-orange-600" />
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
               <p className="text-sm text-gray-600">Menunggu Respons</p>
               <p className="text-2xl font-bold text-yellow-600">{chatStats?.pendingConversations || 0}</p>
             </div>
             <Clock className="h-8 w-8 text-yellow-600" />
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Chat Website</p>
+              <p className="text-2xl font-bold text-blue-600">{chatStats?.websiteChats || 0}</p>
+            </div>
+            <MessageCircle className="h-8 w-8 text-blue-600" />
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Chat WhatsApp</p>
+              <p className="text-2xl font-bold text-green-600">{chatStats?.whatsappChats || 0}</p>
+            </div>
+            <Phone className="h-8 w-8 text-green-600" />
           </div>
         </div>
 
@@ -101,22 +138,12 @@ const LiveChatManager = () => {
         <div className="bg-white p-6 rounded-xl shadow-lg">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Device Terhubung</p>
+              <p className="text-sm text-gray-600">Agent Online</p>
               <p className="text-2xl font-bold text-green-600">
-                {chatStats?.connectedDevices || 0}/{chatStats?.totalDevices || 0}
+                {chatStats?.onlineAgents || 0}/{chatStats?.totalAgents || 0}
               </p>
             </div>
-            <Phone className="h-8 w-8 text-green-600" />
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Response Rate</p>
-              <p className="text-2xl font-bold text-blue-600">95%</p>
-            </div>
-            <BarChart3 className="h-8 w-8 text-blue-600" />
+            <Users className="h-8 w-8 text-green-600" />
           </div>
         </div>
       </div>
@@ -150,18 +177,15 @@ const LiveChatManager = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Live Chat Manager</h2>
-        <div className="flex items-center space-x-2">
-          {chatStats?.connectedDevices ? (
-            <div className="flex items-center text-green-600">
-              <CheckCircle className="h-4 w-4 mr-1" />
-              <span className="text-sm">Online</span>
-            </div>
-          ) : (
-            <div className="flex items-center text-red-600">
-              <AlertTriangle className="h-4 w-4 mr-1" />
-              <span className="text-sm">Offline</span>
-            </div>
-          )}
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center text-blue-600">
+            <Users className="h-4 w-4 mr-1" />
+            <span className="text-sm">{chatStats?.onlineAgents || 0} Agent Online</span>
+          </div>
+          <div className="flex items-center text-green-600">
+            <CheckCircle className="h-4 w-4 mr-1" />
+            <span className="text-sm">Sistem Aktif</span>
+          </div>
         </div>
       </div>
 
@@ -189,6 +213,7 @@ const LiveChatManager = () => {
       {/* Tab Content */}
       <div>
         {activeTab === 'chat' && <WhatsAppChat />}
+        {activeTab === 'agents' && <ChatAgentManager />}
         {activeTab === 'config' && <WhatsAppConfig />}
         {activeTab === 'analytics' && renderAnalytics()}
       </div>
