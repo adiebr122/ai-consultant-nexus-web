@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, X, Image, RefreshCw } from 'lucide-react';
+import { Upload, X, Image, RefreshCw, Trash2 } from 'lucide-react';
 
 interface GalleryUploadProps {
   galleryImages: string[];
@@ -14,6 +14,7 @@ interface GalleryUploadProps {
 export const GalleryUpload = ({ galleryImages, onGalleryChange }: GalleryUploadProps) => {
   const { toast } = useToast();
   const [uploading, setUploading] = useState(false);
+  const [deletingIndex, setDeletingIndex] = useState<number | null>(null);
 
   const handleGalleryUpload = async (files: FileList) => {
     if (!files || files.length === 0) return;
@@ -59,9 +60,44 @@ export const GalleryUpload = ({ galleryImages, onGalleryChange }: GalleryUploadP
     }
   };
 
-  const removeGalleryImage = (index: number) => {
-    const newGalleryImages = galleryImages.filter((_, i) => i !== index);
-    onGalleryChange(newGalleryImages);
+  const removeGalleryImage = async (index: number) => {
+    setDeletingIndex(index);
+    
+    try {
+      // Get the image URL to check if it's from our storage
+      const imageUrl = galleryImages[index];
+      
+      // If it's a Supabase storage URL, try to delete from storage
+      if (imageUrl && imageUrl.includes('supabase.co') && imageUrl.includes('portfolio-images')) {
+        const urlParts = imageUrl.split('/');
+        const fileName = urlParts[urlParts.length - 1];
+        const filePath = `portfolio/${fileName}`;
+        
+        // Try to delete from storage (don't fail if it doesn't exist)
+        await supabase.storage
+          .from('portfolio-images')
+          .remove([filePath]);
+      }
+      
+      // Remove from the gallery array
+      const newGalleryImages = galleryImages.filter((_, i) => i !== index);
+      onGalleryChange(newGalleryImages);
+      
+      toast({
+        title: "Berhasil",
+        description: "Gambar berhasil dihapus dari galeri",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error('Error deleting gallery image:', error);
+      toast({
+        title: "Error",
+        description: "Gagal menghapus gambar galeri",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingIndex(null);
+    }
   };
 
   const addImageUrl = () => {
@@ -136,8 +172,13 @@ export const GalleryUpload = ({ galleryImages, onGalleryChange }: GalleryUploadP
                   size="sm"
                   className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
                   onClick={() => removeGalleryImage(index)}
+                  disabled={deletingIndex === index}
                 >
-                  <X className="h-3 w-3" />
+                  {deletingIndex === index ? (
+                    <RefreshCw className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-3 w-3" />
+                  )}
                 </Button>
               </div>
             ))}
