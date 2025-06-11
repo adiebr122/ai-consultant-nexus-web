@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { 
   Plus, 
@@ -20,6 +19,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { GalleryUpload } from './GalleryUpload';
 
 interface Project {
   id?: string;
@@ -285,9 +285,9 @@ export const ProjectForm = ({ project, isEditing, onSave, onCancel, onChange }: 
           </div>
         </div>
 
-        {/* Image Upload */}
+        {/* Main Image Upload */}
         <div className="space-y-2">
-          <Label className="text-sm font-medium text-gray-700">Project Image</Label>
+          <Label className="text-sm font-medium text-gray-700">Project Main Image</Label>
           <div className="flex items-center space-x-2">
             <Input
               type="text"
@@ -332,6 +332,12 @@ export const ProjectForm = ({ project, isEditing, onSave, onCancel, onChange }: 
             </div>
           )}
         </div>
+
+        {/* Gallery Upload Component */}
+        <GalleryUpload
+          galleryImages={project.gallery_images}
+          onGalleryChange={(images) => onChange({...project, gallery_images: images})}
+        />
 
         {/* Project Challenges & Solutions */}
         <div className="space-y-4">
