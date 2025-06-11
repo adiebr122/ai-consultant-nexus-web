@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -270,20 +271,47 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
     try {
       console.log('Saving portfolio content:', updatedContent);
       
-      const { error } = await supabase
+      // First, try to find existing record
+      const { data: existingData } = await supabase
         .from('website_content')
-        .upsert({
-          section: 'portfolio',
-          title: updatedContent.title,
-          content: updatedContent.description,
-          metadata: { projects: updatedContent.projects } as any,
-          user_id: user.id,
-          is_active: true
-        }, {
-          onConflict: 'section,user_id'
-        });
+        .select('id')
+        .eq('section', 'portfolio')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-      if (error) throw error;
+      let result;
+      
+      if (existingData) {
+        // Update existing record
+        result = await supabase
+          .from('website_content')
+          .update({
+            title: updatedContent.title,
+            content: updatedContent.description,
+            metadata: { projects: updatedContent.projects } as any,
+            is_active: true,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingData.id)
+          .eq('user_id', user.id);
+      } else {
+        // Insert new record
+        result = await supabase
+          .from('website_content')
+          .insert({
+            section: 'portfolio',
+            title: updatedContent.title,
+            content: updatedContent.description,
+            metadata: { projects: updatedContent.projects } as any,
+            user_id: user.id,
+            is_active: true
+          });
+      }
+
+      if (result.error) {
+        console.error('Database error:', result.error);
+        throw result.error;
+      }
       
       return true;
     } catch (error) {
