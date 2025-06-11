@@ -257,28 +257,26 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
     }
   };
 
-  const saveContent = async () => {
+  const saveContentToDatabase = async (updatedContent: PortfolioContent) => {
     if (!user) {
       toast({
         title: "Error",
         description: "Anda harus login untuk menyimpan konten",
         variant: "destructive",
       });
-      return;
+      return false;
     }
     
-    setSaving(true);
-
     try {
-      console.log('Saving portfolio content:', content);
+      console.log('Saving portfolio content:', updatedContent);
       
       const { error } = await supabase
         .from('website_content')
         .upsert({
           section: 'portfolio',
-          title: content.title,
-          content: content.description,
-          metadata: { projects: content.projects } as any,
+          title: updatedContent.title,
+          content: updatedContent.description,
+          metadata: { projects: updatedContent.projects } as any,
           user_id: user.id,
           is_active: true
         }, {
@@ -287,11 +285,7 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
 
       if (error) throw error;
       
-      toast({
-        title: "Berhasil",
-        description: "Konten portfolio berhasil disimpan",
-        variant: "default",
-      });
+      return true;
     } catch (error) {
       console.error('Error saving portfolio content:', error);
       toast({
@@ -299,9 +293,21 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
         description: "Gagal menyimpan konten portfolio",
         variant: "destructive",
       });
-    } finally {
-      setSaving(false);
+      return false;
     }
+  };
+
+  const saveContent = async () => {
+    setSaving(true);
+    const success = await saveContentToDatabase(content);
+    if (success) {
+      toast({
+        title: "Berhasil",
+        description: "Konten portfolio berhasil disimpan",
+        variant: "default",
+      });
+    }
+    setSaving(false);
   };
 
   const resetForm = () => {
@@ -338,44 +344,51 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
     setShowProjectForm(true);
   };
 
-  const deleteProject = (index: number) => {
+  const deleteProject = async (index: number) => {
     if (window.confirm('Apakah Anda yakin ingin menghapus proyek ini?')) {
       console.log('Deleting project at index:', index);
       const newProjects = content.projects.filter((_, i) => i !== index);
-      setContent({ ...content, projects: newProjects });
+      const updatedContent = { ...content, projects: newProjects };
       
-      toast({
-        title: "Berhasil",
-        description: "Proyek berhasil dihapus",
-        variant: "default",
-      });
+      // Save to database immediately
+      const success = await saveContentToDatabase(updatedContent);
+      if (success) {
+        setContent(updatedContent);
+        toast({
+          title: "Berhasil",
+          description: "Proyek berhasil dihapus dan perubahan disimpan",
+          variant: "default",
+        });
+      }
     }
   };
 
-  const saveProject = (project: Project) => {
+  const saveProject = async (project: Project) => {
     console.log('Saving project:', project);
     const newProjects = [...content.projects];
     
     if (editingIndex !== null) {
       console.log('Updating project at index:', editingIndex);
       newProjects[editingIndex] = { ...project };
-      toast({
-        title: "Berhasil",
-        description: "Proyek berhasil diperbarui",
-        variant: "default",
-      });
     } else {
       console.log('Adding new project');
       newProjects.push({ ...project });
+    }
+
+    const updatedContent = { ...content, projects: newProjects };
+    
+    // Save to database immediately
+    const success = await saveContentToDatabase(updatedContent);
+    if (success) {
+      setContent(updatedContent);
+      resetForm();
+      
       toast({
         title: "Berhasil",
-        description: "Proyek berhasil ditambahkan",
+        description: editingIndex !== null ? "Proyek berhasil diperbarui dan disimpan" : "Proyek berhasil ditambahkan dan disimpan",
         variant: "default",
       });
     }
-
-    setContent({ ...content, projects: newProjects });
-    resetForm();
   };
 
   // Filter projects based on search term and category
@@ -425,7 +438,7 @@ const PortfolioManager = ({ onProjectSelect }: PortfolioManagerProps) => {
             className="bg-blue-600 text-white hover:bg-blue-700"
           >
             <Save className="h-4 w-4 mr-2" />
-            {saving ? 'Menyimpan...' : 'Simpan Perubahan'}
+            {saving ? 'Menyimpan...' : 'Simpan Header & Deskripsi'}
           </Button>
         </div>
       </div>
