@@ -184,10 +184,30 @@ const LiveChat = () => {
         })
         .eq('id', conversationId);
 
+      // Automatically send transcript email when chat ends
+      await fetch('/functions/v1/send-chat-transcript', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ conversationId })
+      });
+
       setChatEnded(true);
       setShowFeedback(true);
+      
+      toast({
+        title: "Chat Berakhir",
+        description: "Transkrip chat akan dikirim ke email Anda",
+      });
     } catch (error) {
       console.error('Error ending chat:', error);
+      toast({
+        title: "Error",
+        description: "Gagal mengakhiri chat",
+        variant: "destructive",
+      });
     }
   };
 
@@ -203,7 +223,7 @@ const LiveChat = () => {
         })
         .eq('id', conversationId);
 
-      // Send chat transcript
+      // Send transcript with updated feedback
       await fetch('/functions/v1/send-chat-transcript', {
         method: 'POST',
         headers: {
@@ -216,10 +236,15 @@ const LiveChat = () => {
       setShowFeedback(false);
       toast({
         title: "Terima Kasih",
-        description: "Feedback Anda telah dikirim dan transkrip chat telah dikirim ke email",
+        description: "Feedback Anda telah dikirim dan transkrip final telah dikirim ke email",
       });
     } catch (error) {
       console.error('Error submitting feedback:', error);
+      toast({
+        title: "Error",
+        description: "Gagal mengirim feedback",
+        variant: "destructive",
+      });
     }
   };
 

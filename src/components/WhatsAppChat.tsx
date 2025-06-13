@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -200,7 +199,7 @@ const WhatsAppChat = () => {
     }
   });
 
-  // Close conversation mutation
+  // Close conversation mutation with automatic email sending
   const closeConversationMutation = useMutation({
     mutationFn: async (conversationId: string) => {
       const { error } = await supabase
@@ -213,8 +212,8 @@ const WhatsAppChat = () => {
       
       if (error) throw error;
 
-      // Send transcript email
-      await fetch('/functions/v1/send-chat-transcript', {
+      // Automatically send transcript email
+      const response = await fetch('/functions/v1/send-chat-transcript', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -222,12 +221,57 @@ const WhatsAppChat = () => {
         },
         body: JSON.stringify({ conversationId })
       });
+
+      if (!response.ok) {
+        throw new Error('Failed to send chat transcript');
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
       toast({
         title: "Percakapan Ditutup",
-        description: "Transkrip telah dikirim ke email admin dan customer",
+        description: "Transkrip chat telah dikirim otomatis ke email admin dan customer",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Gagal menutup percakapan: " + error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Send transcript email manually
+  const sendTranscriptMutation = useMutation({
+    mutationFn: async (conversationId: string) => {
+      const response = await fetch('/functions/v1/send-chat-transcript', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ conversationId })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to send transcript');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Transkrip Dikirim",
+        description: "Transkrip chat berhasil dikirim ke email admin dan customer",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Gagal mengirim transkrip: " + error.message,
+        variant: "destructive",
       });
     }
   });
@@ -504,7 +548,7 @@ const WhatsAppChat = () => {
                     {selectedConversationData?.status}
                   </span>
                   
-                  {/* Agent Assignment */}
+                  {/* Agent Assignment and Actions */}
                   {selectedConversationData?.status !== 'closed' && (
                     <div className="flex items-center space-x-2">
                       {!selectedConversationData?.agent_id && (
@@ -528,8 +572,20 @@ const WhatsAppChat = () => {
                         </select>
                       )}
                       
+                      {selectedConversationData?.customer_email && (
+                        <button
+                          onClick={() => sendTranscriptMutation.mutate(selectedConversation)}
+                          disabled={sendTranscriptMutation.isPending}
+                          className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded"
+                          title="Kirim transkrip ke email"
+                        >
+                          <Mail className="h-3 w-3" />
+                        </button>
+                      )}
+                      
                       <button
                         onClick={() => closeConversationMutation.mutate(selectedConversation)}
+                        disabled={closeConversationMutation.isPending}
                         className="text-xs bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded"
                       >
                         Tutup Chat
