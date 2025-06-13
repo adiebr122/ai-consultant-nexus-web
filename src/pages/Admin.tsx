@@ -113,19 +113,19 @@ const Admin = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex bg-gray-50">
+      <div className="min-h-screen flex bg-gray-50 w-full">
         <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} />
         
         <main className="flex-1 overflow-hidden">
           {/* Header with logout */}
-          <div className="bg-white border-b border-gray-200 px-6 py-4">
+          <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
             <div className="flex justify-between items-center">
               <div>
                 <h1 className="text-xl font-semibold text-gray-900">Admin Panel</h1>
                 <p className="text-sm text-gray-600">Kelola website Anda</p>
               </div>
               <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2 text-gray-600">
+                <div className="hidden sm:flex items-center space-x-2 text-gray-600">
                   <User className="h-4 w-4" />
                   <span className="text-sm">{user.email}</span>
                 </div>
@@ -137,14 +137,14 @@ const Admin = () => {
                   className="flex items-center space-x-2 hover:bg-red-50 hover:border-red-200 hover:text-red-600"
                 >
                   <LogOut className="h-4 w-4" />
-                  <span>{loggingOut ? 'Logout...' : 'Logout'}</span>
+                  <span className="hidden sm:inline">{loggingOut ? 'Logout...' : 'Logout'}</span>
                 </Button>
               </div>
             </div>
           </div>
 
           <div className="h-full overflow-y-auto">
-            <div className="p-6">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
               {renderContent()}
             </div>
           </div>
@@ -208,7 +208,7 @@ const DashboardContent = ({ onTabChange }: DashboardContentProps) => {
     <div className="space-y-6">
       {/* Header */}
       <div className="bg-white rounded-xl shadow-sm border p-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Dashboard Admin</h1>
             <p className="text-gray-600 mt-1">Selamat datang di panel admin website Anda</p>
@@ -218,7 +218,7 @@ const DashboardContent = ({ onTabChange }: DashboardContentProps) => {
               <p className="text-sm text-gray-500">Last Updated</p>
               <p className="font-medium">{new Date().toLocaleDateString('id-ID')}</p>
             </div>
-            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
               <TrendingUp className="h-6 w-6 text-white" />
             </div>
           </div>
@@ -234,7 +234,7 @@ const DashboardContent = ({ onTabChange }: DashboardContentProps) => {
       {/* Quick Actions */}
       <div className="bg-white rounded-xl shadow-sm border p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           {quickActions.map((action, index) => {
             const IconComponent = action.icon;
             return (
@@ -243,11 +243,11 @@ const DashboardContent = ({ onTabChange }: DashboardContentProps) => {
                 onClick={() => handleQuickAction(action.action)}
                 className={`p-4 rounded-lg text-white cursor-pointer transition-all duration-200 hover:scale-105 ${action.color}`}
               >
-                <div className="flex items-center space-x-3">
-                  <IconComponent className="h-6 w-6" />
-                  <div>
-                    <h3 className="font-medium">{action.title}</h3>
-                    <p className="text-xs opacity-90">{action.description}</p>
+                <div className="flex items-start space-x-3">
+                  <IconComponent className="h-6 w-6 flex-shrink-0 mt-0.5" />
+                  <div className="min-w-0">
+                    <h3 className="font-medium text-sm leading-tight">{action.title}</h3>
+                    <p className="text-xs opacity-90 mt-1 leading-tight">{action.description}</p>
                   </div>
                 </div>
               </div>
@@ -260,7 +260,7 @@ const DashboardContent = ({ onTabChange }: DashboardContentProps) => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center">
+            <CardTitle className="flex items-center text-lg">
               <FileText className="h-5 w-5 mr-2 text-blue-600" />
               Aktivitas Terbaru
             </CardTitle>
@@ -280,7 +280,7 @@ const DashboardContent = ({ onTabChange }: DashboardContentProps) => {
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center">
+            <CardTitle className="flex items-center text-lg">
               <Phone className="h-5 w-5 mr-2 text-green-600" />
               Kontak Terbaru
             </CardTitle>
