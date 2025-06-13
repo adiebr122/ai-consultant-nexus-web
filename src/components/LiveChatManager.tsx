@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,7 +16,7 @@ import {
   VolumeX
 } from 'lucide-react';
 import WhatsAppChat from './WhatsAppChat';
-import WhatsAppConfig from './WhatsAppConfig';
+import LiveChatConfig from './LiveChatConfig';
 import ChatAgentManager from './ChatAgentManager';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -69,7 +68,7 @@ const LiveChatManager = () => {
   const tabs = [
     { id: 'chat', label: 'Live Chat', icon: MessageCircle },
     { id: 'agents', label: 'Manajemen Agent', icon: UserCheck },
-    { id: 'config', label: 'Konfigurasi', icon: Settings },
+    { id: 'config', label: 'Konfigurasi Live Chat', icon: Settings },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 }
   ];
 
@@ -258,7 +257,7 @@ const LiveChatManager = () => {
           <div className="p-6">
             {activeTab === 'chat' && <WhatsAppChat soundEnabled={soundEnabled} />}
             {activeTab === 'agents' && <ChatAgentManager />}
-            {activeTab === 'config' && <WhatsAppConfig />}
+            {activeTab === 'config' && <LiveChatConfig />}
             {activeTab === 'analytics' && renderAnalytics()}
           </div>
         </div>
