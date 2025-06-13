@@ -12,15 +12,21 @@ import {
   Clock,
   CheckCircle,
   AlertTriangle,
-  UserCheck
+  UserCheck,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 import WhatsAppChat from './WhatsAppChat';
 import WhatsAppConfig from './WhatsAppConfig';
 import ChatAgentManager from './ChatAgentManager';
+import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
 
 const LiveChatManager = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('chat');
+  const [soundEnabled, setSoundEnabled] = useState(true);
 
   // Fetch chat statistics
   const { data: chatStats } = useQuery({
@@ -52,6 +58,14 @@ const LiveChatManager = () => {
     enabled: !!user
   });
 
+  const handleToggleSound = () => {
+    setSoundEnabled(!soundEnabled);
+    toast({
+      title: soundEnabled ? "Notifikasi Suara Dimatikan" : "Notifikasi Suara Dinyalakan",
+      description: soundEnabled ? "Anda tidak akan mendengar suara saat ada chat masuk" : "Anda akan mendengar suara saat ada chat masuk",
+    });
+  };
+
   const tabs = [
     { id: 'chat', label: 'Live Chat', icon: MessageCircle },
     { id: 'agents', label: 'Manajemen Agent', icon: UserCheck },
@@ -61,51 +75,59 @@ const LiveChatManager = () => {
 
   const renderAnalytics = () => (
     <div className="space-y-6">
-      <h3 className="text-2xl font-bold">Analytics Live Chat</h3>
+      <div className="flex justify-between items-center">
+        <h3 className="text-2xl font-bold">Analytics Live Chat</h3>
+        <div className="text-sm text-gray-500">
+          Data diperbarui secara real-time
+        </div>
+      </div>
       
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-lg">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl border border-blue-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Percakapan</p>
-              <p className="text-2xl font-bold text-gray-900">{chatStats?.totalConversations || 0}</p>
+              <p className="text-sm font-medium text-blue-700">Total Percakapan</p>
+              <p className="text-3xl font-bold text-blue-900">{chatStats?.totalConversations || 0}</p>
             </div>
             <MessageCircle className="h-8 w-8 text-blue-600" />
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-lg">
+        <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl border border-green-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Percakapan Aktif</p>
-              <p className="text-2xl font-bold text-green-600">{chatStats?.activeConversations || 0}</p>
+              <p className="text-sm font-medium text-green-700">Percakapan Aktif</p>
+              <p className="text-3xl font-bold text-green-900">{chatStats?.activeConversations || 0}</p>
             </div>
             <CheckCircle className="h-8 w-8 text-green-600" />
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-lg">
+        <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-6 rounded-xl border border-orange-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Belum Ditugaskan</p>
-              <p className="text-2xl font-bold text-orange-600">{chatStats?.unassignedConversations || 0}</p>
+              <p className="text-sm font-medium text-orange-700">Belum Ditugaskan</p>
+              <p className="text-3xl font-bold text-orange-900">{chatStats?.unassignedConversations || 0}</p>
             </div>
             <AlertTriangle className="h-8 w-8 text-orange-600" />
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-lg">
+        <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-6 rounded-xl border border-yellow-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Menunggu Respons</p>
-              <p className="text-2xl font-bold text-yellow-600">{chatStats?.pendingConversations || 0}</p>
+              <p className="text-sm font-medium text-yellow-700">Menunggu Respons</p>
+              <p className="text-3xl font-bold text-yellow-900">{chatStats?.pendingConversations || 0}</p>
             </div>
             <Clock className="h-8 w-8 text-yellow-600" />
           </div>
         </div>
+      </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-lg">
+      {/* Additional Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white p-6 rounded-xl shadow-lg border">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Chat Website</p>
@@ -115,7 +137,7 @@ const LiveChatManager = () => {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-lg">
+        <div className="bg-white p-6 rounded-xl shadow-lg border">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Chat WhatsApp</p>
@@ -125,7 +147,7 @@ const LiveChatManager = () => {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-lg">
+        <div className="bg-white p-6 rounded-xl shadow-lg border">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Pesan Hari Ini</p>
@@ -135,7 +157,7 @@ const LiveChatManager = () => {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-lg">
+        <div className="bg-white p-6 rounded-xl shadow-lg border">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Agent Online</p>
@@ -150,22 +172,24 @@ const LiveChatManager = () => {
 
       {/* Charts placeholder */}
       <div className="grid md:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-lg">
-          <h4 className="text-lg font-semibold mb-4">Pesan per Hari</h4>
+        <div className="bg-white p-6 rounded-xl shadow-lg border">
+          <h4 className="text-lg font-semibold mb-4">Tren Pesan Harian</h4>
           <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
             <div className="text-center">
-              <BarChart3 className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+              <BarChart3 className="h-12 w-12 mx-auto mb-2 text-gray-400" />
               <p className="text-gray-500">Chart akan ditampilkan di sini</p>
+              <p className="text-xs text-gray-400 mt-1">Data visualisasi akan segera tersedia</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-lg">
-          <h4 className="text-lg font-semibold mb-4">Status Percakapan</h4>
+        <div className="bg-white p-6 rounded-xl shadow-lg border">
+          <h4 className="text-lg font-semibold mb-4">Distribusi Status Chat</h4>
           <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
             <div className="text-center">
-              <Users className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+              <Users className="h-12 w-12 mx-auto mb-2 text-gray-400" />
               <p className="text-gray-500">Pie chart akan ditampilkan di sini</p>
+              <p className="text-xs text-gray-400 mt-1">Visualisasi status percakapan</p>
             </div>
           </div>
         </div>
@@ -174,48 +198,70 @@ const LiveChatManager = () => {
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Live Chat Manager</h2>
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center text-blue-600">
-            <Users className="h-4 w-4 mr-1" />
-            <span className="text-sm">{chatStats?.onlineAgents || 0} Agent Online</span>
-          </div>
-          <div className="flex items-center text-green-600">
-            <CheckCircle className="h-4 w-4 mr-1" />
-            <span className="text-sm">Sistem Aktif</span>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="space-y-6">
+        <div className="bg-white rounded-xl shadow-sm border p-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Live Chat Manager</h2>
+              <p className="text-gray-600 mt-1">Kelola percakapan dan notifikasi chat secara real-time</p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Button
+                onClick={handleToggleSound}
+                variant={soundEnabled ? "default" : "outline"}
+                size="sm"
+                className="flex items-center space-x-2"
+              >
+                {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+                <span className="hidden sm:inline">
+                  {soundEnabled ? 'Suara Aktif' : 'Suara Nonaktif'}
+                </span>
+              </Button>
+              <div className="flex items-center space-x-4 text-sm">
+                <div className="flex items-center text-blue-600">
+                  <Users className="h-4 w-4 mr-1" />
+                  <span>{chatStats?.onlineAgents || 0} Agent Online</span>
+                </div>
+                <div className="flex items-center text-green-600">
+                  <CheckCircle className="h-4 w-4 mr-1" />
+                  <span>Sistem Aktif</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Tab Navigation */}
-      <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
-        {tabs.map((tab) => {
-          const IconComponent = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-md transition-colors ${
-                activeTab === tab.id
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-600 hover:text-blue-600'
-              }`}
-            >
-              <IconComponent className="h-4 w-4" />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
-      </div>
+        {/* Tab Navigation */}
+        <div className="bg-white rounded-xl shadow-sm border">
+          <div className="flex space-x-1 bg-gray-50 p-1 rounded-t-xl">
+            {tabs.map((tab) => {
+              const IconComponent = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center space-x-2 px-4 py-3 rounded-lg transition-all duration-200 font-medium ${
+                    activeTab === tab.id
+                      ? 'bg-white text-blue-600 shadow-sm border border-blue-100'
+                      : 'text-gray-600 hover:text-blue-600 hover:bg-white/50'
+                  }`}
+                >
+                  <IconComponent className="h-4 w-4" />
+                  <span className="hidden sm:inline">{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
 
-      {/* Tab Content */}
-      <div>
-        {activeTab === 'chat' && <WhatsAppChat />}
-        {activeTab === 'agents' && <ChatAgentManager />}
-        {activeTab === 'config' && <WhatsAppConfig />}
-        {activeTab === 'analytics' && renderAnalytics()}
+          {/* Tab Content */}
+          <div className="p-6">
+            {activeTab === 'chat' && <WhatsAppChat soundEnabled={soundEnabled} />}
+            {activeTab === 'agents' && <ChatAgentManager />}
+            {activeTab === 'config' && <WhatsAppConfig />}
+            {activeTab === 'analytics' && renderAnalytics()}
+          </div>
+        </div>
       </div>
     </div>
   );

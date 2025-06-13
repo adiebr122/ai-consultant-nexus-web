@@ -1,7 +1,9 @@
+
 import { useState, useEffect } from 'react';
 import { MessageCircle, X, Send, Star, Mail } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAudioNotification } from '@/hooks/useAudioNotification';
 
 interface Message {
   id: string;
@@ -28,8 +30,11 @@ const LiveChat = () => {
   const [feedback, setFeedback] = useState('');
   const [chatEnded, setChatEnded] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [hasNewMessage, setHasNewMessage] = useState(false);
+  const [lastMessageCount, setLastMessageCount] = useState(0);
   
   const { toast } = useToast();
+  const { playNotification } = useAudioNotification();
 
   // Initialize conversation when customer info is provided
   const handleCustomerInfoSubmit = async (e: React.FormEvent) => {
@@ -248,7 +253,7 @@ const LiveChat = () => {
     }
   };
 
-  // Listen for real-time updates from admin
+  // Listen for real-time updates from admin and play notification sound
   useEffect(() => {
     if (!conversationId) return;
 
@@ -273,6 +278,17 @@ const LiveChat = () => {
               senderName: newMsg.sender_name
             };
             setMessages(prev => [...prev, agentMessage]);
+            
+            // Play notification sound and show visual indicator
+            playNotification();
+            if (!isOpen) {
+              setHasNewMessage(true);
+            }
+            
+            toast({
+              title: "Pesan Baru dari CS",
+              description: `${newMsg.sender_name}: ${newMsg.message_content.substring(0, 50)}...`,
+            });
           }
         }
       )
@@ -281,7 +297,14 @@ const LiveChat = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [conversationId]);
+  }, [conversationId, isOpen, playNotification, toast]);
+
+  // Clear new message indicator when chat is opened
+  useEffect(() => {
+    if (isOpen) {
+      setHasNewMessage(false);
+    }
+  }, [isOpen]);
 
   return (
     <>
@@ -289,13 +312,18 @@ const LiveChat = () => {
       <div className="fixed bottom-6 right-6 z-50">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-all duration-300 hover:scale-105 relative"
+          className={`relative bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-all duration-300 hover:scale-105 ${
+            hasNewMessage ? 'animate-bounce' : ''
+          }`}
         >
           {isOpen ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
-          {!isOpen && (
+          {!isOpen && hasNewMessage && (
             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center animate-pulse">
               !
             </span>
+          )}
+          {!isOpen && !hasNewMessage && (
+            <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full h-3 w-3 animate-pulse"></span>
           )}
         </button>
       </div>
@@ -304,7 +332,7 @@ const LiveChat = () => {
       {isOpen && (
         <div className="fixed bottom-24 right-6 w-80 bg-white rounded-2xl shadow-2xl z-50 border border-gray-200">
           {/* Chat Header */}
-          <div className="bg-blue-600 text-white p-4 rounded-t-2xl">
+          <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 rounded-t-2xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
@@ -312,13 +340,13 @@ const LiveChat = () => {
                 </div>
                 <div>
                   <h3 className="font-semibold">Live Chat Support</h3>
-                  <p className="text-sm opacity-90">Tim kami siap membantu</p>
+                  <p className="text-sm opacity-90">Tim kami siap membantu Anda</p>
                 </div>
               </div>
               {!chatEnded && conversationId && (
                 <button
                   onClick={handleEndChat}
-                  className="text-xs bg-red-500 hover:bg-red-600 px-2 py-1 rounded"
+                  className="text-xs bg-red-500 hover:bg-red-600 px-2 py-1 rounded transition-colors"
                 >
                   End Chat
                 </button>
@@ -369,7 +397,7 @@ const LiveChat = () => {
               <div>
                 <input
                   type="email"
-                  placeholder="Email (opsional)"
+                  placeholder="Email (untuk menerima transkrip)"
                   value={customerInfo.email}
                   onChange={(e) => setCustomerInfo({...customerInfo, email: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
@@ -379,7 +407,7 @@ const LiveChat = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 text-sm"
+                className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 text-sm font-medium"
               >
                 {loading ? 'Memulai...' : 'Mulai Chat'}
               </button>
@@ -390,14 +418,14 @@ const LiveChat = () => {
               <h4 className="font-medium text-gray-900">Berikan Rating & Feedback</h4>
               
               <div>
-                <p className="text-sm text-gray-600 mb-2">Rating:</p>
+                <p className="text-sm text-gray-600 mb-2">Rating layanan:</p>
                 <div className="flex space-x-1">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       key={star}
                       type="button"
                       onClick={() => setRating(star)}
-                      className={`${rating >= star ? 'text-yellow-400' : 'text-gray-300'}`}
+                      className={`transition-colors ${rating >= star ? 'text-yellow-400' : 'text-gray-300'}`}
                     >
                       <Star className="h-5 w-5 fill-current" />
                     </button>
@@ -417,7 +445,7 @@ const LiveChat = () => {
 
               <button
                 onClick={handleFeedbackSubmit}
-                className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
               >
                 Kirim Feedback
               </button>
