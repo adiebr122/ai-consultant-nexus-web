@@ -199,23 +199,23 @@ const Services = () => {
 
   if (loading) {
     return (
-      <section id="layanan" className="py-20 bg-white">
+      <section id="layanan" className="py-12 lg:py-20 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16 animate-pulse">
-            <div className="h-10 bg-gray-300 rounded w-1/2 mx-auto mb-4"></div>
-            <div className="h-6 bg-gray-300 rounded w-3/4 mx-auto"></div>
+          <div className="text-center mb-12 lg:mb-16 animate-pulse">
+            <div className="h-8 lg:h-10 bg-gray-300 rounded w-1/2 mx-auto mb-4"></div>
+            <div className="h-4 lg:h-6 bg-gray-300 rounded w-3/4 mx-auto"></div>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
             {[1, 2, 3, 4, 5, 6].map((_, index) => (
-              <div key={index} className="bg-gray-100 p-8 rounded-3xl animate-pulse">
-                <div className="h-12 w-12 bg-gray-300 rounded-xl mb-6"></div>
-                <div className="h-6 bg-gray-300 rounded mb-4"></div>
+              <div key={index} className="bg-gray-100 p-6 lg:p-8 rounded-2xl lg:rounded-3xl animate-pulse">
+                <div className="h-10 lg:h-12 w-10 lg:w-12 bg-gray-300 rounded-xl mb-4 lg:mb-6"></div>
+                <div className="h-5 lg:h-6 bg-gray-300 rounded mb-4"></div>
                 <div className="space-y-2 mb-6">
-                  <div className="h-4 bg-gray-300 rounded"></div>
-                  <div className="h-4 bg-gray-300 rounded"></div>
-                  <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+                  <div className="h-3 lg:h-4 bg-gray-300 rounded"></div>
+                  <div className="h-3 lg:h-4 bg-gray-300 rounded"></div>
+                  <div className="h-3 lg:h-4 bg-gray-300 rounded w-3/4"></div>
                 </div>
-                <div className="h-10 bg-gray-300 rounded"></div>
+                <div className="h-8 lg:h-10 bg-gray-300 rounded"></div>
               </div>
             ))}
           </div>
@@ -225,20 +225,20 @@ const Services = () => {
   }
 
   return (
-    <section id="layanan" className="py-20 bg-white">
+    <section id="layanan" className="py-12 lg:py-20 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16 animate-fade-in">
-          <h2 className="text-5xl font-bold bg-gradient-to-r from-gray-900 to-blue-900 bg-clip-text text-transparent mb-6">
+        <div className="text-center mb-12 lg:mb-16 animate-fade-in">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent mb-4 lg:mb-6">
             {displayContent.title}
           </h2>
-          <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
+          <p className="text-lg lg:text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
             {displayContent.description}
           </p>
         </div>
 
         {services.length === 0 ? (
           <div className="text-center py-12">
-            <Code className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+            <Code className="h-10 lg:h-12 w-10 lg:w-12 mx-auto text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Memuat Layanan...</h3>
             <p className="text-gray-500">Sedang mengambil data layanan dari database</p>
             <button 
@@ -249,44 +249,44 @@ const Services = () => {
             </button>
           </div>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
             {services.map((service, index) => {
               const IconComponent = getServiceIcon(service.service_category);
               return (
                 <div 
                   key={service.id} 
-                  className="group bg-gradient-to-br from-white to-blue-50 p-8 rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 border border-blue-100 animate-fade-in"
+                  className="group bg-white/80 backdrop-blur-sm p-6 lg:p-8 rounded-2xl lg:rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 border border-blue-100/50 hover:border-blue-200 animate-fade-in"
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
-                  <div className="bg-gradient-to-r from-blue-600 to-indigo-600 w-16 h-16 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                    <IconComponent className="h-8 w-8 text-white" />
+                  <div className="bg-gradient-to-r from-blue-600 to-indigo-600 w-12 lg:w-16 h-12 lg:h-16 rounded-xl lg:rounded-2xl flex items-center justify-center mb-4 lg:mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                    <IconComponent className="h-6 w-6 lg:h-8 lg:w-8 text-white" />
                   </div>
                   
-                  <span className="inline-block bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full mb-4 font-medium">
+                  <span className="inline-block bg-blue-100 text-blue-800 text-xs font-medium px-3 py-1 rounded-full mb-4">
                     {service.service_category}
                   </span>
                   
-                  <h3 className="text-2xl font-bold text-gray-900 mb-4 group-hover:text-blue-600 transition-colors">
+                  <h3 className="text-xl lg:text-2xl font-bold text-gray-900 mb-3 lg:mb-4 group-hover:text-blue-600 transition-colors">
                     {service.service_name}
                   </h3>
                   
-                  <p className="text-gray-600 mb-6 leading-relaxed line-clamp-3">
+                  <p className="text-gray-600 mb-4 lg:mb-6 leading-relaxed line-clamp-3 text-sm lg:text-base">
                     {service.service_description}
                   </p>
 
-                  <div className="flex space-x-2">
+                  <div className="flex flex-col sm:flex-row gap-2 lg:gap-3">
                     <button
                       onClick={() => handleServiceDetail(service.id)}
-                      className="flex-1 bg-gray-100 text-gray-700 px-4 py-3 rounded-xl hover:bg-gray-200 transition-all duration-300 flex items-center justify-center font-semibold"
+                      className="flex-1 bg-gray-100 text-gray-700 px-3 lg:px-4 py-2 lg:py-3 rounded-lg lg:rounded-xl hover:bg-gray-200 transition-all duration-300 flex items-center justify-center font-semibold text-sm lg:text-base"
                     >
                       Lihat Detail
                     </button>
                     <button
                       onClick={() => handleServiceClick(service.service_name)}
-                      className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-3 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 flex items-center justify-center font-semibold shadow-lg hover:shadow-xl"
+                      className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-3 lg:px-4 py-2 lg:py-3 rounded-lg lg:rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 flex items-center justify-center font-semibold shadow-lg hover:shadow-xl text-sm lg:text-base"
                     >
                       Konsultasi
-                      <ArrowRight className="ml-2 h-4 w-4" />
+                      <ArrowRight className="ml-2 h-3 w-3 lg:h-4 lg:w-4" />
                     </button>
                   </div>
                 </div>
