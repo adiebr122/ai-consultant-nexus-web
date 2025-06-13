@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -155,13 +154,13 @@ const QuotationForm = ({ open, setOpen, mutation, quotation }: QuotationFormProp
     };
 
     if (quotation) {
-      quotationData.id = quotation.id;
-    }
-
-    try {
+      const updatedQuotationData = {
+        ...quotationData,
+        id: quotation.id
+      };
+      await mutation.mutate(updatedQuotationData);
+    } else {
       await mutation.mutate(quotationData);
-    } catch (error) {
-      console.error('Error submitting quotation:', error);
     }
   };
 

@@ -131,9 +131,19 @@ const InvoiceManager = () => {
   // Create invoice mutation
   const createInvoiceMutation = useMutation({
     mutationFn: async (newInvoice: z.infer<typeof invoiceSchema>) => {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error('User not authenticated');
+
+      const invoiceData = {
+        ...newInvoice,
+        user_id: userData.user.id,
+        invoice_date: newInvoice.invoice_date.toISOString().split('T')[0],
+        due_date: newInvoice.due_date ? newInvoice.due_date.toISOString().split('T')[0] : null,
+      };
+
       const { error } = await supabase
         .from('invoices')
-        .insert(newInvoice);
+        .insert(invoiceData);
       
       if (error) throw error;
     },
@@ -158,9 +168,21 @@ const InvoiceManager = () => {
   // Update invoice mutation
   const updateInvoiceMutation = useMutation({
     mutationFn: async (updatedInvoice: Invoice) => {
+      const invoiceData = {
+        ...updatedInvoice,
+        invoice_date: typeof updatedInvoice.invoice_date === 'string' 
+          ? updatedInvoice.invoice_date 
+          : updatedInvoice.invoice_date.toISOString().split('T')[0],
+        due_date: updatedInvoice.due_date 
+          ? (typeof updatedInvoice.due_date === 'string' 
+              ? updatedInvoice.due_date 
+              : updatedInvoice.due_date.toISOString().split('T')[0])
+          : null,
+      };
+
       const { error } = await supabase
         .from('invoices')
-        .update(updatedInvoice)
+        .update(invoiceData)
         .eq('id', updatedInvoice.id);
       
       if (error) throw error;
@@ -246,7 +268,13 @@ const InvoiceManager = () => {
 
   const onSubmit = (values: z.infer<typeof invoiceSchema>) => {
     if (editInvoice) {
-      updateInvoiceMutation.mutate({ id: editInvoice.id, ...values } as Invoice);
+      const updatedInvoice: Invoice = {
+        ...editInvoice,
+        ...values,
+        invoice_date: typeof values.invoice_date === 'string' ? values.invoice_date : values.invoice_date.toISOString().split('T')[0],
+        due_date: values.due_date ? (typeof values.due_date === 'string' ? values.due_date : values.due_date.toISOString().split('T')[0]) : undefined,
+      };
+      updateInvoiceMutation.mutate(updatedInvoice);
     } else {
       createInvoiceMutation.mutate(values);
     }
