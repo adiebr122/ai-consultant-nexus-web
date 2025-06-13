@@ -135,10 +135,21 @@ const InvoiceManager = () => {
       if (!userData.user) throw new Error('User not authenticated');
 
       const invoiceData = {
-        ...newInvoice,
-        user_id: userData.user.id,
+        invoice_number: newInvoice.invoice_number,
+        client_name: newInvoice.client_name,
+        client_email: newInvoice.client_email,
+        client_company: newInvoice.client_company || null,
+        client_address: newInvoice.client_address || null,
         invoice_date: newInvoice.invoice_date.toISOString().split('T')[0],
         due_date: newInvoice.due_date ? newInvoice.due_date.toISOString().split('T')[0] : null,
+        subtotal: newInvoice.subtotal,
+        tax_percentage: newInvoice.tax_percentage,
+        tax_amount: newInvoice.tax_amount,
+        total_amount: newInvoice.total_amount,
+        status: newInvoice.status,
+        notes: newInvoice.notes || null,
+        terms_conditions: newInvoice.terms_conditions || null,
+        user_id: userData.user.id,
       };
 
       const { error } = await supabase
@@ -169,15 +180,22 @@ const InvoiceManager = () => {
   const updateInvoiceMutation = useMutation({
     mutationFn: async (updatedInvoice: Invoice) => {
       const invoiceData = {
-        ...updatedInvoice,
+        invoice_number: updatedInvoice.invoice_number,
+        client_name: updatedInvoice.client_name,
+        client_email: updatedInvoice.client_email,
+        client_company: updatedInvoice.client_company || null,
+        client_address: updatedInvoice.client_address || null,
         invoice_date: typeof updatedInvoice.invoice_date === 'string' 
           ? updatedInvoice.invoice_date 
-          : updatedInvoice.invoice_date.toISOString().split('T')[0],
-        due_date: updatedInvoice.due_date 
-          ? (typeof updatedInvoice.due_date === 'string' 
-              ? updatedInvoice.due_date 
-              : updatedInvoice.due_date.toISOString().split('T')[0])
-          : null,
+          : updatedInvoice.invoice_date,
+        due_date: updatedInvoice.due_date || null,
+        subtotal: updatedInvoice.subtotal,
+        tax_percentage: updatedInvoice.tax_percentage,
+        tax_amount: updatedInvoice.tax_amount,
+        total_amount: updatedInvoice.total_amount,
+        status: updatedInvoice.status,
+        notes: updatedInvoice.notes || null,
+        terms_conditions: updatedInvoice.terms_conditions || null,
       };
 
       const { error } = await supabase
@@ -270,9 +288,20 @@ const InvoiceManager = () => {
     if (editInvoice) {
       const updatedInvoice: Invoice = {
         ...editInvoice,
-        ...values,
-        invoice_date: typeof values.invoice_date === 'string' ? values.invoice_date : values.invoice_date.toISOString().split('T')[0],
-        due_date: values.due_date ? (typeof values.due_date === 'string' ? values.due_date : values.due_date.toISOString().split('T')[0]) : undefined,
+        invoice_number: values.invoice_number,
+        client_name: values.client_name,
+        client_email: values.client_email,
+        client_company: values.client_company,
+        client_address: values.client_address,
+        invoice_date: values.invoice_date.toISOString().split('T')[0],
+        due_date: values.due_date ? values.due_date.toISOString().split('T')[0] : undefined,
+        subtotal: values.subtotal,
+        tax_percentage: values.tax_percentage,
+        tax_amount: values.tax_amount,
+        total_amount: values.total_amount,
+        status: values.status,
+        notes: values.notes,
+        terms_conditions: values.terms_conditions,
       };
       updateInvoiceMutation.mutate(updatedInvoice);
     } else {
