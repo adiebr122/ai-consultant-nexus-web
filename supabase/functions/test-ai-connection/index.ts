@@ -13,10 +13,15 @@ serve(async (req) => {
   }
 
   try {
-    const { provider, api_key, model, test_message } = await req.json();
+    const { provider, api_key, model } = await req.json();
 
     console.log('Testing AI connection:', { provider, model });
 
+    if (!api_key || !provider || !model) {
+      throw new Error('Missing required parameters: provider, api_key, and model are required');
+    }
+
+    const testMessage = "Hello, this is a test message to verify the connection.";
     let apiUrl = '';
     let headers = {};
     let requestBody = {};
@@ -31,7 +36,7 @@ serve(async (req) => {
         model: model,
         messages: [
           { role: 'system', content: 'You are a helpful assistant.' },
-          { role: 'user', content: test_message }
+          { role: 'user', content: testMessage }
         ],
         temperature: 0.7,
         max_tokens: 50
@@ -46,7 +51,7 @@ serve(async (req) => {
         model: model,
         messages: [
           { role: 'system', content: 'You are a helpful assistant.' },
-          { role: 'user', content: test_message }
+          { role: 'user', content: testMessage }
         ],
         temperature: 0.7,
         max_tokens: 50
@@ -61,7 +66,7 @@ serve(async (req) => {
           {
             parts: [
               {
-                text: test_message
+                text: testMessage
               }
             ]
           }
@@ -75,6 +80,8 @@ serve(async (req) => {
       throw new Error('Unsupported AI provider');
     }
 
+    console.log('Making request to:', apiUrl);
+
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: headers,
@@ -83,16 +90,18 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`API request failed: ${response.status} ${errorText}`);
+      console.error('API Error Response:', errorText);
+      throw new Error(`API request failed: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
+    console.log('API Response received successfully');
     
     let responseText = '';
     if (provider === 'gemini') {
-      responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response';
+      responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Test successful';
     } else {
-      responseText = data.choices?.[0]?.message?.content || 'No response';
+      responseText = data.choices?.[0]?.message?.content || 'Test successful';
     }
     
     return new Response(JSON.stringify({ 
