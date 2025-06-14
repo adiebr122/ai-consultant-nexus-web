@@ -131,6 +131,7 @@ const LiveChat = () => {
       if (aiData?.value) {
         const parsedAiSettings = JSON.parse(aiData.value);
         setAiSettings(parsedAiSettings);
+        console.log('AI Settings loaded:', parsedAiSettings);
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -272,9 +273,12 @@ const LiveChat = () => {
         })
         .eq('id', conversationId);
 
+      console.log('AI Settings for response:', aiSettings);
+
       // Handle AI response if enabled
       if (aiSettings && (aiSettings.mode === 'ai' || aiSettings.mode === 'hybrid')) {
-        handleAIResponse(messageToSend);
+        console.log('Attempting AI response...');
+        await handleAIResponse(messageToSend);
       } else if (settings.auto_reply_enabled) {
         // Send auto reply for human mode
         setTimeout(() => {
@@ -286,6 +290,17 @@ const LiveChat = () => {
             senderName: 'System'
           };
           setMessages(prev => [...prev, autoReply]);
+          
+          // Store auto reply in database
+          supabase
+            .from('chat_messages')
+            .insert({
+              conversation_id: conversationId,
+              sender_type: 'agent',
+              sender_name: 'System',
+              message_content: autoReply.text,
+              message_type: 'text'
+            });
         }, 1000);
       }
 
@@ -300,10 +315,19 @@ const LiveChat = () => {
   };
 
   const handleAIResponse = async (userMessage: string) => {
-    if (!aiSettings || !conversationId) return;
+    if (!aiSettings || !conversationId) {
+      console.log('No AI settings or conversation ID');
+      return;
+    }
+
+    console.log('Making AI request with settings:', {
+      provider: aiSettings.provider,
+      model: aiSettings.model,
+      hasApiKey: !!aiSettings.api_key
+    });
 
     try {
-      const response = await fetch('/functions/v1/ai-chat-response', {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat-response`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -326,10 +350,19 @@ const LiveChat = () => {
         })
       });
 
+      console.log('AI Response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('AI Response error:', errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
       const data = await response.json();
+      console.log('AI Response data:', data);
       
-      if (data.error) {
-        throw new Error(data.error);
+      if (!data.success) {
+        throw new Error(data.error || 'AI response failed');
       }
 
       const aiMessage: Message = {
@@ -368,6 +401,17 @@ const LiveChat = () => {
           senderName: 'System'
         };
         setMessages(prev => [...prev, handoffMessage]);
+
+        // Store handoff message
+        await supabase
+          .from('chat_messages')
+          .insert({
+            conversation_id: conversationId,
+            sender_type: 'agent',
+            sender_name: 'System',
+            message_content: handoffMessage.text,
+            message_type: 'text'
+          });
       }
 
     } catch (error) {
@@ -380,6 +424,17 @@ const LiveChat = () => {
         senderName: 'System'
       };
       setMessages(prev => [...prev, errorMessage]);
+
+      // Store error message
+      await supabase
+        .from('chat_messages')
+        .insert({
+          conversation_id: conversationId,
+          sender_type: 'agent',
+          sender_name: 'System',
+          message_content: errorMessage.text,
+          message_type: 'text'
+        });
     }
   };
 
@@ -396,21 +451,23 @@ const LiveChat = () => {
         .eq('id', conversationId);
 
       // Automatically send transcript email when chat ends
-      await fetch('/functions/v1/send-chat-transcript', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        },
-        body: JSON.stringify({ conversationId })
-      });
+      if (customerInfo.email) {
+        await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-chat-transcript`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({ conversationId })
+        });
+      }
 
       setChatEnded(true);
       setShowFeedback(true);
       
       toast({
         title: "Chat Berakhir",
-        description: "Transkrip chat akan dikirim ke email Anda",
+        description: customerInfo.email ? "Transkrip chat akan dikirim ke email Anda" : "Chat telah berakhir",
       });
     } catch (error) {
       console.error('Error ending chat:', error);
@@ -435,19 +492,21 @@ const LiveChat = () => {
         .eq('id', conversationId);
 
       // Send transcript with updated feedback
-      await fetch('/functions/v1/send-chat-transcript', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        },
-        body: JSON.stringify({ conversationId })
-      });
+      if (customerInfo.email) {
+        await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-chat-transcript`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({ conversationId })
+        });
+      }
 
       setShowFeedback(false);
       toast({
         title: "Terima Kasih",
-        description: "Feedback Anda telah dikirim dan transkrip final telah dikirim ke email",
+        description: customerInfo.email ? "Feedback Anda telah dikirim dan transkrip final telah dikirim ke email" : "Feedback Anda telah dikirim",
       });
     } catch (error) {
       console.error('Error submitting feedback:', error);
@@ -459,9 +518,11 @@ const LiveChat = () => {
     }
   };
 
-  // Listen for real-time updates
+  // Listen for real-time updates with improved channel handling
   useEffect(() => {
     if (!conversationId) return;
+
+    console.log('Setting up real-time listener for conversation:', conversationId);
 
     const channel = supabase
       .channel(`conversation-${conversationId}`)
@@ -474,8 +535,14 @@ const LiveChat = () => {
           filter: `conversation_id=eq.${conversationId}`
         },
         (payload) => {
+          console.log('Real-time message received:', payload);
           const newMsg = payload.new;
-          if (newMsg.sender_type === 'agent' && newMsg.sender_name !== 'System' && newMsg.sender_name !== 'AI Assistant') {
+          
+          // Only add agent messages that aren't from the current customer
+          if (newMsg.sender_type === 'agent' && 
+              newMsg.sender_name !== 'System' && 
+              newMsg.sender_name !== 'AI Assistant') {
+            
             const agentMessage: Message = {
               id: newMsg.id,
               text: newMsg.message_content,
@@ -483,11 +550,19 @@ const LiveChat = () => {
               time: new Date(newMsg.message_time).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
               senderName: newMsg.sender_name
             };
-            setMessages(prev => [...prev, agentMessage]);
+            
+            setMessages(prev => {
+              // Check if message already exists to prevent duplicates
+              const exists = prev.some(msg => msg.id === newMsg.id);
+              if (exists) return prev;
+              
+              return [...prev, agentMessage];
+            });
             
             if (settings.sound_notifications) {
               playNotification();
             }
+            
             if (!isOpen) {
               setHasNewMessage(true);
             }
@@ -499,9 +574,12 @@ const LiveChat = () => {
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Real-time subscription status:', status);
+      });
 
     return () => {
+      console.log('Cleaning up real-time listener');
       supabase.removeChannel(channel);
     };
   }, [conversationId, isOpen, playNotification, toast, settings.sound_notifications]);
