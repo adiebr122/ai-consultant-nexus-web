@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -71,6 +70,11 @@ const LiveChatConfig = () => {
 
   const [aiSettings, setAiSettings] = useState<AISettings | null>(null);
 
+  // Generate unique key for live chat base settings
+  const getConfigKey = () => {
+    return 'livechat_base_config';
+  };
+
   // Fetch live chat settings
   const { data: configData, isLoading } = useQuery({
     queryKey: ['livechat_settings'],
@@ -78,10 +82,11 @@ const LiveChatConfig = () => {
       const { data, error } = await supabase
         .from('site_settings')
         .select('*')
-        .eq('key', 'livechat_config')
-        .single();
+        .eq('key', getConfigKey())
+        .eq('user_id', user?.id)
+        .maybeSingle();
       
-      if (error && error.code !== 'PGRST116') throw error;
+      if (error) throw error;
       
       if (data && data.value) {
         const parsedSettings = JSON.parse(data.value);
@@ -94,22 +99,50 @@ const LiveChatConfig = () => {
     enabled: !!user
   });
 
-  // Fetch AI settings to check current mode
+  // Fetch AI settings to check current mode - check all mode configs
   const { data: aiConfigData } = useQuery({
-    queryKey: ['livechat_ai_settings'],
+    queryKey: ['livechat_ai_settings_check'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Check for AI mode settings first
+      const { data: aiData } = await supabase
         .from('site_settings')
         .select('*')
         .eq('key', 'livechat_ai_config')
-        .single();
+        .eq('user_id', user?.id)
+        .maybeSingle();
       
-      if (error && error.code !== 'PGRST116') throw error;
-      
-      if (data && data.value) {
-        const parsedAiSettings = JSON.parse(data.value);
+      if (aiData && aiData.value) {
+        const parsedAiSettings = JSON.parse(aiData.value);
         setAiSettings(parsedAiSettings);
         return parsedAiSettings;
+      }
+
+      // Check for hybrid mode settings
+      const { data: hybridData } = await supabase
+        .from('site_settings')
+        .select('*')
+        .eq('key', 'livechat_hybrid_config')
+        .eq('user_id', user?.id)
+        .maybeSingle();
+      
+      if (hybridData && hybridData.value) {
+        const parsedHybridSettings = JSON.parse(hybridData.value);
+        setAiSettings(parsedHybridSettings);
+        return parsedHybridSettings;
+      }
+
+      // Check for human mode settings
+      const { data: humanData } = await supabase
+        .from('site_settings')
+        .select('*')
+        .eq('key', 'livechat_human_config')
+        .eq('user_id', user?.id)
+        .maybeSingle();
+      
+      if (humanData && humanData.value) {
+        const parsedHumanSettings = JSON.parse(humanData.value);
+        setAiSettings(parsedHumanSettings);
+        return parsedHumanSettings;
       }
       
       return null;
@@ -123,28 +156,20 @@ const LiveChatConfig = () => {
       const settingsToSave = { ...newSettings };
       delete settingsToSave.id;
 
-      if (configData?.id) {
-        const { error } = await supabase
-          .from('site_settings')
-          .update({
-            value: JSON.stringify(settingsToSave),
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', configData.id);
-        
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('site_settings')
-          .insert({
-            key: 'livechat_config',
-            value: JSON.stringify(settingsToSave),
-            user_id: user?.id,
-            description: 'Live Chat Configuration Settings'
-          });
-        
-        if (error) throw error;
-      }
+      // Use upsert logic with base config key
+      const { error } = await supabase
+        .from('site_settings')
+        .upsert({
+          key: getConfigKey(),
+          value: JSON.stringify(settingsToSave),
+          user_id: user?.id,
+          description: 'Live Chat Base Configuration Settings',
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'key,user_id'
+        });
+      
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['livechat_settings'] });
@@ -460,8 +485,7 @@ const LiveChatConfig = () => {
                 <input
                   type="checkbox"
                   id="require_company"
-                  checked={settings.require_company}
-                  onChange={(e) => setSettings({...settings, require_company: e.target.checked})}
+                  checked={(e) => setSettings({...settings, require_company: e.target.checked})}
                   className="rounded border-gray-300"
                 />
                 <label htmlFor="require_company" className="text-sm font-medium text-gray-700">

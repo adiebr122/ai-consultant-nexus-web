@@ -90,14 +90,21 @@ const LiveChatAIConfig = () => {
     }
   };
 
-  // Fetch AI settings
+  // Generate unique key based on mode to prevent conflicts
+  const getConfigKey = (mode: string) => {
+    return `livechat_${mode}_config`;
+  };
+
+  // Fetch AI settings with mode-specific key
   const { data: configData, isLoading } = useQuery({
-    queryKey: ['livechat_ai_settings'],
+    queryKey: ['livechat_ai_settings', settings.mode],
     queryFn: async () => {
+      const configKey = getConfigKey(settings.mode);
+      
       const { data, error } = await supabase
         .from('site_settings')
         .select('*')
-        .eq('key', 'livechat_ai_config')
+        .eq('key', configKey)
         .eq('user_id', user?.id)
         .maybeSingle();
       
@@ -105,8 +112,9 @@ const LiveChatAIConfig = () => {
       
       if (data && data.value) {
         const parsedSettings = JSON.parse(data.value);
-        setSettings({ ...settings, ...parsedSettings, id: data.id });
-        return { ...settings, ...parsedSettings, id: data.id };
+        const updatedSettings = { ...settings, ...parsedSettings, id: data.id };
+        setSettings(updatedSettings);
+        return updatedSettings;
       }
       
       return settings;
@@ -158,7 +166,7 @@ const LiveChatAIConfig = () => {
     }
   };
 
-  // Save settings mutation
+  // Save settings mutation with mode-specific key
   const saveSettingsMutation = useMutation({
     mutationFn: async (newSettings: AISettings) => {
       // Test connection first if mode is AI or hybrid
@@ -176,24 +184,29 @@ const LiveChatAIConfig = () => {
       
       settingsToSave.knowledge_base = compiledKnowledge;
 
-      // Use upsert logic to avoid duplicate key violation
+      // Use mode-specific key to prevent conflicts
+      const configKey = getConfigKey(newSettings.mode);
+
+      // Use upsert logic with mode-specific key
       const { error } = await supabase
         .from('site_settings')
         .upsert({
-          key: 'livechat_ai_config',
+          key: configKey,
           value: JSON.stringify(settingsToSave),
           user_id: user?.id,
-          description: 'Live Chat AI Configuration Settings',
+          description: `Live Chat ${newSettings.mode.toUpperCase()} Mode Configuration`,
           updated_at: new Date().toISOString()
         }, {
           onConflict: 'key,user_id'
         });
       
       if (error) throw error;
-    },
-    onSuccess: () => {
+
+      // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: ['livechat_ai_settings'] });
       queryClient.invalidateQueries({ queryKey: ['livechat_settings'] });
+    },
+    onSuccess: () => {
       setIsEditing(false);
       toast({
         title: "Settings Saved",
@@ -212,6 +225,12 @@ const LiveChatAIConfig = () => {
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     saveSettingsMutation.mutate(settings);
+  };
+
+  // Handle mode change - this will trigger refetch with new key
+  const handleModeChange = (newMode: 'human' | 'ai' | 'hybrid') => {
+    setSettings(prev => ({ ...prev, mode: newMode }));
+    setConnectionStatus('idle'); // Reset connection status when mode changes
   };
 
   // Knowledge base management
@@ -372,7 +391,7 @@ const LiveChatAIConfig = () => {
                 </label>
                 <select
                   value={settings.mode}
-                  onChange={(e) => setSettings({...settings, mode: e.target.value as any})}
+                  onChange={(e) => handleModeChange(e.target.value as any)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="human">Human Only</option>
