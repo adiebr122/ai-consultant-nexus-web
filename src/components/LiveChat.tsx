@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { MessageCircle, X, Send, Star, Mail } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,6 +10,37 @@ interface Message {
   sender: 'user' | 'agent';
   time: string;
   senderName?: string;
+}
+
+interface LiveChatSettings {
+  welcome_message: string;
+  offline_message: string;
+  auto_reply_enabled: boolean;
+  auto_reply_message: string;
+  working_hours_enabled: boolean;
+  working_hours_start: string;
+  working_hours_end: string;
+  working_days: string[];
+  max_chat_duration: number;
+  chat_widget_color: string;
+  chat_widget_position: string;
+  require_email: boolean;
+  require_phone: boolean;
+  require_company: boolean;
+  sound_notifications: boolean;
+  email_notifications: boolean;
+}
+
+interface AISettings {
+  mode: 'human' | 'ai' | 'hybrid';
+  provider: 'deepseek' | 'openai' | 'gemini';
+  api_key: string;
+  model: string;
+  temperature: number;
+  max_tokens: number;
+  system_prompt: string;
+  knowledge_base: string;
+  handoff_triggers: string[];
 }
 
 const LiveChat = () => {
@@ -31,18 +61,93 @@ const LiveChat = () => {
   const [chatEnded, setChatEnded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [hasNewMessage, setHasNewMessage] = useState(false);
-  const [lastMessageCount, setLastMessageCount] = useState(0);
+  const [settings, setSettings] = useState<LiveChatSettings>({
+    welcome_message: 'Halo! Selamat datang di AI Consultant Pro. Tim CS kami siap membantu Anda.',
+    offline_message: 'Maaf, CS kami sedang offline. Silakan tinggalkan pesan dan kami akan merespons segera.',
+    auto_reply_enabled: true,
+    auto_reply_message: 'Terima kasih atas pesan Anda. Tim CS kami akan segera merespons.',
+    working_hours_enabled: true,
+    working_hours_start: '09:00',
+    working_hours_end: '17:00',
+    working_days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+    max_chat_duration: 60,
+    chat_widget_color: '#3B82F6',
+    chat_widget_position: 'bottom-right',
+    require_email: false,
+    require_phone: true,
+    require_company: false,
+    sound_notifications: true,
+    email_notifications: true
+  });
+  const [aiSettings, setAiSettings] = useState<AISettings | null>(null);
+  const [isWithinWorkingHours, setIsWithinWorkingHours] = useState(true);
   
   const { toast } = useToast();
   const { playNotification } = useAudioNotification();
 
+  // Load settings on component mount
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  // Check working hours
+  useEffect(() => {
+    if (settings.working_hours_enabled) {
+      const now = new Date();
+      const currentDay = now.toLocaleDateString('en-US', { weekday: 'lowercase' });
+      const currentTime = now.toTimeString().slice(0, 5);
+      
+      const isDayIncluded = settings.working_days.includes(currentDay);
+      const isTimeWithin = currentTime >= settings.working_hours_start && currentTime <= settings.working_hours_end;
+      
+      setIsWithinWorkingHours(isDayIncluded && isTimeWithin);
+    } else {
+      setIsWithinWorkingHours(true);
+    }
+  }, [settings]);
+
+  const loadSettings = async () => {
+    try {
+      // Load live chat settings
+      const { data: livechatData } = await supabase
+        .from('site_settings')
+        .select('*')
+        .eq('key', 'livechat_config')
+        .single();
+      
+      if (livechatData?.value) {
+        const parsedSettings = JSON.parse(livechatData.value);
+        setSettings({ ...settings, ...parsedSettings });
+      }
+
+      // Load AI settings
+      const { data: aiData } = await supabase
+        .from('site_settings')
+        .select('*')
+        .eq('key', 'livechat_ai_config')
+        .single();
+      
+      if (aiData?.value) {
+        const parsedAiSettings = JSON.parse(aiData.value);
+        setAiSettings(parsedAiSettings);
+      }
+    } catch (error) {
+      console.error('Error loading settings:', error);
+    }
+  };
+
   // Initialize conversation when customer info is provided
   const handleCustomerInfoSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!customerInfo.name || !customerInfo.phone) {
+    
+    // Validate required fields based on settings
+    if (!customerInfo.name || 
+        (settings.require_phone && !customerInfo.phone) ||
+        (settings.require_email && !customerInfo.email) ||
+        (settings.require_company && !customerInfo.company)) {
       toast({
         title: "Info Required",
-        description: "Nama dan nomor telepon wajib diisi",
+        description: "Harap lengkapi semua field yang wajib diisi",
         variant: "destructive",
       });
       return;
@@ -51,7 +156,7 @@ const LiveChat = () => {
     try {
       setLoading(true);
       
-      // Create new conversation with status 'unassigned'
+      // Create new conversation
       const { data: conversation, error } = await supabase
         .from('chat_conversations')
         .insert({
@@ -68,18 +173,16 @@ const LiveChat = () => {
         .select()
         .single();
 
-      if (error) {
-        console.error('Error creating conversation:', error);
-        throw error;
-      }
+      if (error) throw error;
 
       setConversationId(conversation.id);
       setShowCustomerForm(false);
       
-      // Add initial system message
+      // Add welcome message based on working hours
+      const welcomeText = isWithinWorkingHours ? settings.welcome_message : settings.offline_message;
       const welcomeMessage: Message = {
         id: '1',
-        text: `Halo ${customerInfo.name}! Selamat datang di AI Consultant Pro. Tim CS kami akan segera merespons pesan Anda.`,
+        text: welcomeText.replace('{name}', customerInfo.name),
         sender: 'agent',
         time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
         senderName: 'System'
@@ -102,7 +205,7 @@ const LiveChat = () => {
       await supabase
         .from('user_management')
         .insert({
-          admin_user_id: '2da7d5d8-a2d8-4bfa-bcb8-8ac350d299cf', // Default admin ID
+          admin_user_id: '2da7d5d8-a2d8-4bfa-bcb8-8ac350d299cf',
           client_name: customerInfo.name,
           client_email: customerInfo.email || '',
           client_phone: customerInfo.phone,
@@ -114,7 +217,7 @@ const LiveChat = () => {
 
       toast({
         title: "Chat Dimulai",
-        description: "Percakapan berhasil dimulai. Tim CS akan segera merespons.",
+        description: "Percakapan berhasil dimulai.",
       });
 
     } catch (error) {
@@ -142,6 +245,7 @@ const LiveChat = () => {
     };
     
     setMessages(prev => [...prev, userMessage]);
+    const messageToSend = newMessage;
     setNewMessage('');
 
     try {
@@ -156,7 +260,7 @@ const LiveChat = () => {
           message_type: 'text'
         });
 
-      // Update conversation last message and change status to active
+      // Update conversation
       await supabase
         .from('chat_conversations')
         .update({
@@ -167,6 +271,23 @@ const LiveChat = () => {
         })
         .eq('id', conversationId);
 
+      // Handle AI response if enabled
+      if (aiSettings && (aiSettings.mode === 'ai' || aiSettings.mode === 'hybrid')) {
+        handleAIResponse(messageToSend);
+      } else if (settings.auto_reply_enabled) {
+        // Send auto reply for human mode
+        setTimeout(() => {
+          const autoReply: Message = {
+            id: (Date.now() + 1).toString(),
+            text: settings.auto_reply_message,
+            sender: 'agent',
+            time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+            senderName: 'System'
+          };
+          setMessages(prev => [...prev, autoReply]);
+        }, 1000);
+      }
+
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
@@ -174,6 +295,90 @@ const LiveChat = () => {
         description: "Gagal mengirim pesan",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleAIResponse = async (userMessage: string) => {
+    if (!aiSettings || !conversationId) return;
+
+    try {
+      const response = await fetch('/functions/v1/ai-chat-response', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          message: userMessage,
+          conversation_id: conversationId,
+          provider: aiSettings.provider,
+          api_key: aiSettings.api_key,
+          model: aiSettings.model,
+          temperature: aiSettings.temperature,
+          max_tokens: aiSettings.max_tokens,
+          system_prompt: aiSettings.system_prompt,
+          conversation_history: messages.slice(-10).map(msg => ({
+            role: msg.sender === 'user' ? 'user' : 'assistant',
+            content: msg.text
+          })),
+          knowledge_base: aiSettings.knowledge_base
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      const aiMessage: Message = {
+        id: (Date.now() + 2).toString(),
+        text: data.response,
+        sender: 'agent',
+        time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+        senderName: 'AI Assistant'
+      };
+
+      setMessages(prev => [...prev, aiMessage]);
+
+      // Store AI response
+      await supabase
+        .from('chat_messages')
+        .insert({
+          conversation_id: conversationId,
+          sender_type: 'agent',
+          sender_name: 'AI Assistant',
+          message_content: aiMessage.text,
+          message_type: 'text'
+        });
+
+      // Check for handoff in hybrid mode
+      if (aiSettings.mode === 'hybrid' && data.should_handoff) {
+        await supabase
+          .from('chat_conversations')
+          .update({ status: 'pending_handoff' })
+          .eq('id', conversationId);
+        
+        const handoffMessage: Message = {
+          id: (Date.now() + 3).toString(),
+          text: 'Permintaan Anda akan diteruskan ke customer service kami. Mohon tunggu sebentar.',
+          sender: 'agent',
+          time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+          senderName: 'System'
+        };
+        setMessages(prev => [...prev, handoffMessage]);
+      }
+
+    } catch (error) {
+      console.error('Error getting AI response:', error);
+      const errorMessage: Message = {
+        id: (Date.now() + 4).toString(),
+        text: 'Maaf, saya mengalami gangguan teknis. Tim CS kami akan segera membantu Anda.',
+        sender: 'agent',
+        time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+        senderName: 'System'
+      };
+      setMessages(prev => [...prev, errorMessage]);
     }
   };
 
@@ -253,7 +458,7 @@ const LiveChat = () => {
     }
   };
 
-  // Listen for real-time updates from admin and play notification sound
+  // Listen for real-time updates
   useEffect(() => {
     if (!conversationId) return;
 
@@ -269,7 +474,7 @@ const LiveChat = () => {
         },
         (payload) => {
           const newMsg = payload.new;
-          if (newMsg.sender_type === 'agent' && newMsg.sender_name !== 'System') {
+          if (newMsg.sender_type === 'agent' && newMsg.sender_name !== 'System' && newMsg.sender_name !== 'AI Assistant') {
             const agentMessage: Message = {
               id: newMsg.id,
               text: newMsg.message_content,
@@ -279,8 +484,9 @@ const LiveChat = () => {
             };
             setMessages(prev => [...prev, agentMessage]);
             
-            // Play notification sound and show visual indicator
-            playNotification();
+            if (settings.sound_notifications) {
+              playNotification();
+            }
             if (!isOpen) {
               setHasNewMessage(true);
             }
@@ -297,24 +503,28 @@ const LiveChat = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [conversationId, isOpen, playNotification, toast]);
+  }, [conversationId, isOpen, playNotification, toast, settings.sound_notifications]);
 
-  // Clear new message indicator when chat is opened
   useEffect(() => {
     if (isOpen) {
       setHasNewMessage(false);
     }
   }, [isOpen]);
 
+  // Dynamic positioning based on settings
+  const positionClass = settings.chat_widget_position === 'bottom-left' ? 'bottom-6 left-6' : 'bottom-6 right-6';
+  const chatWindowPosition = settings.chat_widget_position === 'bottom-left' ? 'bottom-24 left-6' : 'bottom-24 right-6';
+
   return (
     <>
       {/* Chat Button */}
-      <div className="fixed bottom-6 right-6 z-50">
+      <div className={`fixed ${positionClass} z-50`}>
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className={`relative bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-all duration-300 hover:scale-105 ${
+          className={`relative text-white p-4 rounded-full shadow-lg transition-all duration-300 hover:scale-105 ${
             hasNewMessage ? 'animate-bounce' : ''
           }`}
+          style={{ backgroundColor: settings.chat_widget_color }}
         >
           {isOpen ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
           {!isOpen && hasNewMessage && (
@@ -330,17 +540,19 @@ const LiveChat = () => {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 w-80 bg-white rounded-2xl shadow-2xl z-50 border border-gray-200">
+        <div className={`fixed ${chatWindowPosition} w-80 bg-white rounded-2xl shadow-2xl z-50 border border-gray-200`}>
           {/* Chat Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 rounded-t-2xl">
+          <div className="text-white p-4 rounded-t-2xl" style={{ background: `linear-gradient(to right, ${settings.chat_widget_color}, ${settings.chat_widget_color}dd)` }}>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: `${settings.chat_widget_color}aa` }}>
                   <MessageCircle className="h-5 w-5" />
                 </div>
                 <div>
                   <h3 className="font-semibold">Live Chat Support</h3>
-                  <p className="text-sm opacity-90">Tim kami siap membantu Anda</p>
+                  <p className="text-sm opacity-90">
+                    {isWithinWorkingHours ? 'Tim kami siap membantu Anda' : 'Di luar jam kerja'}
+                  </p>
                 </div>
               </div>
               {!chatEnded && conversationId && (
@@ -376,38 +588,43 @@ const LiveChat = () => {
               <div>
                 <input
                   type="tel"
-                  placeholder="Nomor HP *"
+                  placeholder={`Nomor HP ${settings.require_phone ? '*' : ''}`}
                   value={customerInfo.phone}
                   onChange={(e) => setCustomerInfo({...customerInfo, phone: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                  required
+                  required={settings.require_phone}
                 />
               </div>
 
-              <div>
-                <input
-                  type="text"
-                  placeholder="Nama Perusahaan"
-                  value={customerInfo.company}
-                  onChange={(e) => setCustomerInfo({...customerInfo, company: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                />
-              </div>
+              {(settings.require_company || customerInfo.company) && (
+                <div>
+                  <input
+                    type="text"
+                    placeholder={`Nama Perusahaan ${settings.require_company ? '*' : ''}`}
+                    value={customerInfo.company}
+                    onChange={(e) => setCustomerInfo({...customerInfo, company: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    required={settings.require_company}
+                  />
+                </div>
+              )}
               
               <div>
                 <input
                   type="email"
-                  placeholder="Email (untuk menerima transkrip)"
+                  placeholder={`Email ${settings.require_email ? '*' : '(untuk menerima transkrip)'}`}
                   value={customerInfo.email}
                   onChange={(e) => setCustomerInfo({...customerInfo, email: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  required={settings.require_email}
                 />
               </div>
               
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 text-sm font-medium"
+                className="w-full text-white py-2 rounded-lg transition-colors disabled:opacity-50 text-sm font-medium"
+                style={{ backgroundColor: settings.chat_widget_color }}
               >
                 {loading ? 'Memulai...' : 'Mulai Chat'}
               </button>
@@ -445,7 +662,8 @@ const LiveChat = () => {
 
               <button
                 onClick={handleFeedbackSubmit}
-                className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                className="w-full text-white py-2 rounded-lg transition-colors text-sm font-medium"
+                style={{ backgroundColor: settings.chat_widget_color }}
               >
                 Kirim Feedback
               </button>
@@ -462,9 +680,12 @@ const LiveChat = () => {
                     <div
                       className={`max-w-xs px-4 py-2 rounded-lg ${
                         message.sender === 'user'
-                          ? 'bg-blue-600 text-white'
+                          ? 'text-white'
                           : 'bg-gray-100 text-gray-800'
                       }`}
+                      style={{
+                        backgroundColor: message.sender === 'user' ? settings.chat_widget_color : undefined
+                      }}
                     >
                       <p className="text-sm">{message.text}</p>
                       <div className="flex justify-between items-center mt-1">
@@ -497,7 +718,8 @@ const LiveChat = () => {
                     />
                     <button
                       type="submit"
-                      className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition-colors"
+                      className="text-white p-2 rounded-lg transition-colors"
+                      style={{ backgroundColor: settings.chat_widget_color }}
                     >
                       <Send className="h-4 w-4" />
                     </button>
