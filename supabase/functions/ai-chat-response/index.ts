@@ -10,13 +10,14 @@ const corsHeaders = {
 interface ChatRequest {
   message: string;
   conversation_id: string;
-  provider: 'deepseek' | 'openai';
+  provider: 'deepseek' | 'openai' | 'gemini';
   api_key: string;
   model: string;
   temperature: number;
   max_tokens: number;
   system_prompt: string;
   conversation_history?: Array<{role: string, content: string}>;
+  knowledge_base?: string;
 }
 
 serve(async (req) => {
@@ -34,7 +35,8 @@ serve(async (req) => {
       temperature, 
       max_tokens, 
       system_prompt,
-      conversation_history = []
+      conversation_history = [],
+      knowledge_base = ''
     }: ChatRequest = await req.json();
 
     console.log('AI Chat Request:', { provider, model, conversation_id });
@@ -42,6 +44,11 @@ serve(async (req) => {
     let apiUrl = '';
     let headers = {};
     let requestBody = {};
+
+    // Enhance system prompt with knowledge base
+    const enhancedSystemPrompt = knowledge_base 
+      ? `${system_prompt}\n\nKnowledge Base:\n${knowledge_base}\n\nGunakan informasi dari knowledge base di atas untuk menjawab pertanyaan dengan lebih akurat dan spesifik.`
+      : system_prompt;
 
     // Configure API based on provider
     if (provider === 'deepseek') {
@@ -52,7 +59,7 @@ serve(async (req) => {
       };
       
       const messages = [
-        { role: 'system', content: system_prompt },
+        { role: 'system', content: enhancedSystemPrompt },
         ...conversation_history,
         { role: 'user', content: message }
       ];
@@ -72,7 +79,7 @@ serve(async (req) => {
       };
       
       const messages = [
-        { role: 'system', content: system_prompt },
+        { role: 'system', content: enhancedSystemPrompt },
         ...conversation_history,
         { role: 'user', content: message }
       ];
@@ -83,6 +90,37 @@ serve(async (req) => {
         temperature: temperature,
         max_tokens: max_tokens,
         stream: false
+      };
+    } else if (provider === 'gemini') {
+      apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${api_key}`;
+      headers = {
+        'Content-Type': 'application/json',
+      };
+
+      // Build conversation context for Gemini
+      let contextText = enhancedSystemPrompt;
+      if (conversation_history.length > 0) {
+        contextText += '\n\nPrevious conversation:\n';
+        conversation_history.forEach(msg => {
+          contextText += `${msg.role}: ${msg.content}\n`;
+        });
+      }
+      contextText += `\nuser: ${message}\nassistant:`;
+
+      requestBody = {
+        contents: [
+          {
+            parts: [
+              {
+                text: contextText
+              }
+            ]
+          }
+        ],
+        generationConfig: {
+          temperature: temperature,
+          maxOutputTokens: max_tokens
+        }
       };
     } else {
       throw new Error('Unsupported AI provider');
@@ -105,7 +143,12 @@ serve(async (req) => {
     const data = await response.json();
     console.log('AI Response received');
 
-    const aiResponse = data.choices[0].message.content;
+    let aiResponse = '';
+    if (provider === 'gemini') {
+      aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Maaf, saya tidak dapat memproses permintaan Anda saat ini.';
+    } else {
+      aiResponse = data.choices?.[0]?.message?.content || 'Maaf, saya tidak dapat memproses permintaan Anda saat ini.';
+    }
 
     // Check for handoff triggers
     const handoffTriggers = ['komplain', 'refund', 'pembatalan', 'masalah teknis', 'berbicara dengan manusia', 'customer service'];

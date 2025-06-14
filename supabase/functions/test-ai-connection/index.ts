@@ -51,6 +51,26 @@ serve(async (req) => {
         temperature: 0.7,
         max_tokens: 50
       };
+    } else if (provider === 'gemini') {
+      apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${api_key}`;
+      headers = {
+        'Content-Type': 'application/json',
+      };
+      requestBody = {
+        contents: [
+          {
+            parts: [
+              {
+                text: test_message
+              }
+            ]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 50
+        }
+      };
     } else {
       throw new Error('Unsupported AI provider');
     }
@@ -68,9 +88,16 @@ serve(async (req) => {
 
     const data = await response.json();
     
+    let responseText = '';
+    if (provider === 'gemini') {
+      responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response';
+    } else {
+      responseText = data.choices?.[0]?.message?.content || 'No response';
+    }
+    
     return new Response(JSON.stringify({ 
       success: true,
-      response: data.choices[0].message.content,
+      response: responseText,
       provider: provider,
       model: model
     }), {
