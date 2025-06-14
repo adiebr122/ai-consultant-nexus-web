@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -99,9 +98,10 @@ const LiveChatAIConfig = () => {
         .from('site_settings')
         .select('*')
         .eq('key', 'livechat_ai_config')
-        .single();
+        .eq('user_id', user?.id)
+        .maybeSingle();
       
-      if (error && error.code !== 'PGRST116') throw error;
+      if (error) throw error;
       
       if (data && data.value) {
         const parsedSettings = JSON.parse(data.value);
@@ -176,28 +176,20 @@ const LiveChatAIConfig = () => {
       
       settingsToSave.knowledge_base = compiledKnowledge;
 
-      if (configData?.id) {
-        const { error } = await supabase
-          .from('site_settings')
-          .update({
-            value: JSON.stringify(settingsToSave),
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', configData.id);
-        
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('site_settings')
-          .insert({
-            key: 'livechat_ai_config',
-            value: JSON.stringify(settingsToSave),
-            user_id: user?.id,
-            description: 'Live Chat AI Configuration Settings'
-          });
-        
-        if (error) throw error;
-      }
+      // Use upsert logic to avoid duplicate key violation
+      const { error } = await supabase
+        .from('site_settings')
+        .upsert({
+          key: 'livechat_ai_config',
+          value: JSON.stringify(settingsToSave),
+          user_id: user?.id,
+          description: 'Live Chat AI Configuration Settings',
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'key,user_id'
+        });
+      
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['livechat_ai_settings'] });
