@@ -253,22 +253,29 @@ const LiveChatAIConfig = () => {
     setKnowledgeEntries(knowledgeEntries.filter(entry => entry.id !== id));
   };
 
-  // Load knowledge entries from existing knowledge_base
+  // Load knowledge entries from existing knowledge_base - FIXED
   useEffect(() => {
-    if (configData && configData.knowledge_base) {
-      // Parse existing knowledge base (this is a simple implementation)
-      // In a real app, you might want to store knowledge entries separately
-      const entries = configData.knowledge_base.split('\n\n').map((section: string, index: number) => {
-        const [title, ...contentLines] = section.split('\n');
-        return {
-          id: index.toString(),
-          type: 'text' as const,
-          title: title.replace(':', ''),
-          content: contentLines.join('\n')
-        };
-      }).filter((entry: any) => entry.title && entry.content);
-      
-      setKnowledgeEntries(entries);
+    if (configData && configData.knowledge_base && typeof configData.knowledge_base === 'string' && configData.knowledge_base.trim()) {
+      try {
+        // Parse existing knowledge base (this is a simple implementation)
+        const entries = configData.knowledge_base.split('\n\n').map((section: string, index: number) => {
+          const [title, ...contentLines] = section.split('\n');
+          return {
+            id: index.toString(),
+            type: 'text' as const,
+            title: title.replace(':', ''),
+            content: contentLines.join('\n')
+          };
+        }).filter((entry: any) => entry.title && entry.content);
+        
+        setKnowledgeEntries(entries);
+      } catch (error) {
+        console.error('Error parsing knowledge base:', error);
+        setKnowledgeEntries([]);
+      }
+    } else {
+      // If no knowledge base or it's not a string, set empty array
+      setKnowledgeEntries([]);
     }
   }, [configData]);
 
