@@ -14,7 +14,8 @@ import {
   CheckCircle,
   AlertCircle,
   Volume2,
-  Bell
+  Bell,
+  Info
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -37,6 +38,11 @@ interface LiveChatSettings {
   require_company: boolean;
   sound_notifications: boolean;
   email_notifications: boolean;
+}
+
+interface AISettings {
+  mode: 'human' | 'ai' | 'hybrid';
+  provider: 'deepseek' | 'openai' | 'gemini';
 }
 
 const LiveChatConfig = () => {
@@ -63,6 +69,8 @@ const LiveChatConfig = () => {
     email_notifications: true
   });
 
+  const [aiSettings, setAiSettings] = useState<AISettings | null>(null);
+
   // Fetch live chat settings
   const { data: configData, isLoading } = useQuery({
     queryKey: ['livechat_settings'],
@@ -82,6 +90,29 @@ const LiveChatConfig = () => {
       }
       
       return settings;
+    },
+    enabled: !!user
+  });
+
+  // Fetch AI settings to check current mode
+  const { data: aiConfigData } = useQuery({
+    queryKey: ['livechat_ai_settings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('*')
+        .eq('key', 'livechat_ai_config')
+        .single();
+      
+      if (error && error.code !== 'PGRST116') throw error;
+      
+      if (data && data.value) {
+        const parsedAiSettings = JSON.parse(data.value);
+        setAiSettings(parsedAiSettings);
+        return parsedAiSettings;
+      }
+      
+      return null;
     },
     enabled: !!user
   });
@@ -120,7 +151,7 @@ const LiveChatConfig = () => {
       setIsEditing(false);
       toast({
         title: "Settings Saved",
-        description: "Live chat configuration berhasil disimpan",
+        description: "Konfigurasi live chat berhasil disimpan",
       });
     },
     onError: (error) => {
@@ -161,6 +192,18 @@ const LiveChatConfig = () => {
     }
   };
 
+  // Auto-reply logic based on AI mode
+  const isAutoReplyRelevant = () => {
+    return !aiSettings || aiSettings.mode === 'human';
+  };
+
+  const getAutoReplyStatus = () => {
+    if (aiSettings?.mode === 'ai' || aiSettings?.mode === 'hybrid') {
+      return 'Dikontrol oleh AI';
+    }
+    return settings.auto_reply_enabled ? 'Aktif' : 'Nonaktif';
+  };
+
   if (isLoading) {
     return (
       <div className="text-center py-8">
@@ -177,7 +220,7 @@ const LiveChatConfig = () => {
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold flex items-center">
             <MessageCircle className="h-5 w-5 mr-2 text-blue-600" />
-            Live Chat Configuration
+            Konfigurasi Live Chat
           </h3>
           <div className="flex space-x-2">
             <Button
@@ -187,7 +230,7 @@ const LiveChatConfig = () => {
               className="flex items-center space-x-2"
             >
               <Edit className="h-4 w-4" />
-              <span>{isEditing ? 'Cancel' : 'Edit Settings'}</span>
+              <span>{isEditing ? 'Batal' : 'Edit Settings'}</span>
             </Button>
           </div>
         </div>
@@ -220,10 +263,26 @@ const LiveChatConfig = () => {
               Auto Reply
             </h4>
             <p className="text-sm text-purple-600">
-              {settings.auto_reply_enabled ? 'Aktif' : 'Nonaktif'}
+              {getAutoReplyStatus()}
             </p>
           </div>
         </div>
+
+        {/* AI Mode Warning */}
+        {aiSettings && (aiSettings.mode === 'ai' || aiSettings.mode === 'hybrid') && (
+          <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="flex items-center">
+              <Info className="h-5 w-5 text-yellow-600 mr-2" />
+              <div>
+                <h4 className="font-medium text-yellow-800">Mode AI Aktif</h4>
+                <p className="text-sm text-yellow-700 mt-1">
+                  Beberapa pengaturan auto-reply akan dikontrol oleh AI. 
+                  {aiSettings.mode === 'hybrid' && ' Dalam mode hybrid, AI akan menangani respons otomatis dan dapat mentransfer ke human agent.'}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Configuration Form */}
@@ -233,7 +292,7 @@ const LiveChatConfig = () => {
           <div>
             <h4 className="text-lg font-semibold mb-4 flex items-center">
               <MessageCircle className="h-5 w-5 mr-2" />
-              Pesan & Balasan Otomatis
+              Pesan Dasar
             </h4>
             <div className="grid md:grid-cols-2 gap-4">
               <div>
@@ -262,29 +321,35 @@ const LiveChatConfig = () => {
               </div>
             </div>
             
-            <div className="mt-4">
-              <div className="flex items-center space-x-2 mb-2">
-                <input
-                  type="checkbox"
-                  id="auto_reply"
-                  checked={settings.auto_reply_enabled}
-                  onChange={(e) => setSettings({...settings, auto_reply_enabled: e.target.checked})}
-                  className="rounded border-gray-300"
-                />
-                <label htmlFor="auto_reply" className="text-sm font-medium text-gray-700">
-                  Aktifkan Auto Reply
-                </label>
+            {/* Auto Reply - Only show if relevant */}
+            {isAutoReplyRelevant() && (
+              <div className="mt-4">
+                <div className="flex items-center space-x-2 mb-2">
+                  <input
+                    type="checkbox"
+                    id="auto_reply"
+                    checked={settings.auto_reply_enabled}
+                    onChange={(e) => setSettings({...settings, auto_reply_enabled: e.target.checked})}
+                    className="rounded border-gray-300"
+                  />
+                  <label htmlFor="auto_reply" className="text-sm font-medium text-gray-700">
+                    Aktifkan Auto Reply (Mode Human)
+                  </label>
+                </div>
+                {settings.auto_reply_enabled && (
+                  <textarea
+                    value={settings.auto_reply_message}
+                    onChange={(e) => setSettings({...settings, auto_reply_message: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    rows={2}
+                    placeholder="Pesan balasan otomatis untuk mode human"
+                  />
+                )}
+                <p className="text-xs text-gray-500 mt-1">
+                  Auto reply hanya berlaku untuk mode Human. Mode AI/Hybrid menggunakan respons AI.
+                </p>
               </div>
-              {settings.auto_reply_enabled && (
-                <textarea
-                  value={settings.auto_reply_message}
-                  onChange={(e) => setSettings({...settings, auto_reply_message: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  rows={2}
-                  placeholder="Pesan balasan otomatis"
-                />
-              )}
-            </div>
+            )}
           </div>
 
           {/* Working Hours */}
@@ -364,7 +429,7 @@ const LiveChatConfig = () => {
           <div>
             <h4 className="text-lg font-semibold mb-4 flex items-center">
               <Users className="h-5 w-5 mr-2" />
-              Form Requirements
+              Persyaratan Form
             </h4>
             <div className="grid md:grid-cols-3 gap-4">
               <div className="flex items-center space-x-2">
