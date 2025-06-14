@@ -13,18 +13,46 @@ serve(async (req) => {
   }
 
   try {
-    const { provider, api_key, model } = await req.json();
+    const requestBody = await req.json();
+    const { provider, api_key, model } = requestBody;
 
-    console.log('Testing AI connection:', { provider, model });
+    console.log('Testing AI connection:', { provider, model, hasApiKey: !!api_key });
 
-    if (!api_key || !provider || !model) {
-      throw new Error('Missing required parameters: provider, api_key, and model are required');
+    // Validate required parameters
+    if (!provider) {
+      return new Response(JSON.stringify({ 
+        success: false,
+        error: 'Provider is required'
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (!api_key) {
+      return new Response(JSON.stringify({ 
+        success: false,
+        error: 'API key is required'
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (!model) {
+      return new Response(JSON.stringify({ 
+        success: false,
+        error: 'Model is required'
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const testMessage = "Hello, this is a test message to verify the connection.";
     let apiUrl = '';
     let headers = {};
-    let requestBody = {};
+    let requestBodyForAPI = {};
 
     if (provider === 'deepseek') {
       apiUrl = 'https://api.deepseek.com/chat/completions';
@@ -32,7 +60,7 @@ serve(async (req) => {
         'Authorization': `Bearer ${api_key}`,
         'Content-Type': 'application/json',
       };
-      requestBody = {
+      requestBodyForAPI = {
         model: model,
         messages: [
           { role: 'system', content: 'You are a helpful assistant.' },
@@ -47,7 +75,7 @@ serve(async (req) => {
         'Authorization': `Bearer ${api_key}`,
         'Content-Type': 'application/json',
       };
-      requestBody = {
+      requestBodyForAPI = {
         model: model,
         messages: [
           { role: 'system', content: 'You are a helpful assistant.' },
@@ -61,7 +89,7 @@ serve(async (req) => {
       headers = {
         'Content-Type': 'application/json',
       };
-      requestBody = {
+      requestBodyForAPI = {
         contents: [
           {
             parts: [
@@ -77,21 +105,55 @@ serve(async (req) => {
         }
       };
     } else {
-      throw new Error('Unsupported AI provider');
+      return new Response(JSON.stringify({ 
+        success: false,
+        error: `Unsupported AI provider: ${provider}`
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     console.log('Making request to:', apiUrl);
+    console.log('Request headers:', Object.keys(headers));
 
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: headers,
-      body: JSON.stringify(requestBody),
+      body: JSON.stringify(requestBodyForAPI),
     });
+
+    console.log('API Response status:', response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error('API Error Response:', errorText);
-      throw new Error(`API request failed: ${response.status} - ${errorText}`);
+      
+      let errorMessage = `API request failed: ${response.status}`;
+      
+      // Try to parse error details
+      try {
+        const errorData = JSON.parse(errorText);
+        if (errorData.error?.message) {
+          errorMessage = errorData.error.message;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+      } catch (e) {
+        // If parsing fails, use the raw error text
+        if (errorText) {
+          errorMessage = errorText.substring(0, 200); // Limit error message length
+        }
+      }
+
+      return new Response(JSON.stringify({ 
+        success: false,
+        error: errorMessage,
+        statusCode: response.status
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const data = await response.json();
@@ -115,11 +177,19 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error testing AI connection:', error);
+    
+    let errorMessage = 'Unknown error occurred';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (typeof error === 'string') {
+      errorMessage = error;
+    }
+
     return new Response(JSON.stringify({ 
       success: false,
-      error: error.message
+      error: errorMessage
     }), {
-      status: 400,
+      status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
