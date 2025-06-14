@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,10 +14,12 @@ import {
   AlertTriangle,
   UserCheck,
   Volume2,
-  VolumeX
+  VolumeX,
+  Bot
 } from 'lucide-react';
 import WhatsAppChat from './WhatsAppChat';
 import LiveChatConfig from './LiveChatConfig';
+import LiveChatAIConfig from './LiveChatAIConfig';
 import ChatAgentManager from './ChatAgentManager';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -69,6 +72,7 @@ const LiveChatManager = () => {
     { id: 'chat', label: 'Live Chat', icon: MessageCircle },
     { id: 'agents', label: 'Manajemen Agent', icon: UserCheck },
     { id: 'config', label: 'Konfigurasi Live Chat', icon: Settings },
+    { id: 'ai-config', label: 'Konfigurasi AI', icon: Bot },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 }
   ];
 
@@ -258,6 +262,7 @@ const LiveChatManager = () => {
             {activeTab === 'chat' && <WhatsAppChat soundEnabled={soundEnabled} />}
             {activeTab === 'agents' && <ChatAgentManager />}
             {activeTab === 'config' && <LiveChatConfig />}
+            {activeTab === 'ai-config' && <LiveChatAIConfig />}
             {activeTab === 'analytics' && renderAnalytics()}
           </div>
         </div>
