@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,7 +15,9 @@ import {
   AlertCircle,
   Volume2,
   Bell,
-  Info
+  Info,
+  Bot,
+  User
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -39,16 +42,12 @@ interface LiveChatSettings {
   email_notifications: boolean;
 }
 
-interface AISettings {
-  mode: 'human' | 'ai' | 'hybrid';
-  provider: 'deepseek' | 'openai' | 'gemini';
-}
-
 const LiveChatConfig = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
+  const [activeMode, setActiveMode] = useState<'human' | 'ai' | 'hybrid' | null>(null);
   const [settings, setSettings] = useState<LiveChatSettings>({
     welcome_message: 'Halo! Selamat datang di AI Consultant Pro. Tim CS kami siap membantu Anda.',
     offline_message: 'Maaf, CS kami sedang offline. Silakan tinggalkan pesan dan kami akan merespons segera.',
@@ -68,84 +67,57 @@ const LiveChatConfig = () => {
     email_notifications: true
   });
 
-  const [aiSettings, setAiSettings] = useState<AISettings | null>(null);
-
-  // Generate unique key for live chat base settings
-  const getConfigKey = () => {
-    return 'livechat_base_config';
-  };
-
-  // Fetch live chat settings
+  // Fetch live chat settings and determine active mode
   const { data: configData, isLoading } = useQuery({
     queryKey: ['livechat_settings'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Load base settings
+      const { data: baseData } = await supabase
         .from('site_settings')
         .select('*')
-        .eq('key', getConfigKey())
+        .eq('key', 'livechat_base_config')
         .eq('user_id', user?.id)
         .maybeSingle();
       
-      if (error) throw error;
-      
-      if (data && data.value) {
-        const parsedSettings = JSON.parse(data.value);
-        setSettings({ ...settings, ...parsedSettings, id: data.id });
-        return { ...settings, ...parsedSettings, id: data.id };
-      }
-      
-      return settings;
-    },
-    enabled: !!user
-  });
-
-  // Fetch AI settings to check current mode - check all mode configs
-  const { data: aiConfigData } = useQuery({
-    queryKey: ['livechat_ai_settings_check'],
-    queryFn: async () => {
-      // Check for AI mode settings first
-      const { data: aiData } = await supabase
-        .from('site_settings')
-        .select('*')
-        .eq('key', 'livechat_ai_config')
-        .eq('user_id', user?.id)
-        .maybeSingle();
-      
-      if (aiData && aiData.value) {
-        const parsedAiSettings = JSON.parse(aiData.value);
-        setAiSettings(parsedAiSettings);
-        return parsedAiSettings;
+      if (baseData?.value) {
+        const parsedSettings = JSON.parse(baseData.value);
+        setSettings({ ...settings, ...parsedSettings, id: baseData.id });
       }
 
-      // Check for hybrid mode settings
-      const { data: hybridData } = await supabase
-        .from('site_settings')
-        .select('*')
-        .eq('key', 'livechat_hybrid_config')
-        .eq('user_id', user?.id)
-        .maybeSingle();
-      
-      if (hybridData && hybridData.value) {
-        const parsedHybridSettings = JSON.parse(hybridData.value);
-        setAiSettings(parsedHybridSettings);
-        return parsedHybridSettings;
-      }
-
-      // Check for human mode settings
+      // Check which mode is active
       const { data: humanData } = await supabase
         .from('site_settings')
         .select('*')
         .eq('key', 'livechat_human_config')
         .eq('user_id', user?.id)
         .maybeSingle();
-      
-      if (humanData && humanData.value) {
-        const parsedHumanSettings = JSON.parse(humanData.value);
-        setAiSettings(parsedHumanSettings);
-        return parsedHumanSettings;
+
+      const { data: aiData } = await supabase
+        .from('site_settings')
+        .select('*')
+        .eq('key', 'livechat_ai_config')
+        .eq('user_id', user?.id)
+        .maybeSingle();
+
+      const { data: hybridData } = await supabase
+        .from('site_settings')
+        .select('*')
+        .eq('key', 'livechat_hybrid_config')
+        .eq('user_id', user?.id)
+        .maybeSingle();
+
+      // Determine active mode priority: AI > Hybrid > Human
+      if (aiData?.value) {
+        setActiveMode('ai');
+      } else if (hybridData?.value) {
+        setActiveMode('hybrid');
+      } else if (humanData?.value) {
+        setActiveMode('human');
+      } else {
+        setActiveMode('human'); // Default
       }
       
-      return null;
+      return { baseData, humanData, aiData, hybridData };
     },
     enabled: !!user
   });
@@ -160,7 +132,7 @@ const LiveChatConfig = () => {
       const { error } = await supabase
         .from('site_settings')
         .upsert({
-          key: getConfigKey(),
+          key: 'livechat_base_config',
           value: JSON.stringify(settingsToSave),
           user_id: user?.id,
           description: 'Live Chat Base Configuration Settings',
@@ -217,16 +189,37 @@ const LiveChatConfig = () => {
     }
   };
 
-  // Auto-reply logic based on AI mode
-  const isAutoReplyRelevant = () => {
-    return !aiSettings || aiSettings.mode === 'human';
-  };
-
-  const getAutoReplyStatus = () => {
-    if (aiSettings?.mode === 'ai' || aiSettings?.mode === 'hybrid') {
-      return 'Dikontrol oleh AI';
+  const getModeInfo = () => {
+    switch (activeMode) {
+      case 'ai':
+        return {
+          icon: <Bot className="h-4 w-4" />,
+          label: 'AI Mode',
+          description: 'AI Assistant menangani semua percakapan',
+          color: 'bg-purple-50 text-purple-800'
+        };
+      case 'hybrid':
+        return {
+          icon: <Users className="h-4 w-4" />,
+          label: 'Hybrid Mode',
+          description: 'AI + Human Support',
+          color: 'bg-blue-50 text-blue-800'
+        };
+      case 'human':
+        return {
+          icon: <User className="h-4 w-4" />,
+          label: 'Human Mode',
+          description: 'Hanya customer service manusia',
+          color: 'bg-green-50 text-green-800'
+        };
+      default:
+        return {
+          icon: <User className="h-4 w-4" />,
+          label: 'Human Mode',
+          description: 'Mode default',
+          color: 'bg-gray-50 text-gray-800'
+        };
     }
-    return settings.auto_reply_enabled ? 'Aktif' : 'Nonaktif';
   };
 
   if (isLoading) {
@@ -237,6 +230,8 @@ const LiveChatConfig = () => {
       </div>
     );
   }
+
+  const modeInfo = getModeInfo();
 
   return (
     <div className="space-y-6">
@@ -261,53 +256,56 @@ const LiveChatConfig = () => {
         </div>
 
         <div className="grid md:grid-cols-3 gap-4">
-          <div className="p-4 bg-blue-50 rounded-lg">
-            <h4 className="font-medium text-blue-800 mb-2 flex items-center">
-              <CheckCircle className="h-4 w-4 mr-2" />
-              Status
+          <div className={`p-4 rounded-lg ${modeInfo.color}`}>
+            <h4 className="font-medium mb-2 flex items-center">
+              {modeInfo.icon}
+              <span className="ml-2">Mode Aktif</span>
             </h4>
-            <p className="text-sm text-blue-600">
-              {settings.sound_notifications ? 'Aktif dengan Notifikasi Suara' : 'Aktif tanpa Suara'}
+            <p className="text-sm">
+              {modeInfo.label}: {modeInfo.description}
             </p>
           </div>
-          <div className="p-4 bg-green-50 rounded-lg">
-            <h4 className="font-medium text-green-800 mb-2 flex items-center">
+          <div className="p-4 bg-blue-50 rounded-lg">
+            <h4 className="font-medium text-blue-800 mb-2 flex items-center">
               <Clock className="h-4 w-4 mr-2" />
               Jam Kerja
             </h4>
-            <p className="text-sm text-green-600">
+            <p className="text-sm text-blue-600">
               {settings.working_hours_enabled 
                 ? `${settings.working_hours_start} - ${settings.working_hours_end}`
                 : 'Selalu Online'
               }
             </p>
           </div>
-          <div className="p-4 bg-purple-50 rounded-lg">
-            <h4 className="font-medium text-purple-800 mb-2 flex items-center">
-              <Users className="h-4 w-4 mr-2" />
+          <div className="p-4 bg-green-50 rounded-lg">
+            <h4 className="font-medium text-green-800 mb-2 flex items-center">
+              <MessageCircle className="h-4 w-4 mr-2" />
               Auto Reply
             </h4>
-            <p className="text-sm text-purple-600">
-              {getAutoReplyStatus()}
+            <p className="text-sm text-green-600">
+              {activeMode === 'human' 
+                ? (settings.auto_reply_enabled ? 'Aktif' : 'Nonaktif')
+                : 'Dikontrol oleh AI'
+              }
             </p>
           </div>
         </div>
 
-        {/* AI Mode Warning */}
-        {aiSettings && (aiSettings.mode === 'ai' || aiSettings.mode === 'hybrid') && (
-          <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <div className="flex items-center">
-              <Info className="h-5 w-5 text-yellow-600 mr-2" />
-              <div>
-                <h4 className="font-medium text-yellow-800">Mode AI Aktif</h4>
-                <p className="text-sm text-yellow-700 mt-1">
-                  Beberapa pengaturan auto-reply akan dikontrol oleh AI. 
-                  {aiSettings.mode === 'hybrid' && ' Dalam mode hybrid, AI akan menangani respons otomatis dan dapat mentransfer ke human agent.'}
-                </p>
-              </div>
+        {/* Mode Information */}
+        <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <div className="flex items-center">
+            <Info className="h-5 w-5 text-yellow-600 mr-2" />
+            <div>
+              <h4 className="font-medium text-yellow-800">Mode Live Chat</h4>
+              <p className="text-sm text-yellow-700 mt-1">
+                {activeMode === 'ai' && 'AI Mode: Semua percakapan ditangani oleh AI Assistant.'}
+                {activeMode === 'hybrid' && 'Hybrid Mode: AI menangani respons awal dan dapat mentransfer ke human agent.'}
+                {activeMode === 'human' && 'Human Mode: Percakapan ditangani oleh customer service manusia.'}
+                {!activeMode && 'Belum ada mode yang dikonfigurasi. Default menggunakan Human Mode.'}
+              </p>
             </div>
           </div>
-        )}
+        </div>
       </div>
 
       {/* Configuration Form */}
@@ -346,8 +344,8 @@ const LiveChatConfig = () => {
               </div>
             </div>
             
-            {/* Auto Reply - Only show if relevant */}
-            {isAutoReplyRelevant() && (
+            {/* Auto Reply - Only show for Human mode */}
+            {activeMode === 'human' && (
               <div className="mt-4">
                 <div className="flex items-center space-x-2 mb-2">
                   <input
@@ -370,8 +368,14 @@ const LiveChatConfig = () => {
                     placeholder="Pesan balasan otomatis untuk mode human"
                   />
                 )}
-                <p className="text-xs text-gray-500 mt-1">
-                  Auto reply hanya berlaku untuk mode Human. Mode AI/Hybrid menggunakan respons AI.
+              </div>
+            )}
+
+            {activeMode !== 'human' && (
+              <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                <p className="text-sm text-gray-600">
+                  <Info className="h-4 w-4 inline mr-1" />
+                  Auto reply dikontrol oleh AI dalam mode {activeMode === 'ai' ? 'AI' : 'Hybrid'}.
                 </p>
               </div>
             )}

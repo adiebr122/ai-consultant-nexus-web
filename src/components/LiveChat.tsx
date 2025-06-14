@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { MessageCircle, X, Send, Star, Mail } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -32,8 +32,11 @@ interface LiveChatSettings {
   email_notifications: boolean;
 }
 
-interface AISettings {
+interface ChatMode {
   mode: 'human' | 'ai' | 'hybrid';
+}
+
+interface AISettings {
   provider: 'deepseek' | 'openai' | 'gemini';
   api_key: string;
   model: string;
@@ -80,11 +83,20 @@ const LiveChat = () => {
     sound_notifications: true,
     email_notifications: true
   });
+  const [chatMode, setChatMode] = useState<ChatMode | null>(null);
   const [aiSettings, setAiSettings] = useState<AISettings | null>(null);
   const [isWithinWorkingHours, setIsWithinWorkingHours] = useState(true);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const { toast } = useToast();
   const { playNotification } = useAudioNotification();
+
+  // Auto scroll to bottom when new messages arrive
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(scrollToBottom, [messages]);
 
   // Load settings on component mount
   useEffect(() => {
@@ -109,32 +121,59 @@ const LiveChat = () => {
 
   const loadSettings = async () => {
     try {
-      // Load live chat settings
-      const { data: livechatData } = await supabase
+      // Load base live chat settings
+      const { data: baseData } = await supabase
         .from('site_settings')
         .select('*')
-        .eq('key', 'livechat_config')
-        .single();
+        .eq('key', 'livechat_base_config')
+        .maybeSingle();
       
-      if (livechatData?.value) {
-        const parsedSettings = JSON.parse(livechatData.value);
+      if (baseData?.value) {
+        const parsedSettings = JSON.parse(baseData.value);
         setSettings({ ...settings, ...parsedSettings });
       }
 
-      // Load AI settings
+      // Load chat mode configuration
+      const { data: humanData } = await supabase
+        .from('site_settings')
+        .select('*')
+        .eq('key', 'livechat_human_config')
+        .maybeSingle();
+
       const { data: aiData } = await supabase
         .from('site_settings')
         .select('*')
         .eq('key', 'livechat_ai_config')
-        .single();
-      
+        .maybeSingle();
+
+      const { data: hybridData } = await supabase
+        .from('site_settings')
+        .select('*')
+        .eq('key', 'livechat_hybrid_config')
+        .maybeSingle();
+
+      // Determine active mode
       if (aiData?.value) {
         const parsedAiSettings = JSON.parse(aiData.value);
+        setChatMode({ mode: 'ai' });
         setAiSettings(parsedAiSettings);
-        console.log('AI Settings loaded:', parsedAiSettings);
+        console.log('AI Mode activated with settings:', parsedAiSettings);
+      } else if (hybridData?.value) {
+        const parsedHybridSettings = JSON.parse(hybridData.value);
+        setChatMode({ mode: 'hybrid' });
+        setAiSettings(parsedHybridSettings);
+        console.log('Hybrid Mode activated with settings:', parsedHybridSettings);
+      } else if (humanData?.value) {
+        setChatMode({ mode: 'human' });
+        console.log('Human Mode activated');
+      } else {
+        setChatMode({ mode: 'human' }); // Default fallback
+        console.log('Default Human Mode activated');
       }
+
     } catch (error) {
       console.error('Error loading settings:', error);
+      setChatMode({ mode: 'human' }); // Fallback to human mode
     }
   };
 
@@ -180,14 +219,20 @@ const LiveChat = () => {
       setConversationId(conversation.id);
       setShowCustomerForm(false);
       
-      // Add welcome message based on working hours
-      const welcomeText = isWithinWorkingHours ? settings.welcome_message : settings.offline_message;
+      // Add welcome message based on working hours and mode
+      let welcomeText = isWithinWorkingHours ? settings.welcome_message : settings.offline_message;
+      if (chatMode?.mode === 'ai') {
+        welcomeText = 'Halo! Saya AI Assistant yang siap membantu Anda. Silakan tanyakan apa saja yang ingin Anda ketahui.';
+      } else if (chatMode?.mode === 'hybrid') {
+        welcomeText = 'Halo! Saya AI Assistant yang akan membantu Anda. Jika diperlukan, saya akan menghubungkan Anda dengan tim customer service kami.';
+      }
+
       const welcomeMessage: Message = {
         id: '1',
         text: welcomeText.replace('{name}', customerInfo.name),
         sender: 'agent',
         time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-        senderName: 'System'
+        senderName: chatMode?.mode === 'ai' || chatMode?.mode === 'hybrid' ? 'AI Assistant' : 'System'
       };
       
       setMessages([welcomeMessage]);
@@ -198,7 +243,7 @@ const LiveChat = () => {
         .insert({
           conversation_id: conversation.id,
           sender_type: 'agent',
-          sender_name: 'System',
+          sender_name: welcomeMessage.senderName,
           message_content: welcomeMessage.text,
           message_type: 'text'
         });
@@ -214,7 +259,7 @@ const LiveChat = () => {
           client_company: customerInfo.company || null,
           lead_source: 'Live Chat',
           lead_status: 'new',
-          notes: 'Lead dari Live Chat website'
+          notes: `Lead dari Live Chat website - Mode: ${chatMode?.mode || 'human'}`
         });
 
       toast({
@@ -273,14 +318,18 @@ const LiveChat = () => {
         })
         .eq('id', conversationId);
 
-      console.log('AI Settings for response:', aiSettings);
+      console.log('Chat Mode:', chatMode?.mode);
+      console.log('AI Settings available:', !!aiSettings);
 
-      // Handle AI response if enabled
-      if (aiSettings && (aiSettings.mode === 'ai' || aiSettings.mode === 'hybrid')) {
-        console.log('Attempting AI response...');
+      // Handle response based on mode
+      if (chatMode?.mode === 'ai' && aiSettings) {
+        console.log('Sending to AI...');
         await handleAIResponse(messageToSend);
-      } else if (settings.auto_reply_enabled) {
-        // Send auto reply for human mode
+      } else if (chatMode?.mode === 'hybrid' && aiSettings) {
+        console.log('Sending to AI (Hybrid mode)...');
+        await handleAIResponse(messageToSend);
+      } else if (chatMode?.mode === 'human' && settings.auto_reply_enabled) {
+        // Send auto reply only for human mode
         setTimeout(() => {
           const autoReply: Message = {
             id: (Date.now() + 1).toString(),
@@ -387,7 +436,7 @@ const LiveChat = () => {
         });
 
       // Check for handoff in hybrid mode
-      if (aiSettings.mode === 'hybrid' && data.should_handoff) {
+      if (chatMode?.mode === 'hybrid' && data.should_handoff) {
         await supabase
           .from('chat_conversations')
           .update({ status: 'pending_handoff' })
@@ -518,14 +567,19 @@ const LiveChat = () => {
     }
   };
 
-  // Listen for real-time updates with improved channel handling
+  // Listen for real-time updates
   useEffect(() => {
     if (!conversationId) return;
 
     console.log('Setting up real-time listener for conversation:', conversationId);
 
     const channel = supabase
-      .channel(`conversation-${conversationId}`)
+      .channel(`conversation-${conversationId}`, {
+        config: {
+          broadcast: { self: false },
+          presence: { key: customerInfo.name }
+        }
+      })
       .on(
         'postgres_changes',
         {
@@ -538,10 +592,8 @@ const LiveChat = () => {
           console.log('Real-time message received:', payload);
           const newMsg = payload.new;
           
-          // Only add agent messages that aren't from the current customer
-          if (newMsg.sender_type === 'agent' && 
-              newMsg.sender_name !== 'System' && 
-              newMsg.sender_name !== 'AI Assistant') {
+          // Only add messages that aren't from this customer instance
+          if (newMsg.sender_type === 'agent' && newMsg.sender_name !== 'System' && newMsg.sender_name !== 'AI Assistant') {
             
             const agentMessage: Message = {
               id: newMsg.id,
@@ -582,7 +634,7 @@ const LiveChat = () => {
       console.log('Cleaning up real-time listener');
       supabase.removeChannel(channel);
     };
-  }, [conversationId, isOpen, playNotification, toast, settings.sound_notifications]);
+  }, [conversationId, isOpen, playNotification, toast, settings.sound_notifications, customerInfo.name]);
 
   useEffect(() => {
     if (isOpen) {
@@ -617,11 +669,11 @@ const LiveChat = () => {
         </button>
       </div>
 
-      {/* Chat Window */}
+      {/* Chat Window - Updated layout */}
       {isOpen && (
-        <div className={`fixed ${chatWindowPosition} w-80 bg-white rounded-2xl shadow-2xl z-50 border border-gray-200`}>
+        <div className={`fixed ${chatWindowPosition} w-96 h-[500px] bg-white rounded-2xl shadow-2xl z-50 border border-gray-200 flex flex-col`}>
           {/* Chat Header */}
-          <div className="text-white p-4 rounded-t-2xl" style={{ background: `linear-gradient(to right, ${settings.chat_widget_color}, ${settings.chat_widget_color}dd)` }}>
+          <div className="text-white p-4 rounded-t-2xl flex-shrink-0" style={{ background: `linear-gradient(to right, ${settings.chat_widget_color}, ${settings.chat_widget_color}dd)` }}>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: `${settings.chat_widget_color}aa` }}>
@@ -630,7 +682,9 @@ const LiveChat = () => {
                 <div>
                   <h3 className="font-semibold">Live Chat Support</h3>
                   <p className="text-sm opacity-90">
-                    {isWithinWorkingHours ? 'Tim kami siap membantu Anda' : 'Di luar jam kerja'}
+                    {chatMode?.mode === 'ai' ? 'AI Assistant Online' : 
+                     chatMode?.mode === 'hybrid' ? 'AI + Human Support' :
+                     isWithinWorkingHours ? 'Tim kami siap membantu Anda' : 'Di luar jam kerja'}
                   </p>
                 </div>
               </div>
@@ -645,168 +699,176 @@ const LiveChat = () => {
             </div>
           </div>
 
-          {/* Customer Info Form */}
-          {showCustomerForm ? (
-            <form onSubmit={handleCustomerInfoSubmit} className="p-4 space-y-4">
-              <div>
-                <h4 className="font-medium text-gray-900 mb-3">Mulai Konsultasi</h4>
-                <p className="text-sm text-gray-600 mb-4">Silakan isi informasi Anda untuk memulai chat</p>
-              </div>
-              
-              <div>
-                <input
-                  type="text"
-                  placeholder="Nama lengkap *"
-                  value={customerInfo.name}
-                  onChange={(e) => setCustomerInfo({...customerInfo, name: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                  required
-                />
-              </div>
-              
-              <div>
-                <input
-                  type="tel"
-                  placeholder={`Nomor HP ${settings.require_phone ? '*' : ''}`}
-                  value={customerInfo.phone}
-                  onChange={(e) => setCustomerInfo({...customerInfo, phone: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                  required={settings.require_phone}
-                />
-              </div>
-
-              {(settings.require_company || customerInfo.company) && (
+          {/* Chat Content */}
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {/* Customer Info Form */}
+            {showCustomerForm ? (
+              <form onSubmit={handleCustomerInfoSubmit} className="p-4 space-y-4 overflow-y-auto">
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-3">Mulai Konsultasi</h4>
+                  <p className="text-sm text-gray-600 mb-4">
+                    {chatMode?.mode === 'ai' ? 'Silakan isi informasi Anda untuk mulai chat dengan AI Assistant' :
+                     chatMode?.mode === 'hybrid' ? 'Silakan isi informasi Anda untuk mulai chat dengan AI dan Human Support' :
+                     'Silakan isi informasi Anda untuk memulai chat'}
+                  </p>
+                </div>
+                
                 <div>
                   <input
                     type="text"
-                    placeholder={`Nama Perusahaan ${settings.require_company ? '*' : ''}`}
-                    value={customerInfo.company}
-                    onChange={(e) => setCustomerInfo({...customerInfo, company: e.target.value})}
+                    placeholder="Nama lengkap *"
+                    value={customerInfo.name}
+                    onChange={(e) => setCustomerInfo({...customerInfo, name: e.target.value})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                    required={settings.require_company}
+                    required
                   />
                 </div>
-              )}
-              
-              <div>
-                <input
-                  type="email"
-                  placeholder={`Email ${settings.require_email ? '*' : '(untuk menerima transkrip)'}`}
-                  value={customerInfo.email}
-                  onChange={(e) => setCustomerInfo({...customerInfo, email: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                  required={settings.require_email}
-                />
-              </div>
-              
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full text-white py-2 rounded-lg transition-colors disabled:opacity-50 text-sm font-medium"
-                style={{ backgroundColor: settings.chat_widget_color }}
-              >
-                {loading ? 'Memulai...' : 'Mulai Chat'}
-              </button>
-            </form>
-          ) : showFeedback ? (
-            /* Feedback Form */
-            <div className="p-4 space-y-4">
-              <h4 className="font-medium text-gray-900">Berikan Rating & Feedback</h4>
-              
-              <div>
-                <p className="text-sm text-gray-600 mb-2">Rating layanan:</p>
-                <div className="flex space-x-1">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => setRating(star)}
-                      className={`transition-colors ${rating >= star ? 'text-yellow-400' : 'text-gray-300'}`}
-                    >
-                      <Star className="h-5 w-5 fill-current" />
-                    </button>
-                  ))}
+                
+                <div>
+                  <input
+                    type="tel"
+                    placeholder={`Nomor HP ${settings.require_phone ? '*' : ''}`}
+                    value={customerInfo.phone}
+                    onChange={(e) => setCustomerInfo({...customerInfo, phone: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    required={settings.require_phone}
+                  />
                 </div>
-              </div>
 
-              <div>
-                <textarea
-                  placeholder="Feedback (opsional)"
-                  value={feedback}
-                  onChange={(e) => setFeedback(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                  rows={3}
-                />
-              </div>
-
-              <button
-                onClick={handleFeedbackSubmit}
-                className="w-full text-white py-2 rounded-lg transition-colors text-sm font-medium"
-                style={{ backgroundColor: settings.chat_widget_color }}
-              >
-                Kirim Feedback
-              </button>
-            </div>
-          ) : (
-            <>
-              {/* Chat Messages */}
-              <div className="h-80 overflow-y-auto p-4 space-y-4">
-                {messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div
-                      className={`max-w-xs px-4 py-2 rounded-lg ${
-                        message.sender === 'user'
-                          ? 'text-white'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}
-                      style={{
-                        backgroundColor: message.sender === 'user' ? settings.chat_widget_color : undefined
-                      }}
-                    >
-                      <p className="text-sm">{message.text}</p>
-                      <div className="flex justify-between items-center mt-1">
-                        <p className={`text-xs ${
-                          message.sender === 'user' ? 'text-blue-100' : 'text-gray-500'
-                        }`}>
-                          {message.senderName || (message.sender === 'user' ? 'Anda' : 'Agent')}
-                        </p>
-                        <p className={`text-xs ${
-                          message.sender === 'user' ? 'text-blue-100' : 'text-gray-500'
-                        }`}>
-                          {message.time}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Chat Input */}
-              {!chatEnded && (
-                <form onSubmit={handleSendMessage} className="p-4 border-t border-gray-200">
-                  <div className="flex space-x-2">
+                {(settings.require_company || customerInfo.company) && (
+                  <div>
                     <input
                       type="text"
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      placeholder="Ketik pesan Anda..."
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      placeholder={`Nama Perusahaan ${settings.require_company ? '*' : ''}`}
+                      value={customerInfo.company}
+                      onChange={(e) => setCustomerInfo({...customerInfo, company: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      required={settings.require_company}
                     />
-                    <button
-                      type="submit"
-                      className="text-white p-2 rounded-lg transition-colors"
-                      style={{ backgroundColor: settings.chat_widget_color }}
-                    >
-                      <Send className="h-4 w-4" />
-                    </button>
                   </div>
-                </form>
-              )}
-            </>
-          )}
+                )}
+                
+                <div>
+                  <input
+                    type="email"
+                    placeholder={`Email ${settings.require_email ? '*' : '(untuk menerima transkrip)'}`}
+                    value={customerInfo.email}
+                    onChange={(e) => setCustomerInfo({...customerInfo, email: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    required={settings.require_email}
+                  />
+                </div>
+                
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full text-white py-2 rounded-lg transition-colors disabled:opacity-50 text-sm font-medium"
+                  style={{ backgroundColor: settings.chat_widget_color }}
+                >
+                  {loading ? 'Memulai...' : 'Mulai Chat'}
+                </button>
+              </form>
+            ) : showFeedback ? (
+              /* Feedback Form */
+              <div className="p-4 space-y-4 overflow-y-auto">
+                <h4 className="font-medium text-gray-900">Berikan Rating & Feedback</h4>
+                
+                <div>
+                  <p className="text-sm text-gray-600 mb-2">Rating layanan:</p>
+                  <div className="flex space-x-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setRating(star)}
+                        className={`transition-colors ${rating >= star ? 'text-yellow-400' : 'text-gray-300'}`}
+                      >
+                        <Star className="h-5 w-5 fill-current" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <textarea
+                    placeholder="Feedback (opsional)"
+                    value={feedback}
+                    onChange={(e) => setFeedback(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    rows={3}
+                  />
+                </div>
+
+                <button
+                  onClick={handleFeedbackSubmit}
+                  className="w-full text-white py-2 rounded-lg transition-colors text-sm font-medium"
+                  style={{ backgroundColor: settings.chat_widget_color }}
+                >
+                  Kirim Feedback
+                </button>
+              </div>
+            ) : (
+              <>
+                {/* Chat Messages */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                  {messages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div
+                        className={`max-w-xs px-4 py-2 rounded-lg ${
+                          message.sender === 'user'
+                            ? 'text-white'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}
+                        style={{
+                          backgroundColor: message.sender === 'user' ? settings.chat_widget_color : undefined
+                        }}
+                      >
+                        <p className="text-sm">{message.text}</p>
+                        <div className="flex justify-between items-center mt-1">
+                          <p className={`text-xs ${
+                            message.sender === 'user' ? 'text-blue-100' : 'text-gray-500'
+                          }`}>
+                            {message.senderName || (message.sender === 'user' ? 'Anda' : 'Agent')}
+                          </p>
+                          <p className={`text-xs ${
+                            message.sender === 'user' ? 'text-blue-100' : 'text-gray-500'
+                          }`}>
+                            {message.time}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  <div ref={messagesEndRef} />
+                </div>
+
+                {/* Chat Input */}
+                {!chatEnded && (
+                  <form onSubmit={handleSendMessage} className="p-4 border-t border-gray-200 flex-shrink-0">
+                    <div className="flex space-x-2">
+                      <input
+                        type="text"
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        placeholder="Ketik pesan Anda..."
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      />
+                      <button
+                        type="submit"
+                        className="text-white p-2 rounded-lg transition-colors"
+                        style={{ backgroundColor: settings.chat_widget_color }}
+                      >
+                        <Send className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </>
+            )}
+          </div>
         </div>
       )}
     </>
