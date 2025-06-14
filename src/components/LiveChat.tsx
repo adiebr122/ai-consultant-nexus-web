@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { MessageCircle, X, Send, Star, Mail } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -94,7 +95,7 @@ const LiveChat = () => {
   useEffect(() => {
     if (settings.working_hours_enabled) {
       const now = new Date();
-      const currentDay = now.toLocaleDateString('en-US', { weekday: 'lowercase' });
+      const currentDay = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
       const currentTime = now.toTimeString().slice(0, 5);
       
       const isDayIncluded = settings.working_days.includes(currentDay);
