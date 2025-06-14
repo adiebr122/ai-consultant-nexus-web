@@ -485,7 +485,8 @@ const LiveChatConfig = () => {
                 <input
                   type="checkbox"
                   id="require_company"
-                  checked={(e) => setSettings({...settings, require_company: e.target.checked})}
+                  checked={settings.require_company}
+                  onChange={(e) => setSettings({...settings, require_company: e.target.checked})}
                   className="rounded border-gray-300"
                 />
                 <label htmlFor="require_company" className="text-sm font-medium text-gray-700">
