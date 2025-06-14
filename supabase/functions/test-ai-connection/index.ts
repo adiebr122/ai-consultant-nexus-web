@@ -24,17 +24,17 @@ serve(async (req) => {
         success: false,
         error: 'Provider is required'
       }), {
-        status: 400,
+        status: 200, // Changed to 200 to avoid non-2xx error
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    if (!api_key) {
+    if (!api_key || api_key.trim() === '') {
       return new Response(JSON.stringify({ 
         success: false,
-        error: 'API key is required'
+        error: 'API key is required and cannot be empty'
       }), {
-        status: 400,
+        status: 200, // Changed to 200 to avoid non-2xx error
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -44,7 +44,7 @@ serve(async (req) => {
         success: false,
         error: 'Model is required'
       }), {
-        status: 400,
+        status: 200, // Changed to 200 to avoid non-2xx error
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -109,7 +109,7 @@ serve(async (req) => {
         success: false,
         error: `Unsupported AI provider: ${provider}`
       }), {
-        status: 400,
+        status: 200, // Changed to 200 to avoid non-2xx error
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -146,12 +146,13 @@ serve(async (req) => {
         }
       }
 
+      // Return success=false but with 200 status to avoid non-2xx error
       return new Response(JSON.stringify({ 
         success: false,
         error: errorMessage,
         statusCode: response.status
       }), {
-        status: 400,
+        status: 200, // Always return 200 to avoid non-2xx error
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -185,11 +186,12 @@ serve(async (req) => {
       errorMessage = error;
     }
 
+    // Return success=false but with 200 status to avoid non-2xx error
     return new Response(JSON.stringify({ 
       success: false,
       error: errorMessage
     }), {
-      status: 500,
+      status: 200, // Always return 200 to avoid non-2xx error
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }

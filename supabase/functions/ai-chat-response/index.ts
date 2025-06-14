@@ -41,6 +41,19 @@ serve(async (req) => {
 
     console.log('AI Chat Request:', { provider, model, conversation_id });
 
+    // Validate required parameters
+    if (!message || !provider || !api_key || !model) {
+      return new Response(JSON.stringify({ 
+        success: false,
+        error: 'Missing required parameters: message, provider, api_key, or model',
+        response: 'Maaf, terjadi kesalahan dalam konfigurasi. Mohon periksa pengaturan AI.',
+        should_handoff: true
+      }), {
+        status: 200, // Return 200 to avoid non-2xx error
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     let apiUrl = '';
     let headers = {};
     let requestBody = {};
@@ -123,7 +136,15 @@ serve(async (req) => {
         }
       };
     } else {
-      throw new Error('Unsupported AI provider');
+      return new Response(JSON.stringify({ 
+        success: false,
+        error: `Unsupported AI provider: ${provider}`,
+        response: 'Maaf, provider AI tidak didukung.',
+        should_handoff: true
+      }), {
+        status: 200, // Return 200 to avoid non-2xx error
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     console.log('Making request to:', apiUrl);
@@ -137,7 +158,18 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('AI API Error:', errorText);
-      throw new Error(`AI API request failed: ${response.status} ${errorText}`);
+      
+      // Return error but with 200 status and fallback response
+      return new Response(JSON.stringify({ 
+        success: false,
+        error: `AI API request failed: ${response.status}`,
+        response: 'Maaf, saya mengalami gangguan teknis. Mohon tunggu sebentar atau hubungi customer service kami.',
+        should_handoff: true,
+        conversation_id: conversation_id
+      }), {
+        status: 200, // Return 200 to avoid non-2xx error
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const data = await response.json();
@@ -157,6 +189,7 @@ serve(async (req) => {
     );
 
     return new Response(JSON.stringify({ 
+      success: true,
       response: aiResponse,
       should_handoff: shouldHandoff,
       provider: provider,
@@ -168,12 +201,22 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in ai-chat-response function:', error);
+    
+    let errorMessage = 'Unknown error occurred';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (typeof error === 'string') {
+      errorMessage = error;
+    }
+    
+    // Always return 200 status with error details in body
     return new Response(JSON.stringify({ 
-      error: error.message,
+      success: false,
+      error: errorMessage,
       response: 'Maaf, saya mengalami gangguan teknis. Mohon tunggu sebentar atau hubungi customer service kami.',
       should_handoff: true
     }), {
-      status: 500,
+      status: 200, // Always return 200 to avoid non-2xx error
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
