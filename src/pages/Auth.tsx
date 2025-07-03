@@ -20,23 +20,34 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
 
+    console.log('Attempting login with:', { email: formData.email, password: '***' });
+
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       });
 
-      if (error) throw error;
+      console.log('Login response:', { data, error });
 
-      toast({
-        title: "Login Berhasil!",
-        description: "Selamat datang kembali.",
-      });
-      navigate('/admin');
+      if (error) {
+        console.error('Login error:', error);
+        throw error;
+      }
+
+      if (data.user) {
+        console.log('Login successful, user:', data.user.email);
+        toast({
+          title: "Login Berhasil!",
+          description: "Selamat datang kembali.",
+        });
+        navigate('/admin');
+      }
     } catch (error: any) {
+      console.error('Auth error:', error);
       toast({
-        title: "Error",
-        description: error.message,
+        title: "Error Login",
+        description: error.message || "Gagal masuk ke sistem",
         variant: "destructive",
       });
     } finally {
@@ -45,10 +56,12 @@ const Auth = () => {
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    console.log('Form data updated:', { [name]: value });
   };
 
   return (
@@ -111,8 +124,8 @@ const Auth = () => {
 
             <button
               type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-semibold disabled:opacity-50"
+              disabled={loading || !formData.email || !formData.password}
+              className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Memproses...' : 'Masuk'}
             </button>
