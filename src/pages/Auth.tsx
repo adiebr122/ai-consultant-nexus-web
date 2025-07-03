@@ -21,8 +21,12 @@ const Auth = () => {
     setLoading(true);
 
     console.log('Attempting login with:', { email: formData.email, password: '***' });
+    console.log('Supabase URL:', supabase.supabaseUrl);
 
     try {
+      // Test connection first
+      console.log('Testing Supabase connection...');
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
@@ -32,6 +36,26 @@ const Auth = () => {
 
       if (error) {
         console.error('Login error:', error);
+        
+        // Handle specific error types
+        if (error.message.includes('Failed to fetch') || error.message.includes('fetch')) {
+          toast({
+            title: "Koneksi Error",
+            description: "Tidak dapat terhubung ke server. Periksa koneksi internet Anda.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        if (error.message.includes('Invalid login credentials')) {
+          toast({
+            title: "Login Gagal",
+            description: "Email atau password salah.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
         throw error;
       }
 
@@ -45,9 +69,20 @@ const Auth = () => {
       }
     } catch (error: any) {
       console.error('Auth error:', error);
+      
+      let errorMessage = "Gagal masuk ke sistem";
+      
+      if (error.message.includes('Failed to fetch')) {
+        errorMessage = "Tidak dapat terhubung ke server. Periksa koneksi internet Anda.";
+      } else if (error.message.includes('Invalid login credentials')) {
+        errorMessage = "Email atau password salah.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Error Login",
-        description: error.message || "Gagal masuk ke sistem",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -130,6 +165,12 @@ const Auth = () => {
               {loading ? 'Memproses...' : 'Masuk'}
             </button>
           </form>
+
+          {/* Debug info - remove in production */}
+          <div className="mt-4 p-3 bg-gray-100 rounded text-xs text-gray-600">
+            <p>Debug: Supabase URL configured</p>
+            <p>Status: {navigator.onLine ? 'Online' : 'Offline'}</p>
+          </div>
         </div>
       </div>
     </div>
