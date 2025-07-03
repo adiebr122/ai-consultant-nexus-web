@@ -21,7 +21,6 @@ const Auth = () => {
     setLoading(true);
 
     console.log('Attempting login with:', { email: formData.email, password: '***' });
-    console.log('Supabase URL:', supabase.supabaseUrl);
 
     try {
       // Test connection first
@@ -70,7 +69,7 @@ const Auth = () => {
     } catch (error: any) {
       console.error('Auth error:', error);
       
-      let errorMessage = "Gagal masuk ke sistem";
+      let errorMessage = "Gagal masik ke sistem";
       
       if (error.message.includes('Failed to fetch')) {
         errorMessage = "Tidak dapat terhubung ke server. Periksa koneksi internet Anda.";
