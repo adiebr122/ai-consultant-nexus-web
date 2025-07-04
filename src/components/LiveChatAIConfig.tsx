@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -102,16 +103,16 @@ const LiveChatAIConfig = () => {
       const configKey = getConfigKey(settings.mode);
       
       const { data, error } = await supabase
-        .from('site_settings')
+        .from('app_settings')
         .select('*')
-        .eq('key', configKey)
+        .eq('setting_key', configKey)
         .eq('user_id', user?.id)
         .maybeSingle();
       
       if (error) throw error;
       
-      if (data && data.value) {
-        const parsedSettings = JSON.parse(data.value);
+      if (data && data.setting_value) {
+        const parsedSettings = JSON.parse(data.setting_value);
         const updatedSettings = { ...settings, ...parsedSettings, id: data.id };
         setSettings(updatedSettings);
         return updatedSettings;
@@ -187,17 +188,18 @@ const LiveChatAIConfig = () => {
       // Use mode-specific key to prevent conflicts
       const configKey = getConfigKey(newSettings.mode);
 
-      // Use upsert logic with mode-specific key
+      // Use upsert logic with app_settings
       const { error } = await supabase
-        .from('site_settings')
+        .from('app_settings')
         .upsert({
-          key: configKey,
-          value: JSON.stringify(settingsToSave),
+          setting_key: configKey,
+          setting_value: JSON.stringify(settingsToSave),
+          setting_category: 'livechat',
           user_id: user?.id,
           description: `Live Chat ${newSettings.mode.toUpperCase()} Mode Configuration`,
           updated_at: new Date().toISOString()
         }, {
-          onConflict: 'key,user_id'
+          onConflict: 'setting_key,user_id'
         });
       
       if (error) throw error;

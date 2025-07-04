@@ -71,47 +71,47 @@ const LiveChatConfig = () => {
   const { data: configData, isLoading } = useQuery({
     queryKey: ['livechat_settings'],
     queryFn: async () => {
-      // Load base settings
+      // Load base settings using app_settings
       const { data: baseData } = await supabase
-        .from('site_settings')
+        .from('app_settings')
         .select('*')
-        .eq('key', 'livechat_base_config')
+        .eq('setting_key', 'livechat_base_config')
         .eq('user_id', user?.id)
         .maybeSingle();
       
-      if (baseData?.value) {
-        const parsedSettings = JSON.parse(baseData.value);
+      if (baseData?.setting_value) {
+        const parsedSettings = JSON.parse(baseData.setting_value);
         setSettings({ ...settings, ...parsedSettings, id: baseData.id });
       }
 
       // Check which mode is active
       const { data: humanData } = await supabase
-        .from('site_settings')
+        .from('app_settings')
         .select('*')
-        .eq('key', 'livechat_human_config')
+        .eq('setting_key', 'livechat_human_config')
         .eq('user_id', user?.id)
         .maybeSingle();
 
       const { data: aiData } = await supabase
-        .from('site_settings')
+        .from('app_settings')
         .select('*')
-        .eq('key', 'livechat_ai_config')
+        .eq('setting_key', 'livechat_ai_config')
         .eq('user_id', user?.id)
         .maybeSingle();
 
       const { data: hybridData } = await supabase
-        .from('site_settings')
+        .from('app_settings')
         .select('*')
-        .eq('key', 'livechat_hybrid_config')
+        .eq('setting_key', 'livechat_hybrid_config')
         .eq('user_id', user?.id)
         .maybeSingle();
 
       // Determine active mode priority: AI > Hybrid > Human
-      if (aiData?.value) {
+      if (aiData?.setting_value) {
         setActiveMode('ai');
-      } else if (hybridData?.value) {
+      } else if (hybridData?.setting_value) {
         setActiveMode('hybrid');
-      } else if (humanData?.value) {
+      } else if (humanData?.setting_value) {
         setActiveMode('human');
       } else {
         setActiveMode('human'); // Default
@@ -128,17 +128,18 @@ const LiveChatConfig = () => {
       const settingsToSave = { ...newSettings };
       delete settingsToSave.id;
 
-      // Use upsert logic with base config key
+      // Use upsert logic with app_settings
       const { error } = await supabase
-        .from('site_settings')
+        .from('app_settings')
         .upsert({
-          key: 'livechat_base_config',
-          value: JSON.stringify(settingsToSave),
+          setting_key: 'livechat_base_config',
+          setting_value: JSON.stringify(settingsToSave),
+          setting_category: 'livechat',
           user_id: user?.id,
           description: 'Live Chat Base Configuration Settings',
           updated_at: new Date().toISOString()
         }, {
-          onConflict: 'key,user_id'
+          onConflict: 'setting_key,user_id'
         });
       
       if (error) throw error;
