@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -56,19 +55,26 @@ const HeroEditor = () => {
 
       if (error && error.code !== 'PGRST116') throw error;
 
-      if (data && data.metadata) {
+      if (data) {
+        // Parse content as JSON to get all the hero data
+        let parsedContent;
+        try {
+          parsedContent = data.content ? JSON.parse(data.content) : {};
+        } catch {
+          parsedContent = {};
+        }
+
         setExistingId(data.id);
-        const metadata = data.metadata as any;
         setContent({
           title: data.title || 'AI Consultant Pro',
-          subtitle: metadata.subtitle || 'Transformasi Digital dengan Teknologi AI',
-          description: data.content || 'Solusi AI terdepan untuk bisnis modern.',
-          cta_primary: metadata.cta_primary || 'Konsultasi Gratis',
-          cta_secondary: metadata.cta_secondary || 'Lihat Portfolio',
-          cta_primary_url: metadata.cta_primary_url || 'https://wa.me/6281234567890',
-          hero_image_url: data.image_url || '',
-          dynamic_headlines: metadata.dynamic_headlines || ['Revolusi Bisnis dengan Kekuatan AI 🚀'],
-          stats: metadata.stats || [{ icon: 'Users', label: 'Klien Terpercaya', value: '150+' }]
+          subtitle: parsedContent.subtitle || 'Transformasi Digital dengan Teknologi AI',
+          description: parsedContent.description || 'Solusi AI terdepan untuk bisnis modern.',
+          cta_primary: parsedContent.cta_primary || 'Konsultasi Gratis',
+          cta_secondary: parsedContent.cta_secondary || 'Lihat Portfolio',
+          cta_primary_url: parsedContent.cta_primary_url || 'https://wa.me/6281234567890',
+          hero_image_url: parsedContent.hero_image_url || '',
+          dynamic_headlines: parsedContent.dynamic_headlines || ['Revolusi Bisnis dengan Kekuatan AI 🚀'],
+          stats: parsedContent.stats || [{ icon: 'Users', label: 'Klien Terpercaya', value: '150+' }]
         });
       }
     } catch (error) {
@@ -86,16 +92,16 @@ const HeroEditor = () => {
       const contentData = {
         section: 'hero',
         title: content.title,
-        content: content.description,
-        image_url: content.hero_image_url,
-        metadata: {
+        content: JSON.stringify({
           subtitle: content.subtitle,
+          description: content.description,
           cta_primary: content.cta_primary,
           cta_secondary: content.cta_secondary,
           cta_primary_url: content.cta_primary_url,
+          hero_image_url: content.hero_image_url,
           dynamic_headlines: content.dynamic_headlines,
           stats: content.stats
-        } as any,
+        }),
         user_id: user.id,
         is_active: true
       };

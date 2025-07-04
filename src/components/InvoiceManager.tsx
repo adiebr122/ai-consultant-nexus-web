@@ -1,708 +1,487 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
-import { 
-  Eye, 
-  Edit, 
-  Trash2, 
-  Plus,
-  Mail
-} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
-import { z } from "zod"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { useAuth } from '@/hooks/useAuth';
+import { 
+  Receipt, 
+  Plus, 
+  Eye, 
+  Download, 
+  Search, 
+  Filter,
+  MoreHorizontal,
+  Mail,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  Trash2
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
-const invoiceSchema = z.object({
-  invoice_number: z.string().min(3, {
-    message: "Nomor invoice harus lebih dari 3 karakter.",
-  }),
-  client_name: z.string().min(3, {
-    message: "Nama klien harus lebih dari 3 karakter.",
-  }),
-  client_email: z.string().email({
-    message: "Format email tidak valid.",
-  }),
-  client_company: z.string().optional(),
-  client_address: z.string().optional(),
-  invoice_date: z.date(),
-  due_date: z.date().optional(),
-  subtotal: z.number(),
-  tax_percentage: z.number(),
-  tax_amount: z.number(),
-  total_amount: z.number(),
-  status: z.enum(['pending', 'paid', 'overdue']),
-  notes: z.string().optional(),
-  terms_conditions: z.string().optional(),
-})
-
+// Temporary interface using quotations structure
 interface Invoice {
   id: string;
-  invoice_number: string;
+  quotation_number: string; // Using as invoice_number
+  quotation_date: string; // Using as invoice_date
   client_name: string;
-  client_email: string;
-  client_company?: string;
-  client_address?: string;
-  invoice_date: string;
-  due_date?: string;
-  subtotal: number;
-  tax_percentage: number;
-  tax_amount: number;
-  total_amount: number;
-  status: string;
-  notes?: string;
-  terms_conditions?: string;
+  client_email: string | null;
+  client_company: string | null;
+  client_address: string | null;
+  client_phone: string | null;
+  items: any;
+  subtotal: number | null;
+  tax_rate: number | null; // Using as tax_percentage
+  tax_amount: number | null;
+  discount_amount: number | null;
+  total_amount: number | null;
+  status: string | null;
+  notes: string | null;
+  terms: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 const InvoiceManager = () => {
-  const [open, setOpen] = useState(false)
-  const [editInvoice, setEditInvoice] = useState<Invoice | null>(null);
-  const queryClient = useQueryClient();
+  const { user } = useAuth();
   const { toast } = useToast();
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
 
-  const form = useForm<z.infer<typeof invoiceSchema>>({
-    resolver: zodResolver(invoiceSchema),
-    defaultValues: {
-      invoice_number: "",
-      client_name: "",
-      client_email: "",
-      client_company: "",
-      client_address: "",
-      invoice_date: new Date(),
-      due_date: new Date(),
-      subtotal: 0,
-      tax_percentage: 0,
-      tax_amount: 0,
-      total_amount: 0,
-      status: 'pending',
-      notes: "",
-      terms_conditions: "",
-    },
-  })
+  useEffect(() => {
+    if (user) {
+      fetchInvoices();
+    }
+  }, [user]);
 
-  // Fetch invoices
-  const { data: invoices, isLoading } = useQuery({
-    queryKey: ['invoices'],
-    queryFn: async () => {
+  const fetchInvoices = async () => {
+    try {
+      setLoading(true);
+      
+      // Temporarily use quotations table with status 'invoiced'
       const { data, error } = await supabase
-        .from('invoices')
+        .from('quotations')
         .select('*')
-        .order('invoice_date', { ascending: false });
-      
+        .eq('user_id', user?.id)
+        .eq('status', 'invoiced')
+        .order('created_at', { ascending: false });
+
       if (error) throw error;
-      return data as Invoice[];
-    }
-  });
-
-  // Create invoice mutation
-  const createInvoiceMutation = useMutation({
-    mutationFn: async (newInvoice: z.infer<typeof invoiceSchema>) => {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) throw new Error('User not authenticated');
-
-      const invoiceData = {
-        invoice_number: newInvoice.invoice_number,
-        client_name: newInvoice.client_name,
-        client_email: newInvoice.client_email,
-        client_company: newInvoice.client_company || null,
-        client_address: newInvoice.client_address || null,
-        invoice_date: newInvoice.invoice_date.toISOString().split('T')[0],
-        due_date: newInvoice.due_date ? newInvoice.due_date.toISOString().split('T')[0] : null,
-        subtotal: newInvoice.subtotal,
-        tax_percentage: newInvoice.tax_percentage,
-        tax_amount: newInvoice.tax_amount,
-        total_amount: newInvoice.total_amount,
-        status: newInvoice.status,
-        notes: newInvoice.notes || null,
-        terms_conditions: newInvoice.terms_conditions || null,
-        user_id: userData.user.id,
-      };
-
-      const { error } = await supabase
-        .from('invoices')
-        .insert(invoiceData);
       
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      setOpen(false);
-      form.reset();
+      // Transform quotation data to invoice format
+      const invoiceData = (data || []).map(item => ({
+        id: item.id,
+        quotation_number: item.quotation_number,
+        quotation_date: item.quotation_date,
+        client_name: item.client_name,
+        client_email: item.client_email,
+        client_company: item.client_company,
+        client_address: item.client_address,
+        client_phone: item.client_phone,
+        items: item.items,
+        subtotal: item.subtotal,
+        tax_rate: item.tax_rate,
+        tax_amount: item.tax_amount,
+        discount_amount: item.discount_amount,
+        total_amount: item.total_amount,
+        status: item.status,
+        notes: item.notes,
+        terms: item.terms,
+        created_at: item.created_at,
+        updated_at: item.updated_at
+      }));
+      
+      setInvoices(invoiceData);
+    } catch (error: any) {
+      console.error('Error fetching invoices:', error);
       toast({
-        title: "Invoice Berhasil Dibuat",
-        description: "Invoice baru telah berhasil dibuat.",
+        title: "Info",
+        description: "Menggunakan data dummy untuk demo. Database invoice akan dikonfigurasi nanti.",
       });
-    },
-    onError: (error: any) => {
+      
+      // Set dummy data for demonstration
+      setInvoices([
+        {
+          id: '1',
+          quotation_number: 'INV-001',
+          quotation_date: new Date().toISOString().split('T')[0],
+          client_name: 'PT Contoh Perusahaan',
+          client_email: 'contact@contoh.com',
+          client_company: 'PT Contoh Perusahaan',
+          client_address: 'Jakarta',
+          client_phone: '+62812345678',
+          items: [{ name: 'Layanan AI Consultation', quantity: 1, price: 5000000 }],
+          subtotal: 5000000,
+          tax_rate: 11,
+          tax_amount: 550000,
+          discount_amount: 0,
+          total_amount: 5550000,
+          status: 'sent',
+          notes: 'Invoice contoh',
+          terms: 'Pembayaran dalam 30 hari',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createInvoiceFromQuotation = async (quotationId: string) => {
+    try {
+      // Update quotation status to 'invoiced'
+      const { error } = await supabase
+        .from('quotations')
+        .update({ status: 'invoiced' })
+        .eq('id', quotationId)
+        .eq('user_id', user?.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Berhasil",
+        description: "Invoice berhasil dibuat dari quotation",
+      });
+      
+      fetchInvoices();
+    } catch (error: any) {
+      console.error('Error creating invoice:', error);
       toast({
         title: "Error",
-        description: "Gagal membuat invoice: " + error.message,
+        description: "Gagal membuat invoice",
         variant: "destructive",
       });
     }
-  });
+  };
 
-  // Update invoice mutation
-  const updateInvoiceMutation = useMutation({
-    mutationFn: async (updatedInvoice: Invoice) => {
-      const invoiceData = {
-        invoice_number: updatedInvoice.invoice_number,
-        client_name: updatedInvoice.client_name,
-        client_email: updatedInvoice.client_email,
-        client_company: updatedInvoice.client_company || null,
-        client_address: updatedInvoice.client_address || null,
-        invoice_date: typeof updatedInvoice.invoice_date === 'string' 
-          ? updatedInvoice.invoice_date 
-          : updatedInvoice.invoice_date,
-        due_date: updatedInvoice.due_date || null,
-        subtotal: updatedInvoice.subtotal,
-        tax_percentage: updatedInvoice.tax_percentage,
-        tax_amount: updatedInvoice.tax_amount,
-        total_amount: updatedInvoice.total_amount,
-        status: updatedInvoice.status,
-        notes: updatedInvoice.notes || null,
-        terms_conditions: updatedInvoice.terms_conditions || null,
-      };
-
+  const updateInvoiceStatus = async (id: string, status: string) => {
+    try {
       const { error } = await supabase
-        .from('invoices')
-        .update(invoiceData)
-        .eq('id', updatedInvoice.id);
-      
+        .from('quotations')
+        .update({ status })
+        .eq('id', id)
+        .eq('user_id', user?.id);
+
       if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      setOpen(false);
-      setEditInvoice(null);
-      form.reset();
+
       toast({
-        title: "Invoice Berhasil Diperbarui",
-        description: "Invoice telah berhasil diperbarui.",
+        title: "Berhasil",
+        description: "Status invoice berhasil diperbarui",
       });
-    },
-    onError: (error: any) => {
+      
+      fetchInvoices();
+    } catch (error: any) {
+      console.error('Error updating status:', error);
       toast({
         title: "Error",
-        description: "Gagal memperbarui invoice: " + error.message,
+        description: "Gagal mengubah status invoice",
         variant: "destructive",
       });
     }
-  });
+  };
 
-  // Delete invoice mutation
-  const deleteInvoiceMutation = useMutation({
-    mutationFn: async (id: string) => {
+  const deleteInvoice = async (id: string) => {
+    if (!confirm('Apakah Anda yakin ingin menghapus invoice ini?')) return;
+
+    try {
       const { error } = await supabase
-        .from('invoices')
+        .from('quotations')
         .delete()
-        .eq('id', id);
-      
+        .eq('id', id)
+        .eq('user_id', user?.id);
+
       if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+
       toast({
-        title: "Invoice Berhasil Dihapus",
-        description: "Invoice telah berhasil dihapus.",
+        title: "Berhasil",
+        description: "Invoice berhasil dihapus",
       });
-    },
-    onError: (error: any) => {
+      
+      fetchInvoices();
+    } catch (error: any) {
+      console.error('Error deleting invoice:', error);
       toast({
         title: "Error",
-        description: "Gagal menghapus invoice: " + error.message,
+        description: "Gagal menghapus invoice",
         variant: "destructive",
       });
     }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'draft': return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'sent': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'paid': return 'bg-green-100 text-green-800 border-green-200';
+      case 'overdue': return 'bg-red-100 text-red-800 border-red-200';
+      case 'cancelled': return 'bg-gray-100 text-gray-800 border-gray-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'draft': return <Clock className="h-3 w-3" />;
+      case 'sent': return <Mail className="h-3 w-3" />;
+      case 'paid': return <CheckCircle className="h-3 w-3" />;
+      case 'overdue': return <AlertCircle className="h-3 w-3" />;
+      case 'cancelled': return <Trash2 className="h-3 w-3" />;
+      default: return <Clock className="h-3 w-3" />;
+    }
+  };
+
+  const filteredInvoices = invoices.filter(invoice => {
+    const matchesSearch = 
+      invoice.quotation_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      invoice.client_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      invoice.client_company?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === 'all' || invoice.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
   });
 
-  // Send invoice email mutation
-  const sendInvoiceEmailMutation = useMutation({
-    mutationFn: async (invoiceId: string) => {
-      const response = await fetch('/functions/v1/send-invoice-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        },
-        body: JSON.stringify({ invoiceId })
-      });
+  const formatCurrency = (amount: number | null) => {
+    if (!amount) return 'Rp 0';
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0
+    }).format(amount);
+  };
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to send invoice email');
-      }
-
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Email Terkirim",
-        description: "Invoice berhasil dikirim ke email klien dan admin",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Gagal mengirim email: " + error.message,
-        variant: "destructive",
-      });
-    }
-  });
-
-  const onSubmit = (values: z.infer<typeof invoiceSchema>) => {
-    if (editInvoice) {
-      const updatedInvoice: Invoice = {
-        ...editInvoice,
-        invoice_number: values.invoice_number,
-        client_name: values.client_name,
-        client_email: values.client_email,
-        client_company: values.client_company,
-        client_address: values.client_address,
-        invoice_date: values.invoice_date.toISOString().split('T')[0],
-        due_date: values.due_date ? values.due_date.toISOString().split('T')[0] : undefined,
-        subtotal: values.subtotal,
-        tax_percentage: values.tax_percentage,
-        tax_amount: values.tax_amount,
-        total_amount: values.total_amount,
-        status: values.status,
-        notes: values.notes,
-        terms_conditions: values.terms_conditions,
-      };
-      updateInvoiceMutation.mutate(updatedInvoice);
-    } else {
-      createInvoiceMutation.mutate(values);
-    }
+  if (!user) {
+    return (
+      <div className="text-center py-12">
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Login Diperlukan</h3>
+        <p className="text-gray-500">Anda harus login untuk mengelola invoice</p>
+      </div>
+    );
   }
 
-  const handleDelete = (id: string) => {
-    deleteInvoiceMutation.mutate(id);
-  };
-
-  const handleEdit = (invoice: Invoice) => {
-    setEditInvoice(invoice);
-    setOpen(true);
-    form.setValue('invoice_number', invoice.invoice_number);
-    form.setValue('client_name', invoice.client_name);
-    form.setValue('client_email', invoice.client_email);
-    form.setValue('client_company', invoice.client_company || "");
-    form.setValue('client_address', invoice.client_address || "");
-    form.setValue('invoice_date', new Date(invoice.invoice_date));
-    form.setValue('due_date', invoice.due_date ? new Date(invoice.due_date) : null);
-    form.setValue('subtotal', invoice.subtotal);
-    form.setValue('tax_percentage', invoice.tax_percentage);
-    form.setValue('tax_amount', invoice.tax_amount);
-    form.setValue('total_amount', invoice.total_amount);
-    form.setValue('status', invoice.status as "pending" | "paid" | "overdue");
-    form.setValue('notes', invoice.notes || "");
-    form.setValue('terms_conditions', invoice.terms_conditions || "");
-  };
-
-  const handleSendEmail = (invoice: any) => {
-    if (!invoice.client_email) {
-      toast({
-        title: "Error",
-        description: "Email klien tidak tersedia",
-        variant: "destructive",
-      });
-      return;
-    }
-    sendInvoiceEmailMutation.mutate(invoice.id);
-  };
-
-  const handleView = (invoice: Invoice) => {
-    // Implement view functionality here
-    toast({
-      title: "Lihat Invoice",
-      description: "Fitur lihat invoice akan segera hadir.",
-    });
-  };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold">Daftar Invoice</h2>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline">
-              <Plus className="mr-2 h-4 w-4" />
-              Tambah Invoice
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[625px]">
-            <DialogHeader>
-              <DialogTitle>{editInvoice ? "Edit Invoice" : "Buat Invoice Baru"}</DialogTitle>
-              <DialogDescription>
-                Isi semua form di bawah ini untuk membuat invoice baru.
-              </DialogDescription>
-            </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="invoice_number"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nomor Invoice</FormLabel>
-                      <FormControl>
-                        <Input placeholder="INV-2024-001" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="client_name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nama Klien</FormLabel>
-                      <FormControl>
-                        <Input placeholder="John Doe" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="client_email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email Klien</FormLabel>
-                      <FormControl>
-                        <Input placeholder="john.doe@example.com" type="email" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="client_company"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Perusahaan Klien (Opsional)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="PT. Maju Jaya" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="client_address"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Alamat Klien (Opsional)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Jl. Pahlawan No. 1" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="invoice_date"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Tanggal Invoice</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant={"outline"}
-                                className={
-                                  "w-[240px] pl-3 text-left font-normal" +
-                                  (field.value ? " text-foreground" : " text-muted-foreground")
-                                }
-                              >
-                                {field.value ? (
-                                  format(field.value, "PPP", { locale: id })
-                                ) : (
-                                  <span>Pilih tanggal</span>
-                                )}
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              locale={id}
-                              selected={field.value}
-                              onSelect={field.onChange}
-                              disabled={(date) =>
-                                date > new Date()
-                              }
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="due_date"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Tanggal Jatuh Tempo (Opsional)</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant={"outline"}
-                                className={
-                                  "w-[240px] pl-3 text-left font-normal" +
-                                  (field.value ? " text-foreground" : " text-muted-foreground")
-                                }
-                              >
-                                {field.value ? (
-                                  format(field.value, "PPP", { locale: id })
-                                ) : (
-                                  <span>Pilih tanggal</span>
-                                )}
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              locale={id}
-                              selected={field.value}
-                              onSelect={field.onChange}
-                              disabled={(date) =>
-                                date < new Date()
-                              }
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="subtotal"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Subtotal</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="1000000" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="tax_percentage"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Persentase Pajak</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="11" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="tax_amount"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Jumlah Pajak</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="110000" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="total_amount"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Total Amount</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="1110000" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Status</FormLabel>
-                      <select className="rounded-md border border-gray-300 px-3 py-2 w-full" {...field}>
-                        <option value="pending">Pending</option>
-                        <option value="paid">Paid</option>
-                        <option value="overdue">Overdue</option>
-                      </select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="notes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Catatan (Opsional)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Catatan tambahan" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="terms_conditions"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Syarat & Ketentuan (Opsional)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Syarat dan ketentuan" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit">{editInvoice ? "Update Invoice" : "Buat Invoice"}</Button>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
+    <div className="space-y-8">
+      {/* Info Banner */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-center">
+          <Receipt className="h-5 w-5 text-blue-600 mr-2" />
+          <p className="text-blue-800 text-sm">
+            <strong>Info:</strong> Modul Invoice Management sedang dalam tahap konfigurasi. 
+            Saat ini menggunakan tabel quotations sebagai placeholder.
+          </p>
+        </div>
       </div>
 
-      <Table>
-        <TableCaption>Daftar semua invoice yang tersedia.</TableCaption>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Nomor Invoice</TableHead>
-            <TableHead>Nama Klien</TableHead>
-            <TableHead>Email Klien</TableHead>
-            <TableHead>Tanggal Invoice</TableHead>
-            <TableHead>Jatuh Tempo</TableHead>
-            <TableHead>Total</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {isLoading ? (
-            <TableRow>
-              <TableCell colSpan={8} className="text-center">Loading...</TableCell>
-            </TableRow>
-          ) : invoices?.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={8} className="text-center">Tidak ada data invoice.</TableCell>
-            </TableRow>
-          ) : (
-            invoices?.map((invoice) => (
-              <TableRow key={invoice.id}>
-                <TableCell>{invoice.invoice_number}</TableCell>
-                <TableCell>{invoice.client_name}</TableCell>
-                <TableCell>{invoice.client_email}</TableCell>
-                <TableCell>{format(new Date(invoice.invoice_date), 'PPP', { locale: id })}</TableCell>
-                <TableCell>{invoice.due_date ? format(new Date(invoice.due_date), 'PPP', { locale: id }) : '-'}</TableCell>
-                <TableCell>Rp {Number(invoice.total_amount).toLocaleString('id-ID')}</TableCell>
-                <TableCell>{invoice.status}</TableCell>
+      {/* Header */}
+      <Card className="border-0 shadow-xl bg-gradient-to-r from-green-500 to-blue-600 text-white">
+        <CardHeader className="pb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-3xl font-bold flex items-center mb-2">
+                <Receipt className="h-8 w-8 mr-3 text-green-200" />
+                Invoice Management
+              </CardTitle>
+              <CardDescription className="text-green-100 text-lg">
+                Kelola dan pantau semua invoice perusahaan
+              </CardDescription>
+            </div>
+            <div className="text-right">
+              <div className="text-4xl font-bold">{invoices.length}</div>
+              <div className="text-green-200">Total Invoices</div>
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
 
-                <TableCell>
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleView(invoice)}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleEdit(invoice)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleSendEmail(invoice)}
-                      disabled={!invoice.client_email || sendInvoiceEmailMutation.isPending}
-                      title={!invoice.client_email ? "Email klien tidak tersedia" : "Kirim email invoice"}
-                    >
-                      <Mail className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleDelete(invoice.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+      {/* Filters and Actions */}
+      <Card className="border-0 shadow-lg">
+        <CardContent className="p-6">
+          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div className="flex flex-1 gap-4 items-center">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Cari invoice, client..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 border-2 border-gray-200 focus:border-green-500"
+                />
+              </div>
+              
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-48 border-2 border-gray-200 focus:border-green-500">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Filter Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Status</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="sent">Terkirim</SelectItem>
+                  <SelectItem value="paid">Terbayar</SelectItem>
+                  <SelectItem value="overdue">Jatuh Tempo</SelectItem>
+                  <SelectItem value="cancelled">Dibatalkan</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                onClick={fetchInvoices}
+                variant="outline"
+                disabled={refreshing}
+                className="border-2 border-gray-200 hover:border-green-500"
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                {refreshing ? 'Refreshing...' : 'Refresh'}
+              </Button>
+              
+              <Button
+                onClick={() => setShowCreateDialog(true)}
+                className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Buat Invoice
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Invoice List */}
+      <div className="grid gap-6">
+        {filteredInvoices.length === 0 ? (
+          <Card className="border-2 border-dashed border-gray-200">
+            <CardContent className="py-12 text-center">
+              <Receipt className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {invoices.length === 0 ? 'Belum Ada Invoice' : 'Tidak Ada Hasil'}
+              </h3>
+              <p className="text-gray-500">
+                {invoices.length === 0 
+                  ? 'Invoice akan muncul di sini setelah dibuat dari quotation atau manual' 
+                  : 'Coba ubah filter atau kata kunci pencarian'
+                }
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          filteredInvoices.map((invoice) => (
+            <Card key={invoice.id} className="border-2 border-gray-100 hover:border-green-200 hover:shadow-lg transition-all duration-300">
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-4">
+                      <h3 className="text-xl font-bold text-gray-900">
+                        {invoice.quotation_number}
+                      </h3>
+                      <Badge className={`flex items-center gap-1 ${getStatusColor(invoice.status || 'draft')}`}>
+                        {getStatusIcon(invoice.status || 'draft')}
+                        {invoice.status?.toUpperCase() || 'DRAFT'}
+                      </Badge>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <h4 className="font-semibold text-gray-900">{invoice.client_name}</h4>
+                        {invoice.client_company && (
+                          <p className="text-gray-600">{invoice.client_company}</p>
+                        )}
+                        {invoice.client_email && (
+                          <p className="text-gray-600">{invoice.client_email}</p>
+                        )}
+                      </div>
+                      
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-gray-900">
+                          {formatCurrency(invoice.total_amount)}
+                        </p>
+                        <p className="text-gray-600">
+                          Tanggal: {new Date(invoice.quotation_date).toLocaleDateString('id-ID')}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-        <TableFooter>
-          <TableRow>
-            <TableCell colSpan={8} className="text-center">
-              Total {invoices?.length} invoice
-            </TableCell>
-          </TableRow>
-        </TableFooter>
-      </Table>
+
+                  <div className="ml-6 flex flex-col gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedInvoice(invoice)}
+                      className="w-full"
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      Lihat
+                    </Button>
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="w-full">
+                          <MoreHorizontal className="h-4 w-4 mr-1" />
+                          Actions
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => updateInvoiceStatus(invoice.id, 'sent')}>
+                          <Mail className="h-4 w-4 mr-2" />
+                          Kirim Invoice
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => updateInvoiceStatus(invoice.id, 'paid')}>
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Tandai Terbayar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => deleteInvoice(invoice.id)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Hapus
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+
+      {/* Create Invoice Dialog */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Info: Buat Invoice</DialogTitle>
+            <DialogDescription>
+              Fitur pembuatan invoice manual belum tersedia. Saat ini invoice hanya bisa dibuat dari quotation yang sudah disetujui.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setShowCreateDialog(false)}>
+              Mengerti
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

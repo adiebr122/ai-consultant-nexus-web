@@ -16,6 +16,7 @@ import QuotationManager from '@/components/QuotationManager';
 import InvoiceManager from '@/components/InvoiceManager';
 import UserManagement from '@/components/UserManagement';
 import SettingsManager from '@/components/SettingsManager';
+import HomePageManager from '@/components/HomePageManager';
 import { DashboardStats } from '@/components/admin/DashboardStats';
 import { DashboardCharts } from '@/components/admin/DashboardCharts';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
@@ -35,7 +36,8 @@ import {
   Calculator,
   Receipt,
   MessageSquare,
-  Building
+  Building,
+  Home
 } from 'lucide-react';
 
 const Admin = () => {
@@ -82,6 +84,8 @@ const Admin = () => {
     switch (activeTab) {
       case 'dashboard':
         return <DashboardContent onTabChange={setActiveTab} />;
+      case 'homepage':
+        return <HomePageManager />;
       case 'hero':
         return <HeroEditor />;
       case 'services':
@@ -163,6 +167,13 @@ const DashboardContent = ({ onTabChange }: DashboardContentProps) => {
 
   const quickActions = [
     {
+      title: 'Kelola Halaman Depan',
+      description: 'Edit semua konten homepage',
+      icon: Home,
+      action: 'homepage',
+      color: 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700'
+    },
+    {
       title: 'Kelola Portfolio',
       description: 'Tambah atau edit proyek portfolio',
       icon: Briefcase,
@@ -234,7 +245,7 @@ const DashboardContent = ({ onTabChange }: DashboardContentProps) => {
       {/* Quick Actions */}
       <div className="bg-white rounded-xl shadow-sm border p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {quickActions.map((action, index) => {
             const IconComponent = action.icon;
             return (

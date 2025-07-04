@@ -57,18 +57,25 @@ const Hero = () => {
 
       if (error && error.code !== 'PGRST116') throw error;
 
-      if (data && data.metadata) {
-        const metadata = data.metadata as any;
+      if (data) {
+        // Parse content as JSON to get metadata
+        let parsedContent;
+        try {
+          parsedContent = data.content ? JSON.parse(data.content) : {};
+        } catch {
+          parsedContent = {};
+        }
+
         setHeroContent({
           title: data.title || 'AI Consultant Pro',
-          subtitle: metadata.subtitle || 'Transformasi Digital dengan Teknologi AI',
-          description: data.content || 'Solusi AI terdepan untuk bisnis modern. Kami membantu perusahaan mengoptimalkan operasional, meningkatkan efisiensi, dan mencapai pertumbuhan berkelanjutan melalui implementasi teknologi Artificial Intelligence yang tepat sasaran.',
-          cta_primary: metadata.cta_primary || 'Konsultasi Gratis',
-          cta_secondary: metadata.cta_secondary || 'Lihat Portfolio',
-          cta_primary_url: metadata.cta_primary_url || 'https://wa.me/6281234567890',
-          hero_image_url: data.image_url,
-          dynamic_headlines: metadata.dynamic_headlines || [],
-          stats: metadata.stats || []
+          subtitle: parsedContent.subtitle || 'Transformasi Digital dengan Teknologi AI',
+          description: parsedContent.description || 'Solusi AI terdepan untuk bisnis modern. Kami membantu perusahaan mengoptimalkan operasional, meningkatkan efisiensi, dan mencapai pertumbuhan berkelanjutan melalui implementasi teknologi Artificial Intelligence yang tepat sasaran.',
+          cta_primary: parsedContent.cta_primary || 'Konsultasi Gratis',
+          cta_secondary: parsedContent.cta_secondary || 'Lihat Portfolio',
+          cta_primary_url: parsedContent.cta_primary_url || 'https://wa.me/6281234567890',
+          hero_image_url: parsedContent.hero_image_url || null,
+          dynamic_headlines: parsedContent.dynamic_headlines || [],
+          stats: parsedContent.stats || []
         });
       }
     } catch (error) {
