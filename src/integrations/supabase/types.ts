@@ -48,6 +48,197 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_agents: {
+        Row: {
+          agent_email: string
+          agent_name: string
+          created_at: string
+          id: string
+          is_active: boolean
+          is_online: boolean
+          max_concurrent_chats: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agent_email: string
+          agent_name: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_online?: boolean
+          max_concurrent_chats?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agent_email?: string
+          agent_name?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_online?: boolean
+          max_concurrent_chats?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      chat_conversations: {
+        Row: {
+          agent_id: string | null
+          chat_ended_at: string | null
+          chat_feedback: string | null
+          chat_rating: number | null
+          chat_started_at: string | null
+          created_at: string
+          customer_company: string | null
+          customer_email: string | null
+          customer_name: string
+          customer_phone: string | null
+          email_sent: boolean | null
+          id: string
+          status: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          agent_id?: string | null
+          chat_ended_at?: string | null
+          chat_feedback?: string | null
+          chat_rating?: number | null
+          chat_started_at?: string | null
+          created_at?: string
+          customer_company?: string | null
+          customer_email?: string | null
+          customer_name: string
+          customer_phone?: string | null
+          email_sent?: boolean | null
+          id?: string
+          status?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          agent_id?: string | null
+          chat_ended_at?: string | null
+          chat_feedback?: string | null
+          chat_rating?: number | null
+          chat_started_at?: string | null
+          created_at?: string
+          customer_company?: string | null
+          customer_email?: string | null
+          customer_name?: string
+          customer_phone?: string | null
+          email_sent?: boolean | null
+          id?: string
+          status?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      chat_messages: {
+        Row: {
+          conversation_id: string
+          created_at: string
+          id: string
+          message: string
+          sender_name: string | null
+          sender_type: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string
+          id?: string
+          message: string
+          sender_name?: string | null
+          sender_type: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          message?: string
+          sender_name?: string | null
+          sender_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chat_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_logos: {
+        Row: {
+          company_url: string | null
+          created_at: string
+          display_order: number
+          id: string
+          is_active: boolean
+          logo_url: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          company_url?: string | null
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          logo_url: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          company_url?: string | null
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          logo_url?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      email_templates: {
+        Row: {
+          body_template: string
+          created_at: string
+          id: string
+          is_active: boolean
+          subject_template: string
+          template_name: string
+          template_type: string
+          updated_at: string
+        }
+        Insert: {
+          body_template: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          subject_template: string
+          template_name: string
+          template_type?: string
+          updated_at?: string
+        }
+        Update: {
+          body_template?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          subject_template?: string
+          template_name?: string
+          template_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       quotations: {
         Row: {
           client_address: string | null

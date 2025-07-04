@@ -1,8 +1,11 @@
+
 import { useState, useEffect } from 'react';
-import { ArrowRight, Code, Brain, Smartphone, Globe, Database, Shield } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { useWhatsAppSettings } from '@/hooks/useWhatsAppSettings';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { ArrowRight, Star, Clock, DollarSign } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface Service {
   id: string;
@@ -15,65 +18,27 @@ interface Service {
   service_image_url: string;
   service_features: string[];
   is_active: boolean;
-}
-
-interface ServicesContent {
-  title: string;
-  description: string;
+  display_order: number;
 }
 
 const Services = () => {
   const [services, setServices] = useState<Service[]>([]);
-  const [content, setContent] = useState<ServicesContent | null>(null);
   const [loading, setLoading] = useState(true);
-  const { createWhatsAppLink } = useWhatsAppSettings();
 
   useEffect(() => {
-    fetchContent();
     fetchServices();
   }, []);
 
-  const fetchContent = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('website_content')
-        .select('*')
-        .eq('section', 'services')
-        .eq('is_active', true)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching services content:', error);
-      }
-
-      if (data) {
-        setContent({
-          title: data.title || 'Layanan Terbaik Kami',
-          description: data.content || 'Kami menyediakan berbagai layanan AI dan teknologi untuk mengoptimalkan bisnis Anda'
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching services content:', error);
-    }
-  };
-
   const fetchServices = async () => {
     try {
-      console.log('Fetching services from database...');
       const { data, error } = await supabase
         .from('services')
         .select('*')
         .eq('is_active', true)
         .order('display_order', { ascending: true });
 
-      if (error) {
-        console.error('Error fetching services:', error);
-        throw error;
-      }
+      if (error) throw error;
       
-      console.log('Services data fetched:', data);
-      
-      // Transform the data to match our interface
       const transformedServices: Service[] = (data || []).map(service => ({
         ...service,
         service_features: Array.isArray(service.service_features) 
@@ -81,219 +46,116 @@ const Services = () => {
           : []
       }));
       
-      console.log('Transformed services:', transformedServices);
       setServices(transformedServices);
     } catch (error) {
-      console.error('Error in fetchServices:', error);
-      // Fallback to static data if fetch fails
-      setServices([
-        {
-          id: 'ai-chatbot',
-          service_name: 'AI Chatbot Development',
-          service_description: 'Kembangkan chatbot AI yang cerdas untuk meningkatkan customer service dan engagement pelanggan dengan teknologi NLP terdepan.',
-          service_category: 'AI Solutions',
-          price_starting_from: 15000000,
-          price_currency: 'IDR',
-          estimated_duration: '4-6 minggu',
-          service_image_url: 'https://images.unsplash.com/photo-1531746790731-6c087fecd65a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-          service_features: ['Natural Language Processing', '24/7 Customer Support', 'Multi-platform Integration', 'Analytics Dashboard'],
-          is_active: true
-        },
-        {
-          id: 'web-development',
-          service_name: 'Custom Web Development',
-          service_description: 'Solusi pengembangan website custom yang responsif, cepat, dan user-friendly menggunakan teknologi terkini.',
-          service_category: 'Web Development',
-          price_starting_from: 25000000,
-          price_currency: 'IDR',
-          estimated_duration: '6-8 minggu',
-          service_image_url: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-          service_features: ['Responsive Design', 'SEO Optimized', 'Fast Loading', 'Admin Panel'],
-          is_active: true
-        },
-        {
-          id: 'mobile-app',
-          service_name: 'Mobile App Development',
-          service_description: 'Pengembangan aplikasi mobile native dan cross-platform untuk iOS dan Android dengan performa optimal.',
-          service_category: 'Mobile Development',
-          price_starting_from: 35000000,
-          price_currency: 'IDR',
-          estimated_duration: '8-12 minggu',
-          service_image_url: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-          service_features: ['Cross-platform', 'Push Notifications', 'Offline Support', 'App Store Ready'],
-          is_active: true
-        },
-        {
-          id: 'data-analytics',
-          service_name: 'Data Analytics & BI',
-          service_description: 'Transformasi data menjadi insights bisnis yang actionable dengan dashboard interaktif dan machine learning.',
-          service_category: 'Data Science',
-          price_starting_from: 20000000,
-          price_currency: 'IDR',
-          estimated_duration: '6-10 minggu',
-          service_image_url: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-          service_features: ['Interactive Dashboards', 'Predictive Analytics', 'Real-time Monitoring', 'Custom Reports'],
-          is_active: true
-        },
-        {
-          id: 'ai-automation',
-          service_name: 'Process Automation',
-          service_description: 'Otomatisasi proses bisnis menggunakan AI dan RPA untuk meningkatkan efisiensi operasional.',
-          service_category: 'AI Automation',
-          price_starting_from: 30000000,
-          price_currency: 'IDR',
-          estimated_duration: '8-14 minggu',
-          service_image_url: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-          service_features: ['RPA Implementation', 'Workflow Optimization', 'AI Integration', 'Performance Monitoring'],
-          is_active: true
-        },
-        {
-          id: 'cybersecurity',
-          service_name: 'Cybersecurity Solutions',
-          service_description: 'Solusi keamanan siber komprehensif untuk melindungi aset digital dan data bisnis Anda.',
-          service_category: 'Security',
-          price_starting_from: 18000000,
-          price_currency: 'IDR',
-          estimated_duration: '4-8 minggu',
-          service_image_url: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-          service_features: ['Penetration Testing', 'Security Audit', 'Incident Response', '24/7 Monitoring'],
-          is_active: true
-        }
-      ]);
+      console.error('Error fetching services:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const defaultContent: ServicesContent = {
-    title: 'Layanan Terbaik Kami',
-    description: 'Kami menyediakan berbagai layanan AI dan teknologi untuk mengoptimalkan bisnis Anda'
-  };
-
-  const displayContent = content || defaultContent;
-
-  const getServiceIcon = (category: string) => {
-    switch (category.toLowerCase()) {
-      case 'ai solutions': return Brain;
-      case 'ai customer service': return Brain;
-      case 'ai automation': return Code;
-      case 'web development': return Globe;
-      case 'mobile development': return Smartphone;
-      case 'data science': return Database;
-      case 'ai analytics': return Database;
-      case 'security': return Shield;
-      case 'content generation': return Brain;
-      default: return Code;
-    }
-  };
-
-  const handleServiceClick = (serviceName: string) => {
-    const message = `Halo, saya tertarik dengan layanan ${serviceName}. Bisakah kita berdiskusi lebih lanjut mengenai konsultasi gratis?`;
-    const whatsappLink = createWhatsAppLink(message);
-    window.open(whatsappLink, '_blank');
-  };
-
-  const handleServiceDetail = (serviceId: string) => {
-    window.location.href = `/services/${serviceId}`;
-  };
-
   if (loading) {
     return (
-      <section id="layanan" className="py-12 lg:py-20 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12 lg:mb-16 animate-pulse">
-            <div className="h-8 lg:h-10 bg-gray-300 rounded w-1/2 mx-auto mb-4"></div>
-            <div className="h-4 lg:h-6 bg-gray-300 rounded w-3/4 mx-auto"></div>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-            {[1, 2, 3, 4, 5, 6].map((_, index) => (
-              <div key={index} className="bg-gray-100 p-6 lg:p-8 rounded-2xl lg:rounded-3xl animate-pulse">
-                <div className="h-10 lg:h-12 w-10 lg:w-12 bg-gray-300 rounded-xl mb-4 lg:mb-6"></div>
-                <div className="h-5 lg:h-6 bg-gray-300 rounded mb-4"></div>
-                <div className="space-y-2 mb-6">
-                  <div className="h-3 lg:h-4 bg-gray-300 rounded"></div>
-                  <div className="h-3 lg:h-4 bg-gray-300 rounded"></div>
-                  <div className="h-3 lg:h-4 bg-gray-300 rounded w-3/4"></div>
-                </div>
-                <div className="h-8 lg:h-10 bg-gray-300 rounded"></div>
-              </div>
-            ))}
+      <section className="py-20 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Memuat layanan...</p>
           </div>
         </div>
       </section>
     );
   }
 
+  if (services.length === 0) {
+    return (
+      <section className="py-20 bg-gray-50">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">Layanan Kami</h2>
+          <p className="text-gray-600">Belum ada layanan yang tersedia</p>
+        </div>
+      </section>
+    );
+  }
+
   return (
-    <section id="layanan" className="py-12 lg:py-20 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12 lg:mb-16 animate-fade-in">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent mb-4 lg:mb-6">
-            {displayContent.title}
-          </h2>
-          <p className="text-lg lg:text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
-            {displayContent.description}
+    <section id="services" className="py-20 bg-gray-50">
+      <div className="container mx-auto px-4">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold text-gray-900 mb-4">Layanan Kami</h2>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            Solusi digital terdepan untuk mengembangkan bisnis Anda dengan teknologi AI dan transformasi digital
           </p>
         </div>
 
-        {services.length === 0 ? (
-          <div className="text-center py-12">
-            <Code className="h-10 lg:h-12 w-10 lg:w-12 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Memuat Layanan...</h3>
-            <p className="text-gray-500">Sedang mengambil data layanan dari database</p>
-            <button 
-              onClick={fetchServices}
-              className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-            >
-              Refresh Layanan
-            </button>
-          </div>
-        ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-            {services.map((service, index) => {
-              const IconComponent = getServiceIcon(service.service_category);
-              return (
-                <div 
-                  key={service.id} 
-                  className="group bg-white/80 backdrop-blur-sm p-6 lg:p-8 rounded-2xl lg:rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 border border-blue-100/50 hover:border-blue-200 animate-fade-in"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  <div className="bg-gradient-to-r from-blue-600 to-indigo-600 w-12 lg:w-16 h-12 lg:h-16 rounded-xl lg:rounded-2xl flex items-center justify-center mb-4 lg:mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                    <IconComponent className="h-6 w-6 lg:h-8 lg:w-8 text-white" />
-                  </div>
-                  
-                  <span className="inline-block bg-blue-100 text-blue-800 text-xs font-medium px-3 py-1 rounded-full mb-4">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {services.map((service) => (
+            <Card key={service.id} className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2 bg-white border-0">
+              <div className="relative overflow-hidden rounded-t-lg">
+                <img 
+                  src={service.service_image_url} 
+                  alt={service.service_name}
+                  className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
+                  onError={(e) => {
+                    e.currentTarget.src = 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
+                  }}
+                />
+                <div className="absolute top-4 left-4">
+                  <Badge variant="secondary" className="bg-white/90 text-gray-900">
                     {service.service_category}
-                  </span>
-                  
-                  <h3 className="text-xl lg:text-2xl font-bold text-gray-900 mb-3 lg:mb-4 group-hover:text-blue-600 transition-colors">
-                    {service.service_name}
-                  </h3>
-                  
-                  <p className="text-gray-600 mb-4 lg:mb-6 leading-relaxed line-clamp-3 text-sm lg:text-base">
-                    {service.service_description}
-                  </p>
+                  </Badge>
+                </div>
+              </div>
+              
+              <CardHeader>
+                <CardTitle className="text-xl font-bold group-hover:text-blue-600 transition-colors">
+                  {service.service_name}
+                </CardTitle>
+                <CardDescription className="text-gray-600 line-clamp-2">
+                  {service.service_description}
+                </CardDescription>
+              </CardHeader>
 
-                  <div className="flex flex-col sm:flex-row gap-2 lg:gap-3">
-                    <button
-                      onClick={() => handleServiceDetail(service.id)}
-                      className="flex-1 bg-gray-100 text-gray-700 px-3 lg:px-4 py-2 lg:py-3 rounded-lg lg:rounded-xl hover:bg-gray-200 transition-all duration-300 flex items-center justify-center font-semibold text-sm lg:text-base"
-                    >
-                      Lihat Detail
-                    </button>
-                    <button
-                      onClick={() => handleServiceClick(service.service_name)}
-                      className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-3 lg:px-4 py-2 lg:py-3 rounded-lg lg:rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 flex items-center justify-center font-semibold shadow-lg hover:shadow-xl text-sm lg:text-base"
-                    >
-                      Konsultasi
-                      <ArrowRight className="ml-2 h-3 w-3 lg:h-4 lg:w-4" />
-                    </button>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between text-sm text-gray-500">
+                  <div className="flex items-center">
+                    <Clock className="h-4 w-4 mr-1" />
+                    {service.estimated_duration}
+                  </div>
+                  <div className="flex items-center font-semibold text-green-600">
+                    <DollarSign className="h-4 w-4 mr-1" />
+                    {service.price_currency} {service.price_starting_from?.toLocaleString('id-ID')}
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        )}
+
+                {service.service_features && service.service_features.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-gray-700">Fitur Utama:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {service.service_features.slice(0, 3).map((feature, idx) => (
+                        <Badge key={idx} variant="outline" className="text-xs">
+                          {feature}
+                        </Badge>
+                      ))}
+                      {service.service_features.length > 3 && (
+                        <Badge variant="outline" className="text-xs">
+                          +{service.service_features.length - 3} lainnya
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <Link to={`/services/${service.id}`}>
+                  <Button className="w-full group-hover:bg-blue-700 transition-colors">
+                    Pelajari Lebih Lanjut
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     </section>
   );
