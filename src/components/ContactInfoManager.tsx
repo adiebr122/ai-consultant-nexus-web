@@ -35,15 +35,16 @@ const ContactInfoManager = () => {
     
     setLoading(true);
     try {
+      // Use app_settings table for contact information
       const { data, error } = await supabase
-        .from('site_settings')
-        .select('key, value')
-        .in('key', ['company_phone', 'company_email', 'company_address', 'whatsapp_number', 'whatsapp_message']);
+        .from('app_settings')
+        .select('setting_key, setting_value')
+        .in('setting_key', ['company_phone', 'company_email', 'company_address', 'whatsapp_number', 'whatsapp_message']);
 
       if (error) throw error;
 
       const settings = data?.reduce((acc, setting) => {
-        acc[setting.key] = setting.value || '';
+        acc[setting.setting_key] = setting.setting_value || '';
         return acc;
       }, {} as Record<string, string>) || {};
 
@@ -79,29 +80,31 @@ const ContactInfoManager = () => {
     setSaving(true);
     try {
       const updates = Object.entries(contactInfo).map(([key, value]) => ({
-        key,
-        value,
+        setting_key: key,
+        setting_value: value,
+        setting_category: 'contact_info',
         description: getFieldDescription(key),
         user_id: user.id
       }));
 
       for (const update of updates) {
         const { error } = await supabase
-          .from('site_settings')
+          .from('app_settings')
           .upsert(
             {
-              key: update.key,
-              value: update.value,
+              setting_key: update.setting_key,
+              setting_value: update.setting_value,
+              setting_category: update.setting_category,
               description: update.description,
               user_id: update.user_id
             },
             {
-              onConflict: 'key'
+              onConflict: 'setting_key'
             }
           );
 
         if (error) {
-          console.error(`Error upserting ${update.key}:`, error);
+          console.error(`Error upserting ${update.setting_key}:`, error);
           throw error;
         }
       }

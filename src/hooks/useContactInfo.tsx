@@ -34,21 +34,21 @@ export const useContactInfo = () => {
     try {
       setLoading(true);
       
-      // Fetch from site_settings table
+      // Fetch from app_settings table
       const { data: contactData } = await supabase
-        .from('site_settings')
-        .select('key, value')
-        .in('key', ['company_phone', 'company_email', 'company_address']);
+        .from('app_settings')
+        .select('setting_key, setting_value')
+        .in('setting_key', ['company_phone', 'company_email', 'company_address']);
 
       if (contactData && contactData.length > 0) {
         const newContactInfo = { ...contactInfo };
         contactData.forEach(item => {
-          if (item.key === 'company_phone') {
-            newContactInfo.company_phone = item.value || newContactInfo.company_phone;
-          } else if (item.key === 'company_email') {
-            newContactInfo.company_email = item.value || newContactInfo.company_email;
-          } else if (item.key === 'company_address') {
-            newContactInfo.company_address = item.value || newContactInfo.company_address;
+          if (item.setting_key === 'company_phone') {
+            newContactInfo.company_phone = item.setting_value || newContactInfo.company_phone;
+          } else if (item.setting_key === 'company_email') {
+            newContactInfo.company_email = item.setting_value || newContactInfo.company_email;
+          } else if (item.setting_key === 'company_address') {
+            newContactInfo.company_address = item.setting_value || newContactInfo.company_address;
           }
         });
         setContactInfo(newContactInfo);
