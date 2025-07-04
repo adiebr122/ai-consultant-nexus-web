@@ -9,7 +9,147 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      app_settings: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_public: boolean | null
+          setting_category: string
+          setting_key: string
+          setting_type: string | null
+          setting_value: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          setting_category: string
+          setting_key: string
+          setting_type?: string | null
+          setting_value?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          setting_category?: string
+          setting_key?: string
+          setting_type?: string | null
+          setting_value?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      quotations: {
+        Row: {
+          client_address: string | null
+          client_company: string | null
+          client_email: string | null
+          client_name: string
+          client_phone: string | null
+          created_at: string
+          discount_amount: number | null
+          id: string
+          items: Json | null
+          notes: string | null
+          quotation_date: string
+          quotation_number: string
+          status: string | null
+          subtotal: number | null
+          tax_amount: number | null
+          tax_rate: number | null
+          terms: string | null
+          total_amount: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_address?: string | null
+          client_company?: string | null
+          client_email?: string | null
+          client_name: string
+          client_phone?: string | null
+          created_at?: string
+          discount_amount?: number | null
+          id?: string
+          items?: Json | null
+          notes?: string | null
+          quotation_date: string
+          quotation_number: string
+          status?: string | null
+          subtotal?: number | null
+          tax_amount?: number | null
+          tax_rate?: number | null
+          terms?: string | null
+          total_amount?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_address?: string | null
+          client_company?: string | null
+          client_email?: string | null
+          client_name?: string
+          client_phone?: string | null
+          created_at?: string
+          discount_amount?: number | null
+          id?: string
+          items?: Json | null
+          notes?: string | null
+          quotation_date?: string
+          quotation_number?: string
+          status?: string | null
+          subtotal?: number | null
+          tax_amount?: number | null
+          tax_rate?: number | null
+          terms?: string | null
+          total_amount?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      website_content: {
+        Row: {
+          content: string | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          section: string
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          section: string
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          section?: string
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
