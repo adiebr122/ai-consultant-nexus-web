@@ -31,24 +31,98 @@ const Services = () => {
 
   const fetchServices = async () => {
     try {
+      console.log('Fetching services from database...');
+      
+      // Check if services table exists by trying to fetch from it
       const { data, error } = await supabase
-        .from('services')
+        .from('website_content')
         .select('*')
+        .eq('section', 'services')
         .eq('is_active', true)
-        .order('display_order', { ascending: true });
+        .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      
-      const transformedServices: Service[] = (data || []).map(service => ({
-        ...service,
-        service_features: Array.isArray(service.service_features) 
-          ? service.service_features as string[]
-          : []
-      }));
-      
-      setServices(transformedServices);
+      console.log('Services query result:', { data, error });
+
+      if (error) {
+        console.error('Error fetching services:', error);
+        // If no services data found, show default services
+        setServices([]);
+      } else if (data && data.length > 0) {
+        // Transform website_content data to Service format
+        const transformedServices: Service[] = data.map((item, index) => {
+          let serviceData;
+          try {
+            serviceData = item.content ? JSON.parse(item.content) : {};
+          } catch (e) {
+            console.error('Error parsing service content:', e);
+            serviceData = {};
+          }
+
+          return {
+            id: item.id,
+            service_name: item.title || `Layanan ${index + 1}`,
+            service_description: serviceData.description || 'Deskripsi layanan',
+            service_category: serviceData.category || 'Umum',
+            price_starting_from: serviceData.price || 1000000,
+            price_currency: serviceData.currency || 'IDR',
+            estimated_duration: serviceData.duration || '1-2 minggu',
+            service_image_url: serviceData.image_url || 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+            service_features: serviceData.features || ['Konsultasi', 'Implementasi', 'Support'],
+            is_active: item.is_active || true,
+            display_order: index
+          };
+        });
+        
+        console.log('Transformed services:', transformedServices);
+        setServices(transformedServices);
+      } else {
+        console.log('No services found, using default services');
+        // Default services if none exist
+        setServices([
+          {
+            id: 'default-1',
+            service_name: 'AI Consultation',
+            service_description: 'Konsultasi mendalam tentang implementasi AI dalam bisnis Anda',
+            service_category: 'Konsultasi',
+            price_starting_from: 2500000,
+            price_currency: 'IDR',
+            estimated_duration: '1-2 minggu',
+            service_image_url: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+            service_features: ['Analisis Kebutuhan', 'Roadmap AI', 'ROI Analysis'],
+            is_active: true,
+            display_order: 1
+          },
+          {
+            id: 'default-2',
+            service_name: 'Custom AI Development',
+            service_description: 'Pengembangan solusi AI custom sesuai kebutuhan bisnis spesifik',
+            service_category: 'Development',
+            price_starting_from: 15000000,
+            price_currency: 'IDR',
+            estimated_duration: '2-3 bulan',
+            service_image_url: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+            service_features: ['Machine Learning', 'Data Processing', 'API Integration'],
+            is_active: true,
+            display_order: 2
+          },
+          {
+            id: 'default-3',
+            service_name: 'AI Training & Workshop',
+            service_description: 'Pelatihan tim internal untuk memahami dan menggunakan teknologi AI',
+            service_category: 'Training',
+            price_starting_from: 5000000,
+            price_currency: 'IDR',
+            estimated_duration: '3-5 hari',
+            service_image_url: 'https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+            service_features: ['Hands-on Training', 'Case Studies', 'Certification'],
+            is_active: true,
+            display_order: 3
+          }
+        ]);
+      }
     } catch (error) {
-      console.error('Error fetching services:', error);
+      console.error('Error in fetchServices:', error);
+      setServices([]);
     } finally {
       setLoading(false);
     }
@@ -72,7 +146,7 @@ const Services = () => {
       <section className="py-20 bg-gray-50">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">Layanan Kami</h2>
-          <p className="text-gray-600">Belum ada layanan yang tersedia</p>
+          <p className="text-gray-600">Layanan sedang dalam pengembangan. Silakan hubungi kami untuk informasi lebih lanjut.</p>
         </div>
       </section>
     );
@@ -146,12 +220,10 @@ const Services = () => {
                   </div>
                 )}
 
-                <Link to={`/services/${service.id}`}>
-                  <Button className="w-full group-hover:bg-blue-700 transition-colors">
-                    Pelajari Lebih Lanjut
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
+                <Button className="w-full group-hover:bg-blue-700 transition-colors">
+                  Pelajari Lebih Lanjut
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
               </CardContent>
             </Card>
           ))}
