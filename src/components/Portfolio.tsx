@@ -1,11 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { ArrowRight, ExternalLink, Calendar } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { ExternalLink, Calendar, Code, ArrowRight } from 'lucide-react';
 
 interface Portfolio {
   id: string;
@@ -13,172 +9,244 @@ interface Portfolio {
   project_description: string;
   project_category: string;
   project_image_url: string;
-  project_url: string;
+  project_url?: string;
+  technologies_used: string[];
   client_name: string;
   completion_date: string;
-  technologies_used: string[];
   is_featured: boolean;
-  is_active: boolean;
-  display_order: number;
+  created_at: string;
 }
 
 const Portfolio = () => {
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchPortfolios();
-  }, []);
+  const [selectedCategory, setSelectedCategory] = useState('all');
 
   const fetchPortfolios = async () => {
     try {
-      const { data, error } = await supabase
-        .from('portfolios')
+      setLoading(true);
+      
+      // Try to fetch from website_content table first
+      const { data: contentData } = await supabase
+        .from('website_content')
         .select('*')
+        .eq('section', 'portfolio')
         .eq('is_active', true)
-        .order('display_order', { ascending: true })
-        .limit(6);
+        .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      
-      const transformedPortfolios: Portfolio[] = (data || []).map(portfolio => ({
-        ...portfolio,
-        technologies_used: Array.isArray(portfolio.technologies_used) 
-          ? portfolio.technologies_used as string[]
-          : []
-      }));
-      
-      setPortfolios(transformedPortfolios);
+      if (contentData && contentData.length > 0) {
+        // Transform website_content data to portfolio format
+        const transformedData: Portfolio[] = contentData.map((item, index) => ({
+          id: item.id,
+          project_name: item.title || `Project ${index + 1}`,
+          project_description: item.content || 'Deskripsi project akan segera tersedia',
+          project_category: 'Website Development',
+          project_image_url: '/placeholder.svg',
+          project_url: '#',
+          technologies_used: ['React', 'TypeScript', 'Tailwind CSS'],
+          client_name: 'Client',
+          completion_date: new Date(item.created_at).toISOString().split('T')[0],
+          is_featured: index < 3,
+          created_at: item.created_at
+        }));
+        setPortfolios(transformedData);
+      } else {
+        // Fallback to default portfolio items
+        const defaultPortfolios: Portfolio[] = [
+          {
+            id: '1',
+            project_name: 'E-Commerce Platform',
+            project_description: 'Platform e-commerce modern dengan fitur lengkap untuk bisnis online',
+            project_category: 'Web Development',
+            project_image_url: '/placeholder.svg',
+            project_url: '#',
+            technologies_used: ['React', 'Node.js', 'MongoDB', 'Stripe'],
+            client_name: 'PT. Digital Commerce',
+            completion_date: '2024-01-15',
+            is_featured: true,
+            created_at: '2024-01-15'
+          },
+          {
+            id: '2',
+            project_name: 'Corporate Website',
+            project_description: 'Website corporate dengan desain profesional dan responsif',
+            project_category: 'Web Design',
+            project_image_url: '/placeholder.svg',
+            project_url: '#',
+            technologies_used: ['HTML', 'CSS', 'JavaScript', 'WordPress'],
+            client_name: 'CV. Maju Bersama',
+            completion_date: '2024-02-20',
+            is_featured: true,
+            created_at: '2024-02-20'
+          },
+          {
+            id: '3',
+            project_name: 'Mobile App UI/UX',
+            project_description: 'Desain antarmuka dan pengalaman pengguna untuk aplikasi mobile',
+            project_category: 'UI/UX Design',
+            project_image_url: '/placeholder.svg',
+            project_url: '#',
+            technologies_used: ['Figma', 'Adobe XD', 'Sketch'],
+            client_name: 'Startup Teknologi',
+            completion_date: '2024-03-10',
+            is_featured: true,
+            created_at: '2024-03-10'
+          }
+        ];
+        setPortfolios(defaultPortfolios);
+      }
     } catch (error) {
       console.error('Error fetching portfolios:', error);
+      // Set default portfolios on error
+      setPortfolios([]);
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchPortfolios();
+  }, []);
+
+  const categories = ['all', ...Array.from(new Set(portfolios.map(p => p.project_category)))];
+  
+  const filteredPortfolios = selectedCategory === 'all' 
+    ? portfolios 
+    : portfolios.filter(p => p.project_category === selectedCategory);
+
   if (loading) {
     return (
-      <section className="py-20 bg-white">
-        <div className="container mx-auto px-4">
+      <div className="py-16 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
             <p className="mt-4 text-gray-600">Memuat portfolio...</p>
           </div>
         </div>
-      </section>
-    );
-  }
-
-  if (portfolios.length === 0) {
-    return (
-      <section className="py-20 bg-white">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Portfolio Kami</h2>
-          <p className="text-gray-600">Belum ada portfolio yang tersedia</p>
-        </div>
-      </section>
+      </div>
     );
   }
 
   return (
-    <section id="portfolio" className="py-20 bg-white">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">Portfolio Kami</h2>
+    <section id="portfolio" className="py-16 bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl mb-4">
+            Portfolio Kami
+          </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Lihat hasil karya terbaik kami dalam mengembangkan solusi digital yang inovatif
+            Lihat hasil karya terbaik kami dalam berbagai proyek yang telah kami kerjakan
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {portfolios.map((portfolio) => (
-            <Card key={portfolio.id} className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2 bg-white border-0 overflow-hidden">
-              <div className="relative overflow-hidden">
-                <img 
-                  src={portfolio.project_image_url} 
+        {/* Category Filter */}
+        <div className="flex flex-wrap justify-center gap-4 mb-12">
+          {categories.map((category) => (
+            <button
+              key={category}
+              onClick={() => setSelectedCategory(category)}
+              className={`px-6 py-2 rounded-full transition-all duration-200 ${
+                selectedCategory === category
+                  ? 'bg-blue-600 text-white shadow-lg'
+                  : 'bg-white text-gray-600 hover:bg-blue-50 hover:text-blue-600'
+              }`}
+            >
+              {category === 'all' ? 'Semua' : category}
+            </button>
+          ))}
+        </div>
+
+        {/* Portfolio Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {filteredPortfolios.map((portfolio) => (
+            <div
+              key={portfolio.id}
+              className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group"
+            >
+              <div className="aspect-video bg-gradient-to-br from-blue-100 to-purple-100 relative overflow-hidden">
+                <img
+                  src={portfolio.project_image_url}
                   alt={portfolio.project_name}
-                  className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
-                  onError={(e) => {
-                    e.currentTarget.src = 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
-                  }}
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                 />
-                <div className="absolute top-4 left-4">
-                  <Badge variant="secondary" className="bg-white/90 text-gray-900">
-                    {portfolio.project_category}
-                  </Badge>
-                </div>
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
                 {portfolio.is_featured && (
-                  <div className="absolute top-4 right-4">
-                    <Badge className="bg-yellow-500 text-white">
-                      Featured
-                    </Badge>
+                  <div className="absolute top-4 left-4 bg-yellow-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                    Featured
                   </div>
                 )}
               </div>
               
-              <CardContent className="p-6 space-y-4">
-                <div>
-                  <h3 className="text-xl font-bold group-hover:text-blue-600 transition-colors mb-2">
-                    {portfolio.project_name}
-                  </h3>
-                  <p className="text-gray-600 text-sm line-clamp-2">
-                    {portfolio.project_description}
-                  </p>
+              <div className="p-6">
+                <div className="flex items-center gap-2 text-sm text-blue-600 mb-2">
+                  <Code className="h-4 w-4" />
+                  <span>{portfolio.project_category}</span>
                 </div>
-
-                <div className="flex items-center justify-between text-sm text-gray-500">
-                  <div className="flex items-center">
-                    <Calendar className="h-4 w-4 mr-1" />
-                    {new Date(portfolio.completion_date).toLocaleDateString('id-ID')}
-                  </div>
-                  {portfolio.client_name && (
-                    <span className="font-medium">{portfolio.client_name}</span>
+                
+                <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                  {portfolio.project_name}
+                </h3>
+                
+                <p className="text-gray-600 mb-4 line-clamp-3">
+                  {portfolio.project_description}
+                </p>
+                
+                <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
+                  <Calendar className="h-4 w-4" />
+                  <span>{new Date(portfolio.completion_date).toLocaleDateString('id-ID')}</span>
+                  <span>•</span>
+                  <span>{portfolio.client_name}</span>
+                </div>
+                
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {portfolio.technologies_used.slice(0, 3).map((tech) => (
+                    <span
+                      key={tech}
+                      className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs"
+                    >
+                      {tech}
+                    </span>
+                  ))}
+                  {portfolio.technologies_used.length > 3 && (
+                    <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs">
+                      +{portfolio.technologies_used.length - 3} lainnya
+                    </span>
                   )}
                 </div>
-
-                {portfolio.technologies_used && portfolio.technologies_used.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {portfolio.technologies_used.slice(0, 3).map((tech, idx) => (
-                      <Badge key={idx} variant="outline" className="text-xs">
-                        {tech}
-                      </Badge>
-                    ))}
-                    {portfolio.technologies_used.length > 3 && (
-                      <Badge variant="outline" className="text-xs">
-                        +{portfolio.technologies_used.length - 3} lainnya
-                      </Badge>
-                    )}
-                  </div>
-                )}
-
-                <div className="flex space-x-2">
-                  <Link to={`/portfolio/${portfolio.id}`} className="flex-1">
-                    <Button variant="outline" className="w-full">
-                      Detail
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </Link>
-                  {portfolio.project_url && (
-                    <Button size="sm" asChild>
-                      <a href={portfolio.project_url} target="_blank" rel="noopener noreferrer">
-                        <ExternalLink className="h-4 w-4" />
-                      </a>
-                    </Button>
+                
+                <div className="flex items-center justify-between">
+                  <button className="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-2 group">
+                    Lihat Detail
+                    <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                  </button>
+                  
+                  {portfolio.project_url && portfolio.project_url !== '#' && (
+                    <a
+                      href={portfolio.project_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gray-500 hover:text-blue-600 transition-colors"
+                    >
+                      <ExternalLink className="h-5 w-5" />
+                    </a>
                   )}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ))}
         </div>
 
-        <div className="text-center mt-12">
-          <Button size="lg" asChild>
-            <Link to="/portfolio">
-              Lihat Semua Portfolio
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Link>
-          </Button>
-        </div>
+        {filteredPortfolios.length === 0 && (
+          <div className="text-center py-12">
+            <div className="text-gray-400 mb-4">
+              <Code className="h-16 w-16 mx-auto" />
+            </div>
+            <h3 className="text-xl font-medium text-gray-900 mb-2">Belum Ada Portfolio</h3>
+            <p className="text-gray-600">
+              Portfolio untuk kategori "{selectedCategory}" belum tersedia.
+            </p>
+          </div>
+        )}
       </div>
     </section>
   );

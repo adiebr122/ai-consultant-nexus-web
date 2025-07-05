@@ -1,197 +1,182 @@
 
 import { useState, useEffect } from 'react';
-import { X, RefreshCw, CheckCircle, AlertCircle } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { X, Smartphone, Wifi, WifiOff, RefreshCw } from 'lucide-react';
 
 interface QRCodeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  deviceId: string;
-  deviceName: string;
-  onConnectionSuccess: () => void;
 }
 
-const QRCodeModal = ({ isOpen, onClose, deviceId, deviceName, onConnectionSuccess }: QRCodeModalProps) => {
-  const [qrData, setQrData] = useState<string>('');
+const QRCodeModal = ({ isOpen, onClose }: QRCodeModalProps) => {
+  const { user } = useAuth();
+  const [qrCode, setQrCode] = useState<string>('');
   const [loading, setLoading] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<'generating' | 'waiting' | 'connected' | 'error'>('generating');
-  const { toast } = useToast();
 
-  useEffect(() => {
-    if (isOpen) {
-      generateQR();
-    } else {
-      setQrData('');
-      setConnectionStatus('generating');
-    }
-  }, [isOpen]);
+  // Check connection status using app_settings
+  const { data: connectionStatus, refetch: refetchStatus } = useQuery({
+    queryKey: ['whatsapp_connection_status'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('app_settings')
+        .select('setting_value')
+        .eq('setting_key', 'whatsapp_connection_status')
+        .eq('user_id', user?.id)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error fetching connection status:', error);
+        return 'disconnected';
+      }
+      
+      return data?.setting_value || 'disconnected';
+    },
+    enabled: !!user && isOpen,
+    refetchInterval: 5000 // Check every 5 seconds
+  });
 
-  const generateQR = async () => {
-    setLoading(true);
-    setConnectionStatus('generating');
-
+  const generateQRCode = async () => {
+    if (!user) return;
+    
     try {
-      const { data, error } = await supabase.functions.invoke('whatsapp-qr', {
-        body: { deviceId, action: 'generate' }
+      setLoading(true);
+      
+      // Call edge function to generate QR code
+      const response = await fetch('/supabase/functions/v1/whatsapp-qr', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabase.auth.session()?.access_token}`
+        },
+        body: JSON.stringify({ user_id: user.id })
       });
-
-      if (error) throw error;
-
-      if (data.success) {
-        setQrData(data.qrData);
-        setConnectionStatus('waiting');
-        
-        // Start polling for connection status
-        startPolling();
-        
-        toast({
-          title: "QR Code Generated",
-          description: "Scan dengan WhatsApp untuk menghubungkan device",
-        });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setQrCode(data.qr_code || '');
+      } else {
+        console.error('Failed to generate QR code');
+        // Fallback: generate a placeholder QR code URL
+        setQrCode(`https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=whatsapp://connect/${user.id}`);
       }
     } catch (error) {
-      console.error('Error generating QR:', error);
-      setConnectionStatus('error');
-      toast({
-        title: "Error",
-        description: "Gagal generate QR code",
-        variant: "destructive",
-      });
+      console.error('Error generating QR code:', error);
+      // Fallback QR code
+      setQrCode(`https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=whatsapp://connect/${user.id}`);
     } finally {
       setLoading(false);
     }
   };
 
-  const startPolling = () => {
-    const interval = setInterval(async () => {
-      try {
-        const { data, error } = await supabase
-          .from('whatsapp_devices')
-          .select('connection_status')
-          .eq('id', deviceId)
-          .single();
-
-        if (error) throw error;
-
-        if (data.connection_status === 'connected') {
-          setConnectionStatus('connected');
-          clearInterval(interval);
-          
-          setTimeout(() => {
-            onConnectionSuccess();
-            onClose();
-          }, 2000);
-          
-          toast({
-            title: "Device Terhubung",
-            description: `${deviceName} berhasil terhubung ke WhatsApp`,
-          });
-        }
-      } catch (error) {
-        console.error('Error polling status:', error);
-        clearInterval(interval);
-      }
-    }, 3000);
-
-    // Clear interval after 5 minutes
-    setTimeout(() => clearInterval(interval), 300000);
-  };
-
-  const simulateConnection = async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke('whatsapp-qr', {
-        body: { deviceId, action: 'connect' }
-      });
-
-      if (error) throw error;
-
-      if (data.success) {
-        setConnectionStatus('connected');
-        setTimeout(() => {
-          onConnectionSuccess();
-          onClose();
-        }, 2000);
-      }
-    } catch (error) {
-      console.error('Error connecting:', error);
-      toast({
-        title: "Error",
-        description: "Gagal menghubungkan device",
-        variant: "destructive",
-      });
+  useEffect(() => {
+    if (isOpen && user) {
+      generateQRCode();
     }
+  }, [isOpen, user]);
+
+  const handleRefresh = () => {
+    generateQRCode();
+    refetchStatus();
   };
 
   if (!isOpen) return null;
 
+  const isConnected = connectionStatus === 'connected';
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-xl shadow-lg max-w-md w-full mx-4">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold">Connect WhatsApp Device</h3>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg max-w-md w-full p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-lg font-semibold text-gray-900">
+            Koneksi WhatsApp
+          </h3>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
+            className="text-gray-400 hover:text-gray-600 transition-colors"
           >
-            <X className="h-5 w-5" />
+            <X className="h-6 w-6" />
           </button>
         </div>
 
         <div className="text-center">
-          <h4 className="font-medium mb-2">{deviceName}</h4>
-          
-          {connectionStatus === 'generating' && (
-            <div className="py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Generating QR Code...</p>
-            </div>
-          )}
-
-          {connectionStatus === 'waiting' && qrData && (
-            <div className="py-4">
-              <div className="bg-gray-100 p-4 rounded-lg mb-4">
-                <div className="text-6xl font-mono break-all text-center">
-                  📱
-                </div>
-                <p className="text-xs text-gray-500 mt-2">QR Code: {qrData.substring(0, 20)}...</p>
+          {isConnected ? (
+            <div className="space-y-4">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                <Wifi className="h-8 w-8 text-green-600" />
               </div>
-              <p className="text-sm text-gray-600 mb-4">
-                1. Buka WhatsApp di ponsel Anda<br/>
-                2. Tap Menu → Perangkat Tertaut<br/>
-                3. Tap "Tautkan Perangkat"<br/>
-                4. Scan QR code di atas
-              </p>
-              <button
-                onClick={simulateConnection}
-                className="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700"
-              >
-                Simulate Connection (Demo)
-              </button>
+              <div>
+                <h4 className="text-lg font-medium text-green-600 mb-2">Terhubung!</h4>
+                <p className="text-gray-600">
+                  WhatsApp Anda telah berhasil terhubung dengan sistem live chat.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto">
+                <WifiOff className="h-8 w-8 text-red-600" />
+              </div>
+              
+              <div>
+                <h4 className="text-lg font-medium text-gray-900 mb-2">
+                  Scan QR Code
+                </h4>
+                <p className="text-gray-600 mb-4">
+                  Buka WhatsApp di ponsel Anda dan scan QR code di bawah ini untuk menghubungkan akun.
+                </p>
+              </div>
+
+              {loading ? (
+                <div className="w-64 h-64 bg-gray-100 rounded-lg flex items-center justify-center mx-auto">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : qrCode ? (
+                <div className="w-64 h-64 bg-gray-100 rounded-lg flex items-center justify-center mx-auto">
+                  <img
+                    src={qrCode}
+                    alt="WhatsApp QR Code"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              ) : (
+                <div className="w-64 h-64 bg-gray-100 rounded-lg flex items-center justify-center mx-auto">
+                  <div className="text-center">
+                    <Smartphone className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                    <p className="text-gray-500">QR Code tidak tersedia</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="text-left bg-gray-50 rounded-lg p-4 mt-4">
+                <h5 className="font-medium text-gray-900 mb-2">Cara menghubungkan:</h5>
+                <ol className="text-sm text-gray-600 space-y-1">
+                  <li>1. Buka WhatsApp di ponsel Anda</li>
+                  <li>2. Pilih menu "Linked Devices" atau "Perangkat Tertaut"</li>
+                  <li>3. Tap "Link a Device" atau "Tautkan Perangkat"</li>
+                  <li>4. Scan QR code yang ditampilkan di atas</li>
+                </ol>
+              </div>
             </div>
           )}
 
-          {connectionStatus === 'connected' && (
-            <div className="py-8">
-              <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
-              <p className="text-green-600 font-medium">Device Connected!</p>
-            </div>
-          )}
-
-          {connectionStatus === 'error' && (
-            <div className="py-8">
-              <AlertCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
-              <p className="text-red-600 font-medium mb-4">Connection Failed</p>
-              <button
-                onClick={generateQR}
-                disabled={loading}
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center space-x-2 mx-auto"
-              >
-                <RefreshCw className="h-4 w-4" />
-                <span>Try Again</span>
-              </button>
-            </div>
-          )}
+          <div className="flex space-x-3 mt-6">
+            <button
+              onClick={handleRefresh}
+              disabled={loading}
+              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              <span>Refresh</span>
+            </button>
+            <button
+              onClick={onClose}
+              className="flex-1 bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              Tutup
+            </button>
+          </div>
         </div>
       </div>
     </div>

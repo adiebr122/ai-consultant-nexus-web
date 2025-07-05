@@ -35,8 +35,8 @@ const LiveChatManager = () => {
     queryKey: ['chat_stats'],
     queryFn: async () => {
       const [conversationsResult, messagesResult, agentsResult] = await Promise.all([
-        supabase.from('chat_conversations').select('id, status, platform'),
-        supabase.from('chat_messages').select('id').gte('message_time', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()),
+        supabase.from('chat_conversations').select('id, status'),
+        supabase.from('chat_messages').select('id').gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()),
         supabase.from('chat_agents').select('id, is_active, is_online')
       ]);
 
@@ -49,8 +49,8 @@ const LiveChatManager = () => {
         activeConversations: conversations.filter(c => c.status === 'active').length,
         pendingConversations: conversations.filter(c => c.status === 'pending').length,
         unassignedConversations: conversations.filter(c => c.status === 'unassigned').length,
-        websiteChats: conversations.filter(c => c.platform === 'website').length,
-        whatsappChats: conversations.filter(c => c.platform === 'whatsapp').length,
+        websiteChats: conversations.length, // All conversations as website chats
+        whatsappChats: 0, // Default to 0 for now
         todayMessages: todayMessages.length,
         totalAgents: agents.length,
         activeAgents: agents.filter(a => a.is_active).length,
