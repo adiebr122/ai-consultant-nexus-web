@@ -1,18 +1,17 @@
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
-import { ArrowLeft, Download, Send, Calendar, User, Building } from 'lucide-react';
+import { QuotationPreview } from '@/components/quotation/QuotationPreview';
 import { Button } from '@/components/ui/button';
+import { ArrowLeft, Download, Mail } from 'lucide-react';
+import jsPDF from 'jspdf';
+import { useToast } from '@/hooks/use-toast';
 
 interface QuotationItem {
-  id: string;
-  item_name: string;
   description: string;
   quantity: number;
-  unit_price: number;
+  price: number;
   total: number;
 }
 
@@ -21,246 +20,185 @@ interface Quotation {
   quotation_number: string;
   quotation_date: string;
   client_name: string;
-  client_email?: string;
-  client_company?: string;
-  client_phone?: string;
-  client_address?: string;
+  client_email: string | null;
+  client_company: string | null;
+  client_phone: string | null;
+  client_address: string | null;
   items: QuotationItem[];
-  subtotal: number;
-  tax_rate: number;
-  tax_amount: number;
-  discount_amount: number;
-  total_amount: number;
-  notes?: string;
-  terms?: string;
-  status: string;
+  subtotal: number | null;
+  tax_rate: number | null;
+  tax_amount: number | null;
+  discount_amount: number | null;
+  total_amount: number | null;
+  notes: string | null;
+  terms: string | null;
+  status: string | null;
+  created_at: string;
+  updated_at: string;
+  user_id: string;
 }
 
 const QuotationView = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { toast } = useToast();
   const [quotation, setQuotation] = useState<Quotation | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Fetch quotation data
-  const { data: quotationData, isLoading, error } = useQuery({
-    queryKey: ['quotation', id],
-    queryFn: async () => {
-      if (!id || !user) return null;
-      
+  useEffect(() => {
+    if (id) {
+      fetchQuotation();
+    }
+  }, [id]);
+
+  const fetchQuotation = async () => {
+    try {
       const { data, error } = await supabase
         .from('quotations')
         .select('*')
         .eq('id', id)
-        .eq('user_id', user.id)
         .single();
-      
+
       if (error) throw error;
-      
-      // Parse items if they exist
-      const parsedData = {
+
+      // Transform the data to ensure items is properly typed
+      const transformedQuotation: Quotation = {
         ...data,
-        items: Array.isArray(data.items) ? data.items : []
+        items: Array.isArray(data.items) 
+          ? data.items.map((item: any) => ({
+              description: item.description || '',
+              quantity: Number(item.quantity) || 0,
+              price: Number(item.price) || 0,
+              total: Number(item.total) || 0
+            }))
+          : []
       };
-      
-      setQuotation(parsedData);
-      return parsedData;
-    },
-    enabled: !!id && !!user
-  });
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-    }).format(amount);
+      setQuotation(transformedQuotation);
+    } catch (error) {
+      console.error('Error fetching quotation:', error);
+      toast({
+        title: "Error",
+        description: "Gagal mengambil data penawaran",
+        variant: "destructive",
+      });
+      navigate('/admin');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('id-ID', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
+  const handleDownloadPDF = () => {
+    if (!quotation) return;
+
+    const pdf = new jsPDF();
+    
+    // Add title
+    pdf.setFontSize(20);
+    pdf.text('PENAWARAN HARGA', 20, 30);
+    
+    // Add quotation details
+    pdf.setFontSize(12);
+    pdf.text(`No: ${quotation.quotation_number}`, 20, 50);
+    pdf.text(`Tanggal: ${new Date(quotation.quotation_date).toLocaleDateString('id-ID')}`, 20, 60);
+    
+    // Add client info
+    pdf.text('Kepada:', 20, 80);
+    pdf.text(`${quotation.client_name}`, 20, 90);
+    if (quotation.client_company) {
+      pdf.text(`${quotation.client_company}`, 20, 100);
+    }
+    
+    // Add items
+    let yPos = 120;
+    pdf.text('Item:', 20, yPos);
+    yPos += 10;
+    
+    quotation.items.forEach((item, index) => {
+      pdf.text(`${index + 1}. ${item.description}`, 20, yPos);
+      pdf.text(`Qty: ${item.quantity} x Rp ${item.price.toLocaleString('id-ID')} = Rp ${item.total.toLocaleString('id-ID')}`, 30, yPos + 10);
+      yPos += 20;
     });
+    
+    // Add total
+    yPos += 10;
+    pdf.text(`Total: Rp ${quotation.total_amount?.toLocaleString('id-ID') || '0'}`, 20, yPos);
+    
+    pdf.save(`penawaran-${quotation.quotation_number}.pdf`);
   };
 
-  if (isLoading) {
+  const handleSendEmail = async () => {
+    if (!quotation?.client_email) {
+      toast({
+        title: "Error",
+        description: "Email klien tidak tersedia",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase.functions.invoke('send-quotation-email', {
+        body: { quotationId: quotation.id }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Berhasil",
+        description: "Penawaran berhasil dikirim via email",
+      });
+    } catch (error) {
+      console.error('Error sending email:', error);
+      toast({
+        title: "Error",
+        description: "Gagal mengirim email",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
-  if (error || !quotation) {
+  if (!quotation) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Quotation Tidak Ditemukan</h2>
-          <p className="text-gray-600 mb-4">Quotation yang Anda cari tidak tersedia.</p>
-          <Button onClick={() => navigate('/admin')}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Kembali ke Admin
-          </Button>
-        </div>
+      <div className="text-center py-12">
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Penawaran tidak ditemukan</h3>
+        <Button onClick={() => navigate('/admin')} variant="outline">
+          Kembali ke Admin
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <Button 
-            variant="outline" 
-            onClick={() => navigate('/admin')}
-            className="flex items-center space-x-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span>Kembali</span>
+    <div className="max-w-4xl mx-auto p-6">
+      <div className="flex justify-between items-center mb-6">
+        <Button onClick={() => navigate('/admin')} variant="outline" className="flex items-center gap-2">
+          <ArrowLeft className="h-4 w-4" />
+          Kembali
+        </Button>
+        <div className="flex gap-2">
+          <Button onClick={handleDownloadPDF} variant="outline" className="flex items-center gap-2">
+            <Download className="h-4 w-4" />
+            Download PDF
           </Button>
-          
-          <div className="flex space-x-3">
-            <Button variant="outline">
-              <Download className="h-4 w-4 mr-2" />
-              Download PDF
-            </Button>
-            <Button>
-              <Send className="h-4 w-4 mr-2" />
+          {quotation.client_email && (
+            <Button onClick={handleSendEmail} className="flex items-center gap-2">
+              <Mail className="h-4 w-4" />
               Kirim Email
             </Button>
-          </div>
-        </div>
-
-        {/* Quotation Content */}
-        <div className="bg-white rounded-lg shadow-lg p-8">
-          {/* Header Info */}
-          <div className="flex justify-between items-start mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">PENAWARAN</h1>
-              <p className="text-gray-600">#{quotation.quotation_number}</p>
-            </div>
-            <div className="text-right">
-              <div className="flex items-center text-gray-600 mb-2">
-                <Calendar className="h-4 w-4 mr-2" />
-                <span>{formatDate(quotation.quotation_date)}</span>
-              </div>
-              <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-                quotation.status === 'approved' ? 'bg-green-100 text-green-800' :
-                quotation.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                'bg-yellow-100 text-yellow-800'
-              }`}>
-                {quotation.status === 'approved' ? 'Disetujui' :
-                 quotation.status === 'rejected' ? 'Ditolak' : 'Draft'}
-              </div>
-            </div>
-          </div>
-
-          {/* Client Info */}
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Kepada:</h3>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <div className="flex items-center mb-2">
-                <User className="h-4 w-4 text-gray-500 mr-2" />
-                <span className="font-medium">{quotation.client_name}</span>
-              </div>
-              {quotation.client_company && (
-                <div className="flex items-center mb-2">
-                  <Building className="h-4 w-4 text-gray-500 mr-2" />
-                  <span>{quotation.client_company}</span>
-                </div>
-              )}
-              {quotation.client_email && (
-                <p className="text-gray-600 ml-6">{quotation.client_email}</p>
-              )}
-              {quotation.client_phone && (
-                <p className="text-gray-600 ml-6">{quotation.client_phone}</p>
-              )}
-              {quotation.client_address && (
-                <p className="text-gray-600 ml-6 whitespace-pre-line">{quotation.client_address}</p>
-              )}
-            </div>
-          </div>
-
-          {/* Items Table */}
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Detail Penawaran:</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse border border-gray-300">
-                <thead>
-                  <tr className="bg-gray-50">
-                    <th className="border border-gray-300 px-4 py-3 text-left font-medium text-gray-900">Item</th>
-                    <th className="border border-gray-300 px-4 py-3 text-left font-medium text-gray-900">Deskripsi</th>
-                    <th className="border border-gray-300 px-4 py-3 text-center font-medium text-gray-900">Qty</th>
-                    <th className="border border-gray-300 px-4 py-3 text-right font-medium text-gray-900">Harga Unit</th>
-                    <th className="border border-gray-300 px-4 py-3 text-right font-medium text-gray-900">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {quotation.items.map((item, index) => (
-                    <tr key={index}>
-                      <td className="border border-gray-300 px-4 py-3">{item.item_name}</td>
-                      <td className="border border-gray-300 px-4 py-3 text-gray-600">{item.description}</td>
-                      <td className="border border-gray-300 px-4 py-3 text-center">{item.quantity}</td>
-                      <td className="border border-gray-300 px-4 py-3 text-right">{formatCurrency(item.unit_price)}</td>
-                      <td className="border border-gray-300 px-4 py-3 text-right font-medium">{formatCurrency(item.total)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Totals */}
-          <div className="flex justify-end mb-8">
-            <div className="w-80">
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Subtotal:</span>
-                  <span className="font-medium">{formatCurrency(quotation.subtotal || 0)}</span>
-                </div>
-                {quotation.discount_amount > 0 && (
-                  <div className="flex justify-between text-red-600">
-                    <span>Diskon:</span>
-                    <span>-{formatCurrency(quotation.discount_amount)}</span>
-                  </div>
-                )}
-                {quotation.tax_rate > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Pajak ({quotation.tax_rate}%):</span>
-                    <span className="font-medium">{formatCurrency(quotation.tax_amount || 0)}</span>
-                  </div>
-                )}
-                <div className="border-t pt-2">
-                  <div className="flex justify-between text-lg font-bold">
-                    <span>Total:</span>
-                    <span>{formatCurrency(quotation.total_amount || 0)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Notes and Terms */}
-          {(quotation.notes || quotation.terms) && (
-            <div className="space-y-6">
-              {quotation.notes && (
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-2">Catatan:</h4>
-                  <p className="text-gray-600 whitespace-pre-line">{quotation.notes}</p>
-                </div>
-              )}
-              {quotation.terms && (
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-2">Syarat & Ketentuan:</h4>
-                  <p className="text-gray-600 whitespace-pre-line">{quotation.terms}</p>
-                </div>
-              )}
-            </div>
           )}
         </div>
       </div>
+
+      <QuotationPreview quotation={quotation} />
     </div>
   );
 };
